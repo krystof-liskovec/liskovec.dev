@@ -1,0 +1,81 @@
+---
+import '../styles/terminal.css';
+---
+
+<div class="crt-screen" id="crt-container">
+  <!-- The complete graphical terminal viewport custom drawn by Go WASM -->
+  <canvas id="terminal-canvas"></canvas>
+</div>
+
+<script is:inline src="/wasm_exec.js"></script>
+
+<script>
+  // DOM Elements
+  const crtContainer = document.getElementById('crt-container');
+
+  // Reusable global AudioContext to avoid heavy initialization lag on every keypress
+  let cachedAudioCtx = null;
+
+  window.playBeep = function(freq = 440, duration = 0.08, type = 'sine') {
+    try {
+      if (!cachedAudioCtx) {
+        cachedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      const audioCtx = cachedAudioCtx;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.type = type;
+      oscillator.frequency.value = freq;
+      
+      gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+      // AudioContext blocked by browser autoplay policies
+    }
+  };
+
+  window.playKeyClick = function() {
+    const clickFreq = 750 + Math.random() * 550;
+    window.playBeep(clickFreq, 0.025, 'triangle');
+  };
+
+  // Theme callback registered globally for Go WASM CLI theme shifts
+  window.applyTheme = function(themeName) {
+    crtContainer.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-theme');
+    
+    // Manage CRT monitor flicker class dynamically
+    if (themeName === 'phosphor' || themeName === 'amber') {
+      crtContainer.classList.add('flicker');
+    } else {
+      crtContainer.classList.remove('flicker');
+    }
+
+    if (themeName !== 'viper') {
+      document.documentElement.setAttribute('data-theme', themeName);
+      crtContainer.setAttribute('data-theme', themeName);
+    }
+  };
+
+  // Load and Instantiate Go WASM Binary
+  const go = new Go();
+  WebAssembly.instantiateStreaming(fetch('/terminal.wasm'), go.importObject)
+    .then((result) => {
+      // Run the Graphical Go WASM application
+      go.run(result.instance);
+    })
+    .catch((err) => {
+      console.error("Go WASM Graphic Engine boot failed:", err);
+    });
+</script>
