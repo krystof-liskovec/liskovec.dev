@@ -6,16 +6,13 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "copy-wasm-exec": "cp /usr/lib/go/lib/wasm/wasm_exec.js public/wasm_exec.js",
-    "build:wasm": "cd terminal-go && GOOS=js GOARCH=wasm go build -o ../public/terminal.wasm",
-    "predev": "npm run copy-wasm-exec && npm run build:wasm",
-    "prebuild": "npm run copy-wasm-exec && npm run build:wasm",
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "astro": "^6.4.2"
   }
 }

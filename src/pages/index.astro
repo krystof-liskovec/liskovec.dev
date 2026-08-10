@@ -1,8 +1,87 @@
 ---
-import Terminal from '../components/Terminal.astro';
 import Layout from '../layouts/Layout.astro';
+import '../styles/site.css';
 ---
 
 <Layout>
-	<Terminal />
+	<div class="site-shell">
+		<header class="site-header">
+			<a class="wordmark" href="/">krystof liskovec</a>
+			<nav aria-label="Primary navigation">
+				<a href="#work">work</a>
+				<a href="#about">about</a>
+				<a href="#contact">contact</a>
+			</nav>
+		</header>
+
+		<main>
+			<section class="hero" id="about">
+				<p class="eyebrow">software engineer / czech republic</p>
+				<h1>i make useful things<br /><em>feel simple.</em></h1>
+				<div class="hero-grid">
+					<p class="intro">I design and build fast web interfaces, dependable systems, and small tools that solve real problems. Mostly with Go, TypeScript, Astro, and a suspicious amount of attention to detail.</p>
+					<div class="shape-stage" aria-hidden="true">
+						<div class="shape shape-back"></div>
+						<div class="shape shape-front"></div>
+					</div>
+				</div>
+			</section>
+
+			<section class="prompt-panel" aria-labelledby="prompt-title">
+				<div class="prompt-heading">
+					<div>
+						<p class="eyebrow">the visual prompt</p>
+						<h2 id="prompt-title">describe a feeling.</h2>
+					</div>
+					<span class="prompt-status" id="prompt-status">theme: quiet / precise</span>
+				</div>
+				<form class="prompt-form" id="theme-form">
+					<label class="sr-only" for="theme-prompt">Describe how the website should look</label>
+					<input id="theme-prompt" name="prompt" type="text" autocomplete="off" placeholder="make it feel like a rainy coffee shop at night" />
+					<button type="submit" aria-label="Apply visual prompt">↗</button>
+				</form>
+				<div class="prompt-examples" aria-label="Prompt examples">
+					<button type="button" data-prompt="warm, editorial, and slightly nostalgic">warm / editorial</button>
+					<button type="button" data-prompt="strange neon future, sharp and electric">neon / future</button>
+					<button type="button" data-prompt="organic, calm, green, like a quiet forest">organic / calm</button>
+					<button type="button" data-prompt="black and white brutalist, but soft">soft brutalism</button>
+				</div>
+			</section>
+
+			<section class="content-section" id="work">
+				<div class="section-label"><span>01</span><span>selected work</span></div>
+				<div class="project-list">
+					<a class="project" href="https://github.com/kristof-liskovec/liskovec.dev" target="_blank" rel="noreferrer">
+						<div><h3>liskovec.dev</h3><p>a small portfolio with a large opinion about interfaces.</p></div>
+						<span class="project-meta">astro · css · interaction <b>↗</b></span>
+					</a>
+					<a class="project" href="https://github.com/kristof-liskovec/gophershell" target="_blank" rel="noreferrer">
+						<div><h3>gophershell cli</h3><p>a developer dashboard for local container deployments and real-time logs.</p></div>
+						<span class="project-meta">go · docker · tui <b>↗</b></span>
+					</a>
+				</div>
+			</section>
+
+			<section class="split-section">
+				<div class="content-section compact">
+					<div class="section-label"><span>02</span><span>toolbox</span></div>
+					<p class="large-copy">go, typescript, astro, react, postgres, docker, linux, and the web platform.</p>
+				</div>
+				<div class="content-section compact" id="contact">
+					<div class="section-label"><span>03</span><span>say hello</span></div>
+					<div class="contact-links">
+						<a href="mailto:krystof@liskovec.dev">email <span>↗</span></a>
+						<a href="https://github.com/kristof-liskovec" target="_blank" rel="noreferrer">github <span>↗</span></a>
+						<a href="https://linkedin.com/in/krystof-liskovec" target="_blank" rel="noreferrer">linkedin <span>↗</span></a>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer><span>© 2026 krystof liskovec</span><div class="footer-actions"><button id="undo-theme" type="button">undo visual</button><button id="reset-theme" type="button">reset visual</button></div></footer>
+	</div>
 </Layout>
+
+<script>
+	import '../scripts/theme.ts';
+</script>
