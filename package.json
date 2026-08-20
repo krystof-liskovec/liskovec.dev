@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "liskovec-dev",
   "type": "module",
   "version": "0.0.1",
   "engines": {
@@ -7,12 +7,12 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "server": "go run ./server/main.go",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.2.0",
     "astro": "^6.4.2"
   }
 }
