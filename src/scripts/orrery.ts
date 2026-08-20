@@ -14,6 +14,7 @@ type Planet = {
   sprite: string[];
   color: string;
   size: number;
+  easterEgg?: boolean;
 };
 
 const DEG = Math.PI / 180;
@@ -28,11 +29,13 @@ const PLANETS: Planet[] = [
   { name: 'Saturn', a: 9.53667594, e: .05386179, meanLongitude: 49.95424423, perihelion: 92.59887831, longitudeRate: 1222.49362201, inclination: 2.48599187, node: 113.66242448, displayRadius: 30, glyph: 'O', sprite: ['   .--.   ', '--(====)--', "   '--'   "], color: '#fabd2f', size: .82 },
   { name: 'Uranus', a: 19.18916464, e: .04725744, meanLongitude: 313.23810451, perihelion: 170.9542763, longitudeRate: 428.48202785, inclination: .77263783, node: 74.01692503, displayRadius: 36, glyph: 'O', sprite: [' .-. ', '( o )', " '-' "], color: '#8ec07c', size: .72 },
   { name: 'Neptune', a: 30.06992276, e: .00859048, meanLongitude: -55.12002969, perihelion: 44.96476227, longitudeRate: 218.45945325, inclination: 1.77004347, node: 131.78422574, displayRadius: 42, glyph: 'O', sprite: [' .-. ', '( ~ )', " '-' "], color: '#458588', size: .72 },
+  { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '*', sprite: [' .-. ', '(:.:)', " '-' "], color: '#d3869b', size: .64, easterEgg: true },
 ];
 
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const system = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
+const sceneLabel = document.querySelector<HTMLElement>('.solar-caption span:first-child');
 const context = canvas?.getContext('2d');
 
 if (canvas && system && context) {
@@ -61,7 +64,9 @@ if (canvas && system && context) {
     lastX: 0,
     lastY: 0,
     pointerId: -1,
+    dragDistance: 0,
   };
+  const easterEgg = { clicks: 0, unlocked: false, revealedAt: 0 };
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reducedMotion = reducedMotionQuery.matches;
   let lastClockSecond = -1;
@@ -122,7 +127,11 @@ if (canvas && system && context) {
 
   const ORBIT_SAMPLES = 112;
   const orbitPoints = PLANETS.map((planet) =>
-    Array.from({ length: ORBIT_SAMPLES }, (_, sample) => orbitalPoint(planet, sample / ORBIT_SAMPLES * Math.PI * 2))
+    Array.from({ length: ORBIT_SAMPLES }, (_, sample) => {
+      const trueAnomaly = sample / ORBIT_SAMPLES * Math.PI * 2;
+      const normalizedDistance = (1 - planet.e ** 2) / (1 + planet.e * Math.cos(trueAnomaly));
+      return orbitalPoint(planet, trueAnomaly, normalizedDistance);
+    })
   );
 
   function render(frameTime: number) {
@@ -141,6 +150,10 @@ if (canvas && system && context) {
     pointer.x += (pointer.targetX - pointer.x) * .055;
     pointer.y += (pointer.targetY - pointer.y) * .055;
     const seconds = frameTime / 1000;
+    const revealProgress = easterEgg.unlocked
+      ? Math.min(1, (frameTime - easterEgg.revealedAt) / (reducedMotion ? 1 : 1200))
+      : 0;
+    const plutoReveal = 1 - (1 - revealProgress) ** 3;
     const drift = reducedMotion ? 0 : seconds * .035;
     const automaticPitch = (58 + Math.sin(seconds * .18) * 4 + pointer.y * 10) * DEG;
     const automaticYaw = (Math.sin(seconds * .11) * 8 + pointer.x * 14) * DEG;
@@ -166,9 +179,10 @@ if (canvas && system && context) {
     const centerX = width * .52;
     const centerY = height * .38;
     // Leave enough room for Neptune even at the nearest point in the projection.
-    const worldScale = width < 600
+    const baseWorldScale = width < 600
       ? Math.min(width / 116, height / 54)
       : Math.min(width / 104, height / 50);
+    const worldScale = baseWorldScale * (1 - plutoReveal * .11);
     const cameraDistance = 145;
 
     const cameraTransform = (world: Vec3) => {
@@ -198,13 +212,14 @@ if (canvas && system && context) {
     }
     context.globalAlpha = 1;
 
-    type OrbitMark = { x: number; y: number; z: number; scale: number; glyph: string; earth: boolean; alpha: number };
+    type OrbitMark = { x: number; y: number; z: number; scale: number; glyph: string; earth: boolean; alpha: number; reveal: number };
     const farMarks: OrbitMark[] = [];
     const nearMarks: OrbitMark[] = [];
     // The orbits are a stable spatial reference; motion belongs to the scene itself.
     const dashTravel = 0;
 
     PLANETS.forEach((planet, planetIndex) => {
+      if (planet.easterEgg && !easterEgg.unlocked) return;
       for (let sample = 0; sample < ORBIT_SAMPLES; sample++) {
         if ((sample + dashTravel + planetIndex) % 3 === 0) continue;
         const projected = cameraTransform(orbitPoints[planetIndex][sample]);
@@ -213,7 +228,7 @@ if (canvas && system && context) {
         const dy = next.y - projected.y;
         const slope = Math.abs(dy / (dx || .001));
         const glyph = slope > 2.1 ? '|' : slope > .55 ? (dx * dy > 0 ? '\\' : '/') : '-';
-        const mark = { ...projected, glyph, earth: planet.name === 'Earth', alpha: planet.name === 'Earth' ? .78 : .62 };
+        const mark = { ...projected, glyph, earth: planet.name === 'Earth', alpha: planet.name === 'Earth' ? .78 : .62, reveal: planet.easterEgg ? plutoReveal : 1 };
         (projected.z < 0 ? farMarks : nearMarks).push(mark);
       }
     });
@@ -221,7 +236,7 @@ if (canvas && system && context) {
     const drawMarks = (marks: OrbitMark[]) => {
       context.font = '9px "DM Mono", monospace';
       for (const mark of marks) {
-        context.globalAlpha = mark.alpha;
+        context.globalAlpha = mark.alpha * mark.reveal;
         context.fillStyle = mark.earth ? '#83a598' : '#665c54';
         context.fillText(mark.glyph, mark.x, mark.y);
       }
@@ -229,9 +244,9 @@ if (canvas && system && context) {
     };
 
     const now = Date.now();
-    const bodies = PLANETS.map((planet) => {
+    const bodies = PLANETS.filter((planet) => !planet.easterEgg || easterEgg.unlocked).map((planet) => {
       const orbit = solveOrbit(planet, now);
-      return { planet, position: heliocentricPosition(planet, orbit.angle, orbit.distance), ...cameraTransform(orbitalPoint(planet, orbit.angle, orbit.distance)) };
+      return { planet, reveal: planet.easterEgg ? plutoReveal : 1, position: heliocentricPosition(planet, orbit.angle, orbit.distance), ...cameraTransform(orbitalPoint(planet, orbit.angle, orbit.distance)) };
     }).sort((first, second) => first.z - second.z);
 
     const canvasBounds = canvas.getBoundingClientRect();
@@ -241,7 +256,7 @@ if (canvas && system && context) {
       ? bodies.reduce<typeof bodies[number] | null>((closest, body) => {
           const distance = Math.hypot(body.x - localPointerX, body.y - localPointerY);
           const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
-          return distance < 28 && distance < closestDistance ? body : closest;
+          return body.reveal > .35 && distance < 28 && distance < closestDistance ? body : closest;
         }, null)
       : null;
 
@@ -252,7 +267,7 @@ if (canvas && system && context) {
       const fontSize = Math.max(8, 15 * planet.size * depthScale) * (isHovered ? 1.14 : 1);
       const lines = fontSize < 9 ? [planet.glyph] : planet.sprite;
       const lineHeight = fontSize * .78;
-      context.globalAlpha = 1;
+      context.globalAlpha = body.reveal;
       context.fillStyle = planet.color;
       context.shadowBlur = 0;
       context.font = `bold ${fontSize}px "DM Mono", monospace`;
@@ -350,6 +365,7 @@ if (canvas && system && context) {
       camera.roll += deltaX * .0045;
       camera.yaw += deltaX * .0018;
       camera.pitch = Math.max(12 * DEG, Math.min(88 * DEG, camera.pitch + deltaY * .0055));
+      camera.dragDistance += Math.hypot(deltaX, deltaY);
       camera.lastX = event.clientX;
       camera.lastY = event.clientY;
       return;
@@ -370,6 +386,7 @@ if (canvas && system && context) {
     camera.roll = camera.renderedRoll;
     camera.lastX = event.clientX;
     camera.lastY = event.clientY;
+    camera.dragDistance = 0;
     camera.pointerId = event.pointerId;
     pointer.targetX = pointer.x;
     pointer.targetY = pointer.y;
@@ -380,6 +397,14 @@ if (canvas && system && context) {
   const finishDrag = (event: PointerEvent) => {
     if (!camera.dragging || event.pointerId !== camera.pointerId) return;
     camera.dragging = false;
+    if (event.type === 'pointerup' && camera.dragDistance < 6 && !easterEgg.unlocked) {
+      easterEgg.clicks += 1;
+      if (easterEgg.clicks === 9) {
+        easterEgg.unlocked = true;
+        easterEgg.revealedAt = performance.now();
+        if (sceneLabel) sceneLabel.textContent = 'OBJECT 134340 DETECTED / PLUTO';
+      }
+    }
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   };
   window.addEventListener('pointerup', finishDrag);
