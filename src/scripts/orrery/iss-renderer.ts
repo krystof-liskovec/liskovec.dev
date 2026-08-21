@@ -1,0 +1,135 @@
+import { rotateX, rotateY } from './math';
+import type { Vec3 } from './types';
+
+type Segment = {
+  from: Vec3;
+  to: Vec3;
+  color: string;
+  glyph?: string;
+  alpha?: number;
+};
+
+type Module = {
+  point: Vec3;
+  label: string;
+  color: string;
+};
+
+type RenderIssOptions = {
+  centerX: number;
+  centerY: number;
+  scale: number;
+  reveal: number;
+  longitude: number;
+  latitude: number;
+  compact: boolean;
+};
+
+const segments: Segment[] = [];
+const modules: Module[] = [
+  { point: { x: 0, y: .35, z: -8.2 }, label: '<SOYUZ>', color: '#bdae93' },
+  { point: { x: 0, y: .95, z: -5.6 }, label: '[ZARYA]', color: '#8ec07c' },
+  { point: { x: 0, y: .35, z: -2.8 }, label: '[UNITY]', color: '#8ec07c' },
+  { point: { x: 0, y: .75, z: 0 }, label: '[O]', color: '#fabd2f' },
+  { point: { x: 0, y: .3, z: 3 }, label: '[DESTINY]', color: '#8ec07c' },
+  { point: { x: 0, y: 1, z: 5.8 }, label: '[KIBO]', color: '#8ec07c' },
+  { point: { x: 0, y: .3, z: 8.4 }, label: '<DRAGON>', color: '#bdae93' },
+  { point: { x: 0, y: 2, z: .25 }, label: '(CUPOLA)', color: '#b8bb26' },
+];
+
+const addSegment = (from: Vec3, to: Vec3, color: string, glyph?: string, alpha?: number) => {
+  segments.push({ from, to, color, glyph, alpha });
+};
+
+// Integrated truss structure and its repeated cross-bracing.
+addSegment({ x: -10, y: -.28, z: 0 }, { x: 10, y: -.28, z: 0 }, '#fabd2f', '=');
+addSegment({ x: -10, y: .28, z: 0 }, { x: 10, y: .28, z: 0 }, '#fabd2f', '=');
+for (let x = -10; x <= 10; x += 1) {
+  addSegment({ x, y: -.38, z: 0 }, { x, y: .38, z: 0 }, '#d79921', '|', .8);
+}
+
+// Four paired solar-array wings, represented as gridded planes.
+for (const x of [-8.2, -5.4, 5.4, 8.2]) {
+  for (const side of [-1, 1]) {
+    const innerY = side * 1.05;
+    const outerY = side * 4.7;
+    const left = x - .72;
+    const right = x + .72;
+    addSegment({ x: left, y: innerY, z: 0 }, { x: left, y: outerY, z: 0 }, '#d79921', '|');
+    addSegment({ x: right, y: innerY, z: 0 }, { x: right, y: outerY, z: 0 }, '#d79921', '|');
+    addSegment({ x: left, y: outerY, z: 0 }, { x: right, y: outerY, z: 0 }, '#d79921', '=');
+    for (let panel = 0; panel <= 5; panel++) {
+      const y = innerY + (outerY - innerY) * panel / 5;
+      addSegment({ x: left, y, z: 0 }, { x: right, y, z: 0 }, '#d79921', '#', .86);
+    }
+  }
+}
+
+// Pressurised module spine, radiators, and docking branches extend in depth.
+addSegment({ x: 0, y: .65, z: -8.5 }, { x: 0, y: .65, z: 8.7 }, '#8ec07c', '-');
+addSegment({ x: 0, y: .65, z: 0 }, { x: 0, y: 2, z: .25 }, '#b8bb26', '|');
+for (const x of [-2.8, 2.8]) {
+  addSegment({ x: x - .8, y: .65, z: -1.6 }, { x: x + .8, y: .65, z: -1.6 }, '#bdae93', '=');
+  addSegment({ x: x - .8, y: .65, z: 1.6 }, { x: x + .8, y: .65, z: 1.6 }, '#bdae93', '=');
+  addSegment({ x, y: .65, z: -1.6 }, { x, y: .65, z: 1.6 }, '#928374', '|');
+}
+
+export function drawFocusedIss(context: CanvasRenderingContext2D, options: RenderIssOptions) {
+  const { centerX, centerY, scale, reveal, longitude, latitude, compact } = options;
+  const unit = (compact ? 9.5 : 18) * scale;
+  const yaw = -.58 + longitude;
+  const pitch = .26 + latitude;
+  const cameraDistance = 30;
+
+  const project = (point: Vec3) => {
+    let rotated = rotateY(point, yaw);
+    rotated = rotateX(rotated, pitch);
+    const perspective = cameraDistance / (cameraDistance - rotated.z);
+    return {
+      x: centerX + rotated.x * unit * perspective,
+      y: centerY + rotated.y * unit * perspective,
+      z: rotated.z,
+      scale: perspective,
+    };
+  };
+
+  const projectedSegments = segments.map((segment) => {
+    const from = project(segment.from);
+    const to = project(segment.to);
+    return { ...segment, from, to, depth: (from.z + to.z) / 2 };
+  }).sort((first, second) => first.depth - second.depth);
+
+  context.save();
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  for (const segment of projectedSegments) {
+    const dx = segment.to.x - segment.from.x;
+    const dy = segment.to.y - segment.from.y;
+    const distance = Math.hypot(dx, dy);
+    const fontSize = Math.max(4.5, (compact ? 6 : 8) * scale * (segment.from.scale + segment.to.scale) / 2);
+    const steps = Math.max(1, Math.ceil(distance / (fontSize * .58)));
+    const slope = Math.abs(dy / (dx || .001));
+    const glyph = segment.glyph ?? (slope > 1.8 ? '|' : slope > .45 ? (dx * dy > 0 ? '\\' : '/') : '-');
+    context.font = `bold ${fontSize}px "DM Mono", monospace`;
+    context.fillStyle = segment.color;
+    context.globalAlpha = reveal * (segment.alpha ?? 1) * (.58 + Math.min(1, segment.from.scale) * .38);
+    for (let step = 0; step <= steps; step++) {
+      const progress = step / steps;
+      context.fillText(glyph, segment.from.x + dx * progress, segment.from.y + dy * progress);
+    }
+  }
+
+  const projectedModules = modules.map((module) => ({ ...module, ...project(module.point) }))
+    .sort((first, second) => first.z - second.z);
+  for (const module of projectedModules) {
+    const fontSize = Math.max(5, (compact ? 6.2 : 8.5) * scale * module.scale);
+    context.font = `bold ${fontSize}px "DM Mono", monospace`;
+    context.strokeStyle = '#1d2021';
+    context.lineWidth = Math.max(1.5, fontSize * .18);
+    context.fillStyle = module.color;
+    context.globalAlpha = reveal * (.62 + Math.min(1, module.scale) * .38);
+    context.strokeText(module.label, module.x, module.y);
+    context.fillText(module.label, module.x, module.y);
+  }
+  context.restore();
+}
