@@ -6,12 +6,15 @@ import '../styles/site.css';
 <Layout>
 	<div class="site-shell">
 		<header class="site-header">
-			<a class="wordmark" href="/" aria-label="Krystof Liskovec home"><span>~/</span>krystof.liskovec</a>
+			<div class="brand-lockup">
+				<a class="wordmark" href="/" aria-label="Krystof Liskovec home"><span>~/</span>krystof.liskovec</a>
+				<p class="eyebrow"><span class="signal">●</span> devops · software engineer · cz</p>
+			</div>
 			<nav aria-label="Primary navigation"><a href="#work">[ work ]</a><a href="#about">[ about ]</a><a href="#contact">[ contact ]</a></nav>
 		</header>
 		<main>
 			<section class="solar-hero" id="about">
-				<div class="solar-heading"><p class="eyebrow"><span class="signal">●</span> signal acquired · software engineer · cz</p><h1>somewhere<br /><span class="zoom-location-frame"><span id="zoom-location">in the solar system.</span></span></h1></div>
+				<div class="solar-heading"><h1>somewhere<br /><span class="zoom-location-frame"><span id="zoom-location">in the solar system.</span></span></h1></div>
 				<div class="solar-system" id="solar-system" aria-label="A live, approximate ASCII orrery of the solar system">
 					<canvas id="solar-canvas" role="img" aria-label="ASCII solar system with live approximate planetary positions"></canvas>
 					<button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return to previous view ]</button>
@@ -24,13 +27,13 @@ import '../styles/site.css';
 						</div>
 						<output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
 					</div>
-					<div class="solar-caption"><span>LIVE ASCII ORRERY / 3D HELIOCENTRIC</span><span id="solar-time">UTC / BROWSER TIME</span><span>drag to spin · double-click to reset</span></div>
+					<div class="solar-caption"><span>INTERACTIVE ASCII CANVAS</span><span id="solar-time">UTC / BROWSER TIME</span><span>drag to explore · double-click to reset</span></div>
 				</div>
-				<div class="hero-footer"><span>↓ scroll to inspect the operator</span><span>orbital data: JPL / NASA · browser time</span></div>
+				<div class="hero-footer"><span>↓ scroll to view selected work</span><span>software · interfaces · developer tools</span></div>
 			</section>
-			<div class="status-bar"><span>╞═ SYSTEMS ONLINE</span><span>⌁ currently exploring: <b>creative engineering</b></span><span>2026.08</span></div>
-			<section class="content-section" id="work"><div class="section-label"><span>01 / selected transmissions</span><span>2 artifacts found</span></div><div class="project-list"><a class="project" href="https://github.com/kristof-liskovec/liskovec.dev" target="_blank" rel="noreferrer"><div class="project-index">[ 01 ]</div><div class="project-body"><h2>liskovec.dev</h2><p>A small portfolio with a large opinion about interfaces.</p></div><div class="project-meta">astro · css <b>↗</b></div></a><a class="project" href="https://github.com/kristof-liskovec/gophershell" target="_blank" rel="noreferrer"><div class="project-index">[ 02 ]</div><div class="project-body"><h2>gophershell cli</h2><p>A developer dashboard for local container deployments and real-time logs.</p></div><div class="project-meta">go · docker · tui <b>↗</b></div></a></div></section>
-			<section class="lower-grid"><div class="content-section compact"><div class="section-label"><span>02 / equipment</span><span>loadout</span></div><p class="large-copy">go · typescript · astro · react<br />postgres · docker · linux</p></div><div class="content-section compact" id="contact"><div class="section-label"><span>03 / open channel</span><span>say hello</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a><a href="https://github.com/kristof-liskovec" target="_blank" rel="noreferrer">github <span>↗</span></a><a href="https://linkedin.com/in/krystof-liskovec" target="_blank" rel="noreferrer">linkedin <span>↗</span></a></div></div></section>
+			<div class="status-bar"><span>● AVAILABLE FOR COLLABORATION</span><span>currently building: <b>thoughtful software</b></span><span>2026</span></div>
+			<section class="content-section" id="work"><div class="section-label"><span>01 / selected work</span><span>2 projects</span></div><div class="project-list"><a class="project" href="https://github.com/kristof-liskovec/liskovec.dev" target="_blank" rel="noreferrer"><div class="project-index">[ 01 ]</div><div class="project-body"><h2>liskovec.dev</h2><p>A small portfolio with a large opinion about interfaces.</p></div><div class="project-meta">astro · css <b>↗</b></div></a><a class="project" href="https://github.com/kristof-liskovec/gophershell" target="_blank" rel="noreferrer"><div class="project-index">[ 02 ]</div><div class="project-body"><h2>gophershell cli</h2><p>A developer dashboard for local container deployments and real-time logs.</p></div><div class="project-meta">go · docker · tui <b>↗</b></div></a></div></section>
+			<section class="lower-grid"><div class="content-section compact"><div class="section-label"><span>02 / skills</span><span>tools &amp; technologies</span></div><p class="large-copy">go · typescript · astro · react<br />postgres · docker · linux</p></div><div class="content-section compact" id="contact"><div class="section-label"><span>03 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a><a href="https://github.com/kristof-liskovec" target="_blank" rel="noreferrer">github <span>↗</span></a><a href="https://linkedin.com/in/krystof-liskovec" target="_blank" rel="noreferrer">linkedin <span>↗</span></a></div></div></section>
 		</main>
 		<footer><span>© 2026 krystof liskovec</span><span>made with curiosity + caffeine</span></footer>
 	</div>

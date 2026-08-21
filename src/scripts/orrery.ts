@@ -120,8 +120,7 @@ if (canvas && system && context) {
     if (zoomInput) zoomInput.disabled = true;
     setZoomLocation(`focus:${target.id}`, target.name === 'Earth' ? 'on planet Earth.' : target.kind === 'star' ? 'at Sol.' : `near ${target.name}.`);
     if (sceneLabel) {
-      const view = target.kind === 'galactic' ? 'DEEP-SPACE VIEW' : target.kind === 'star' ? 'STELLAR VIEW' : 'PLANETARY VIEW';
-      sceneLabel.textContent = `${target.name.toUpperCase()} / ${view}`;
+      sceneLabel.textContent = `${target.name.toUpperCase()} / CLOSE-UP`;
     }
   };
 
@@ -159,7 +158,7 @@ if (canvas && system && context) {
       focusReturn.textContent = `[ ← return to ${parentName} ]`;
     }
     setZoomLocation(`focus:${target.id}`, target.kind === 'moon' ? `near ${target.name}.` : 'aboard the ISS.');
-    if (sceneLabel) sceneLabel.textContent = target.kind === 'moon' ? `${target.name.toUpperCase()} / SATELLITE VIEW` : 'ISS / ORBITAL VIEW';
+    if (sceneLabel) sceneLabel.textContent = `${target.name.toUpperCase()} / CLOSE-UP`;
   };
 
   reducedMotionQuery.addEventListener('change', (event) => {
@@ -184,12 +183,17 @@ if (canvas && system && context) {
   function render(frameTime: number) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, width < 600 ? 1.5 : 2);
-    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const pixelWidth = Math.max(1, Math.round(width * dpr));
+    const pixelHeight = Math.max(1, Math.round(height * dpr));
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
     }
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Use the canvas's real backing-store ratio. CSS grid sizing can produce
+    // fractional dimensions, and a nominal DPR transform leaves that bitmap
+    // fractionally stretched by the browser, softening small ASCII glyphs.
+    context.setTransform(pixelWidth / width, 0, 0, pixelHeight / height, 0, 0);
     context.clearRect(0, 0, width, height);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
@@ -236,7 +240,7 @@ if (canvas && system && context) {
         const parent = objectFocus.target;
         if (parent) {
           setZoomLocation(`focus:${parent.id}`, parent.name === 'Earth' ? 'on planet Earth.' : `near ${parent.name}.`);
-          if (sceneLabel) sceneLabel.textContent = `${parent.name.toUpperCase()} / ${parent.kind === 'star' ? 'STELLAR VIEW' : 'PLANETARY VIEW'}`;
+          if (sceneLabel) sceneLabel.textContent = `${parent.name.toUpperCase()} / CLOSE-UP`;
         }
       }
     }
@@ -1323,12 +1327,12 @@ if (canvas && system && context) {
     zoomInput.setAttribute('aria-valuetext', status);
     if (sceneLabel) {
       sceneLabel.textContent = cosmicZoom.target >= .72
-        ? 'MILKY WAY / GALACTIC VIEW'
+        ? 'MILKY WAY / INTERACTIVE VIEW'
         : cosmicZoom.target >= .3
-          ? 'DEPARTING LOCAL SYSTEM / ORION ARM'
+          ? 'ZOOMING OUT / ORION ARM'
           : easterEgg.unlocked
             ? 'OBJECT 134340 DETECTED / PLUTO'
-            : 'LIVE ASCII ORRERY / 3D HELIOCENTRIC';
+            : 'INTERACTIVE ASCII CANVAS';
     }
   });
 
