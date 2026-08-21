@@ -1,0 +1,47 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/site.css';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+}
+
+interface Props {
+	post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const published = new Intl.DateTimeFormat('en-GB', {
+	day: '2-digit',
+	month: 'long',
+	year: 'numeric',
+}).format(post.data.published);
+---
+
+<Layout title={`${post.data.title} — krystof.liskovec`} description={post.data.description}>
+	<div class="site-shell">
+		<header class="site-header">
+			<div class="brand-lockup">
+				<a class="wordmark" href="/" aria-label="Kryštof Liskovec home"><span>/home/</span>krystof-liskovec</a>
+				<p class="eyebrow"><span class="signal">●</span> devops · software engineer</p>
+			</div>
+			<nav aria-label="Primary navigation"><a href="/#about">[ about ]</a><a href="/blog" aria-current="page">[ blog ]</a><a href="/#contact">[ contact ]</a></nav>
+		</header>
+		<main class="post-page">
+			<article>
+				<a class="post-back" href="/blog">← all posts</a>
+				<header class="post-header">
+					<div class="post-meta"><time datetime={post.data.published.toISOString()}>{published}</time><span>{post.data.tags.join(' · ')}</span></div>
+					<h1>{post.data.title}</h1>
+					<p>{post.data.description}</p>
+				</header>
+				<div class="post-body"><Content /></div>
+			</article>
+		</main>
+		<footer><span>© 2026 krystof liskovec</span><a href="/blog">← back to blog</a></footer>
+	</div>
+</Layout>

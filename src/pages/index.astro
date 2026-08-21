@@ -1,6 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PostList from '../components/PostList.astro';
+import { getCollection } from 'astro:content';
 import '../styles/site.css';
+
+const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && data.featured))
+	.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf())
+	.slice(0, 3);
 ---
 
 <Layout>
@@ -32,7 +38,7 @@ import '../styles/site.css';
 				<div class="hero-footer"><span>↓ scroll to learn more</span></div>
 			</section>
 			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software engineering</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software engineer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
-			<section class="content-section" id="blog"><div class="section-label"><span>02 / featured posts</span><span>sometimes with opinions included</span></div><div class="blog-preview"><div><h2>nothing here yet.</h2><p>the first post is still being figured out. eventually, this is where a few favourites will live.</p></div><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section>
+			<section class="content-section" id="blog"><div class="section-label"><span>02 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section>
 			<section class="lower-grid"><div class="content-section compact"><div class="section-label"><span>03 / skills</span><span>tools &amp; technologies</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go · TypeScript · NestJS · Express</p></div><div><span>data</span><p>PostgreSQL · MariaDB · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></div><div class="content-section compact" id="contact"><div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a><a href="https://github.com/kristof-liskovec" target="_blank" rel="noreferrer">github <span>↗</span></a><a href="https://linkedin.com/in/krystof-liskovec" target="_blank" rel="noreferrer">linkedin <span>↗</span></a></div></div></section>
 		</main>
 		<footer><span>© 2026 krystof liskovec</span><span>made with curiosity + caffeine</span></footer>
