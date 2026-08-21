@@ -369,7 +369,7 @@ if (canvas && system && context) {
       for (const star of STARS) {
         if (star.glyph !== glyph) continue;
         const pulse = reducedMotion ? .45 : .5 + .5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
-        context.globalAlpha = (.12 + pulse * (glyph === '+' ? .78 : .4)) * localSkyOpacity;
+        context.globalAlpha = (.16 + pulse * (glyph === '+' ? .82 : .46)) * localSkyOpacity;
         context.fillText(glyph, star.x * width + starParallaxX, star.y * height + starParallaxY);
       }
     }
@@ -420,7 +420,7 @@ if (canvas && system && context) {
         const dy = next.y - projected.y;
         const slope = Math.abs(dy / (dx || .001));
         const glyph = slope > 2.1 ? '|' : slope > .55 ? (dx * dy > 0 ? '\\' : '/') : '-';
-        const mark = { ...projected, glyph, alpha: .62 * localDetailOpacity * (1 - planetSceneFocus), reveal: planet.easterEgg ? plutoReveal : 1 };
+        const mark = { ...projected, glyph, alpha: .7 * localDetailOpacity * (1 - planetSceneFocus), reveal: planet.easterEgg ? plutoReveal : 1 };
         (projected.z < 0 ? farMarks : nearMarks).push(mark);
       }
     });
@@ -429,7 +429,7 @@ if (canvas && system && context) {
       context.font = '9px "DM Mono", monospace';
       for (const mark of marks) {
         context.globalAlpha = mark.alpha * mark.reveal;
-        context.fillStyle = '#665c54';
+        context.fillStyle = '#7c6f64';
         context.fillText(mark.glyph, mark.x, mark.y);
       }
       context.globalAlpha = 1;
