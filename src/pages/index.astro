@@ -11,14 +11,17 @@ import '../styles/site.css';
 		</header>
 		<main>
 			<section class="solar-hero" id="about">
-				<div class="solar-heading"><p class="eyebrow"><span class="signal">●</span> signal acquired · software engineer · cz</p><h1>somewhere<br /><span>in the solar system.</span></h1></div>
+				<div class="solar-heading"><p class="eyebrow"><span class="signal">●</span> signal acquired · software engineer · cz</p><h1>somewhere<br /><span class="zoom-location-frame"><span id="zoom-location">in the solar system.</span></span></h1></div>
 				<div class="solar-system" id="solar-system" aria-label="A live, approximate ASCII orrery of the solar system">
 					<canvas id="solar-canvas" role="img" aria-label="ASCII solar system with live approximate planetary positions"></canvas>
 					<div class="cosmic-zoom-control">
-						<span aria-hidden="true">MILKY WAY</span>
-						<label class="sr-only" for="cosmic-zoom">Zoom from the Solar System out to the Milky Way</label>
-						<input id="cosmic-zoom" type="range" min="0" max="100" value="0" step="1" />
-						<span aria-hidden="true">SOL</span>
+						<label class="sr-only" for="cosmic-zoom">Zoom between Earth, the Solar System, and the Milky Way</label>
+						<div class="cosmic-zoom-scale">
+							<span aria-hidden="true">MILKY WAY</span>
+							<input id="cosmic-zoom" type="range" min="-100" max="100" value="0" step="1" />
+							<span aria-hidden="true">EARTH</span>
+							<span class="cosmic-zoom-origin" aria-hidden="true">SOL</span>
+						</div>
 						<output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
 					</div>
 					<div class="solar-caption"><span>LIVE ASCII ORRERY / 3D HELIOCENTRIC</span><span id="solar-time">calculating ephemeris...</span><span>drag to spin · double-click to reset</span></div>
