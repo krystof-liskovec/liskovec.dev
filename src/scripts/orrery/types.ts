@@ -1,0 +1,69 @@
+export type Vec3 = { x: number; y: number; z: number };
+
+export type Planet = {
+  name: string;
+  a: number;
+  e: number;
+  meanLongitude: number;
+  perihelion: number;
+  longitudeRate: number;
+  inclination: number;
+  node: number;
+  displayRadius: number;
+  glyph: string;
+  sprite: string[];
+  color: string;
+  size: number;
+  easterEgg?: boolean;
+};
+
+export type GalacticObject = {
+  name: string;
+  kind: string;
+  x: number;
+  y: number;
+  glyph: string;
+  color: string;
+  distance: string;
+  detail: string;
+};
+
+export type FocusTarget = {
+  id: string;
+  name: string;
+  kind: 'planet' | 'moon' | 'station' | 'galactic';
+  color: string;
+  subtitle: string;
+  detail: string;
+  originX: number;
+  originY: number;
+};
+
+export type FocusState = {
+  target: FocusTarget | null;
+  progress: number;
+  exiting: boolean;
+  child: FocusTarget | null;
+  childProgress: number;
+  childExiting: boolean;
+  longitude: number;
+  latitude: number;
+  childLongitude: number;
+  childLatitude: number;
+  resetLongitude: number;
+  resetLatitude: number;
+  resetting: boolean;
+  resetStartedAt: number;
+  previousLabel: string;
+};
+
+export type ProjectedBody = {
+  planet: Planet;
+  world: Vec3;
+  reveal: number;
+  position: { longitude: number; latitude: number; distance: number };
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+};

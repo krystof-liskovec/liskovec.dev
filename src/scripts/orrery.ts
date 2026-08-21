@@ -1,122 +1,9 @@
-type Vec3 = { x: number; y: number; z: number };
-
-type Planet = {
-  name: string;
-  a: number;
-  e: number;
-  meanLongitude: number;
-  perihelion: number;
-  longitudeRate: number;
-  inclination: number;
-  node: number;
-  displayRadius: number;
-  glyph: string;
-  sprite: string[];
-  color: string;
-  size: number;
-  easterEgg?: boolean;
-};
-
-type GalacticObject = {
-  name: string;
-  kind: string;
-  x: number;
-  y: number;
-  glyph: string;
-  color: string;
-  distance: string;
-  detail: string;
-};
-
-type FocusTarget = {
-  id: string;
-  name: string;
-  kind: 'planet' | 'moon' | 'station' | 'galactic';
-  color: string;
-  subtitle: string;
-  detail: string;
-  originX: number;
-  originY: number;
-};
-
-const DEG = Math.PI / 180;
-const J2000 = Date.UTC(2000, 0, 1, 12);
-
-const PLANETS: Planet[] = [
-  { name: 'Mercury', a: .38709927, e: .20563593, meanLongitude: 252.2503235, perihelion: 77.45779628, longitudeRate: 149472.67411175, inclination: 7.00497902, node: 48.33076593, displayRadius: 7, glyph: '.', sprite: [' ... ', '(:.)', " '.' "], color: '#bdae93', size: .68 },
-  { name: 'Venus', a: .72333566, e: .00677672, meanLongitude: 181.9790995, perihelion: 131.60246718, longitudeRate: 58517.81538729, inclination: 3.39467605, node: 76.67984255, displayRadius: 10, glyph: 'o', sprite: [' .-. ', '(:~)', " '-' "], color: '#d79921', size: .74 },
-  { name: 'Earth', a: 1.00000261, e: .01671123, meanLongitude: 100.46457166, perihelion: 102.93768193, longitudeRate: 35999.37244981, inclination: 0, node: 0, displayRadius: 14, glyph: '@', sprite: [' .-. ', '(o~)', " '-' "], color: '#83a598', size: .74 },
-  { name: 'Mars', a: 1.52371034, e: .0933941, meanLongitude: -4.55343205, perihelion: -23.94362959, longitudeRate: 19140.30268499, inclination: 1.84969142, node: 49.55953891, displayRadius: 18, glyph: 'o', sprite: [' .-. ', '(:.)', " '-' "], color: '#fb4934', size: .7 },
-  { name: 'Jupiter', a: 5.202887, e: .04838624, meanLongitude: 34.39644051, perihelion: 14.72847983, longitudeRate: 3034.74612775, inclination: 1.30439695, node: 100.47390909, displayRadius: 24, glyph: 'O', sprite: [' .-----. ', '/~~~~~~~\\', '|==()===|', '\\_______/', " '-----' "], color: '#d5c4a1', size: .82 },
-  { name: 'Saturn', a: 9.53667594, e: .05386179, meanLongitude: 49.95424423, perihelion: 92.59887831, longitudeRate: 1222.49362201, inclination: 2.48599187, node: 113.66242448, displayRadius: 30, glyph: 'O', sprite: ['   .---.   ', " .':::::'. ", '--==(=:=)==--', " '.:::::.' ", "   '---'   "], color: '#fabd2f', size: .68 },
-  { name: 'Uranus', a: 19.18916464, e: .04725744, meanLongitude: 313.23810451, perihelion: 170.9542763, longitudeRate: 428.48202785, inclination: .77263783, node: 74.01692503, displayRadius: 36, glyph: 'O', sprite: ['  .---.  ', '-( ~~~ )-', "  '---'  "], color: '#8ec07c', size: .7 },
-  { name: 'Neptune', a: 30.06992276, e: .00859048, meanLongitude: -55.12002969, perihelion: 44.96476227, longitudeRate: 218.45945325, inclination: 1.77004347, node: 131.78422574, displayRadius: 42, glyph: 'O', sprite: [' .---. ', '(~~~~~)', " '---' "], color: '#458588', size: .72 },
-  { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '.', sprite: ['.'], color: '#d3869b', size: .64, easterEgg: true },
-];
-
-// These are intentionally schematic positions on the face-on illustration, not a
-// claim that every object lies neatly in the same two-dimensional galactic plane.
-const GALACTIC_OBJECTS: GalacticObject[] = [
-  { name: 'Sagittarius A*', kind: 'supermassive black hole', x: 0, y: 0, glyph: '{(@)}', color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
-  { name: 'Orion Nebula', kind: 'stellar nursery', x: .48, y: -.15, glyph: ':.*.:', color: '#d3869b', distance: '~1,340 ly', detail: 'Orion molecular cloud' },
-  { name: 'Cygnus X-1', kind: 'stellar black hole', x: .2, y: .25, glyph: '<*O>', color: '#83a598', distance: '~7,200 ly', detail: 'x-ray binary system' },
-  { name: 'Crab Nebula', kind: 'supernova remnant', x: -.25, y: -.22, glyph: '{+}', color: '#b8bb26', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
-];
-
-const EARTH_MAP = [
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '**************************************************.***#.........**#.****************************',
-  '*************************#*...#***********#..............................#*##*******************',
-  '*...**#********#####**#####......#*******#............................##%%##%#####***##*********',
-  '.....#####...#################....#*****.............####.........##############################',
-  '.#..###################%##..#%#...#**..............#############################################',
-  '....###################.....#......*..............###.####################################.###..',
-  '......#.....###########....#%##....................#..###############################.....#.....',
-  '.............#############.#####..............##..##.################################.....#.....',
-  '..............####%############.#..............#################%###%#################..........',
-  '...............#########.######.................##############%#%%%%###%%%%%%%%######...........',
-  '...............#%##%#########.................###..#####...##.%#%%%####%%%%%%%%#####............',
-  '...............#%%%#########..................#%.....########.#%%%%#%%%%%%%%%%##.#...#..........',
-  '................%%%%%#######..................%%%%%......%%%%#%%%%%#%%%%%%######....#...........',
-  '.................%%%%######..................%%%%##%.##..%%%%%%%%%%##%%%%#######................',
-  '..................##%#.......................%%%%%%%%####%%%%.%%%%##############................',
-  '...................#%#......................%%%%%%%%%#%#%%%%%*%%..##############................',
-  '....................##..#...................#%%#%%##%%%#%%.%%###...#%##..####...................',
-  '.....................####...................%%#%%%%*#%%%%%.%%%#.....%#...####...................',
-  '........................##..................###%%%%###%%%##%%.......%.....###...................',
-  '............................####............###############%%%..................................',
-  '...........................#######...........###.##########%%...................................',
-  '...........................########................#######%%..............##.###................',
-  '...........................#########...............#######%................#.##.................',
-  '...........................############............######%...........................##.........',
-  '...........................############.............#######.....................................',
-  '............................########%#.............########........................#............',
-  '.............................%########.............%%#%%##..%....................%%%%#%.........',
-  '.............................%%######..............#%%%%#...%..................%%%%%%%%#........',
-  '.............................%%#####................%%%%#...%.................%%%%%%%%%%........',
-  '.............................%#####.................%%%%#.....................%%%%%%%%%%#.......',
-  '.............................%%###...................%%#.......................#%%.%%%%##.......',
-  '.............................####....................................................###........',
-  '.............................%%.................................................................',
-  '.............................%#.................................................................',
-  '............................#%..................................................................',
-  '............................##..................................................................',
-  '................................................................................................',
-  '................................................................................................',
-  '..................................*.****.........................*............................*.',
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '************************************************************************************************',
-  '************************************************************************************************',
-];
-const EARTH_MAP_WIDTH = 96;
-const EARTH_MAP_HEIGHT = 48;
-const EARTH_CLOSEUP_COLUMNS = 46;
-const EARTH_CLOSEUP_ROWS = 23;
+import { FOCUSED_ART, GALACTIC_OBJECTS, PLANETARY_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
+import { drawReadout } from './orrery/canvas-ui';
+import { EARTH_MAP, EARTH_MAP_HEIGHT, EARTH_MAP_WIDTH } from './orrery/earth-map';
+import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveOrbit } from './orrery/math';
+import { ASTEROID_BELT, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
+import type { FocusState, FocusTarget, Vec3 } from './orrery/types';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const system = document.querySelector<HTMLElement>('#solar-system');
@@ -129,13 +16,6 @@ const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-ret
 const context = canvas?.getContext('2d');
 
 if (canvas && system && context) {
-  const stars = Array.from({ length: 90 }, (_, index) => ({
-    x: ((index * 47) % 131) / 131,
-    y: ((index * 83) % 127) / 127,
-    phase: (index * 1.618) % (Math.PI * 2),
-    speed: .55 + (index % 9) * .09,
-    glyph: index % 17 === 0 ? '+' : index % 7 === 0 ? '*' : '.',
-  }));
   const pointer = { x: 0, y: 0, targetX: 0, targetY: 0, clientX: -1000, clientY: -1000, active: false };
   const camera = {
     manual: false,
@@ -155,7 +35,7 @@ if (canvas && system && context) {
     lastY: 0,
     pointerId: -1,
     dragDistance: 0,
-    dragMode: 'solar' as 'solar' | 'galaxy' | 'earth' | 'focus',
+    dragMode: 'solar' as 'solar' | 'galaxy' | 'focus',
   };
   const galaxyCamera = {
     rotation: 0,
@@ -165,19 +45,11 @@ if (canvas && system && context) {
     resetRotation: 0,
     resetTilt: 1,
   };
-  const earthCamera = {
-    longitude: 0,
-    latitude: 0,
-    resetting: false,
-    resetStartedAt: 0,
-    resetLongitude: 0,
-    resetLatitude: 0,
-  };
-  const objectFocus = {
-    target: null as FocusTarget | null,
+  const objectFocus: FocusState = {
+    target: null,
     progress: 0,
     exiting: false,
-    child: null as FocusTarget | null,
+    child: null,
     childProgress: 0,
     childExiting: false,
     longitude: 0,
@@ -252,14 +124,20 @@ if (canvas && system && context) {
       objectFocus.childExiting = true;
       camera.dragging = false;
       system.classList.remove('is-dragging');
-      if (focusReturn) focusReturn.disabled = true;
+      if (focusReturn) {
+        focusReturn.disabled = true;
+        focusReturn.textContent = '[ returning to Earth… ]';
+      }
       return;
     }
     if (!objectFocus.target || objectFocus.exiting) return;
     objectFocus.exiting = true;
     camera.dragging = false;
     system.classList.remove('is-dragging');
-    if (focusReturn) focusReturn.disabled = true;
+    if (focusReturn) {
+      focusReturn.disabled = true;
+      focusReturn.textContent = '[ returning to previous view… ]';
+    }
   };
 
   const beginChildFocus = (target: FocusTarget) => {
@@ -274,123 +152,9 @@ if (canvas && system && context) {
     if (sceneLabel) sceneLabel.textContent = target.kind === 'moon' ? 'MOON / LUNAR VIEW' : 'ISS / ORBITAL VIEW';
   };
 
-  const randomUnit = (seed: number) => {
-    const value = Math.sin(seed * 91.733) * 43758.5453;
-    return value - Math.floor(value);
-  };
-  const galacticSolRadius = .58;
-  const galacticSolAngle = Math.PI + galacticSolRadius * 6.25;
-  const galacticSol = {
-    x: Math.cos(galacticSolAngle) * galacticSolRadius,
-    y: Math.sin(galacticSolAngle) * galacticSolRadius * .58,
-  };
-  const galaxyStars = Array.from({ length: 1180 }, (_, index) => {
-    const inCore = index < 170;
-    const radius = inCore
-      ? Math.pow(randomUnit(index + 1), 2.15) * .24
-      : .08 + Math.pow(randomUnit(index + 1), .66) * .92;
-    const arm = index % 4;
-    const angle = inCore
-      ? randomUnit(index + 11) * Math.PI * 2
-      : arm * Math.PI / 2 + radius * 6.25 + (randomUnit(index + 11) - .5) * (.12 + radius * .3);
-    return {
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius * .58,
-      radius,
-      phase: randomUnit(index + 31) * Math.PI * 2,
-      strength: randomUnit(index + 51),
-      glyph: index % 37 === 0 ? '+' : index % 8 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
-    };
-  });
-  const orionSpurStars = Array.from({ length: 72 }, (_, index) => {
-    const radius = galacticSolRadius + (index / 71 - .5) * .18;
-    const angle = Math.PI + radius * 6.25 + (randomUnit(index + 801) - .5) * .024;
-    return {
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius * .58,
-      phase: randomUnit(index + 901) * Math.PI * 2,
-      glyph: index % 13 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
-    };
-  });
-  const asteroidBelt = Array.from({ length: 170 }, (_, index) => ({
-    angle: randomUnit(index + 1201) * Math.PI * 2,
-    radius: 20.15 + randomUnit(index + 1301) * 2.15,
-    inclination: (randomUnit(index + 1401) - .5) * 8 * DEG,
-    node: randomUnit(index + 1501) * Math.PI * 2,
-    phase: randomUnit(index + 1601),
-    glyph: index % 19 === 0 ? ':' : index % 7 === 0 ? "'" : '.',
-  }));
-  const planetaryMoonSystems: Record<string, { radii: number[]; speeds: number[]; tilt: number }> = {
-    Earth: { radii: [1.15], speeds: [.13], tilt: 5 * DEG },
-    Mars: { radii: [.72, 1], speeds: [.24, .17], tilt: 2 * DEG },
-    Jupiter: { radii: [1.35, 1.72, 2.1, 2.58], speeds: [.34, .23, .17, .11], tilt: 3 * DEG },
-    Saturn: { radii: [1.72, 2.42], speeds: [.2, .1], tilt: 7 * DEG },
-    Uranus: { radii: [1.45, 2], speeds: [.18, .12], tilt: 28 * DEG },
-    Neptune: { radii: [1.62], speeds: [-.13], tilt: 18 * DEG },
-  };
-
   reducedMotionQuery.addEventListener('change', (event) => {
     reducedMotion = event.matches;
   });
-
-  const rotateX = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x,
-    y: point.y * Math.cos(angle) - point.z * Math.sin(angle),
-    z: point.y * Math.sin(angle) + point.z * Math.cos(angle),
-  });
-  const rotateY = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x * Math.cos(angle) + point.z * Math.sin(angle),
-    y: point.y,
-    z: -point.x * Math.sin(angle) + point.z * Math.cos(angle),
-  });
-  const rotateZ = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
-    y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
-    z: point.z,
-  });
-
-  function solveOrbit(planet: Planet, date: number) {
-    const centuries = (date - J2000) / 86400000 / 36525;
-    const meanAnomaly = (planet.meanLongitude + planet.longitudeRate * centuries - planet.perihelion) * DEG;
-    let eccentricAnomaly = meanAnomaly;
-    for (let iteration = 0; iteration < 8; iteration++) {
-      eccentricAnomaly -= (eccentricAnomaly - planet.e * Math.sin(eccentricAnomaly) - meanAnomaly) / (1 - planet.e * Math.cos(eccentricAnomaly));
-    }
-    return {
-      angle: Math.atan2(Math.sqrt(1 - planet.e ** 2) * Math.sin(eccentricAnomaly), Math.cos(eccentricAnomaly) - planet.e),
-      distance: (planet.a * (1 - planet.e * Math.cos(eccentricAnomaly))) / planet.a,
-    };
-  }
-
-  function orbitalPoint(planet: Planet, angle: number, distance = 1): Vec3 {
-    const radius = planet.displayRadius * distance;
-    const argumentOfPerihelion = (planet.perihelion - planet.node) * DEG;
-    let point: Vec3 = { x: Math.cos(angle + argumentOfPerihelion) * radius, y: Math.sin(angle + argumentOfPerihelion) * radius, z: 0 };
-    point = rotateX(point, planet.inclination * DEG * 2.4);
-    return rotateZ(point, planet.node * DEG);
-  }
-
-  function heliocentricPosition(planet: Planet, angle: number, normalizedDistance: number) {
-    const radius = planet.a * normalizedDistance;
-    const argumentOfPerihelion = (planet.perihelion - planet.node) * DEG;
-    let point: Vec3 = { x: Math.cos(angle + argumentOfPerihelion) * radius, y: Math.sin(angle + argumentOfPerihelion) * radius, z: 0 };
-    point = rotateX(point, planet.inclination * DEG);
-    point = rotateZ(point, planet.node * DEG);
-    return {
-      longitude: (Math.atan2(point.y, point.x) / DEG + 360) % 360,
-      latitude: Math.atan2(point.z, Math.hypot(point.x, point.y)) / DEG,
-      distance: radius,
-    };
-  }
-
-  const ORBIT_SAMPLES = 112;
-  const orbitPoints = PLANETS.map((planet) =>
-    Array.from({ length: ORBIT_SAMPLES }, (_, sample) => {
-      const trueAnomaly = sample / ORBIT_SAMPLES * Math.PI * 2;
-      const normalizedDistance = (1 - planet.e ** 2) / (1 + planet.e * Math.cos(trueAnomaly));
-      return orbitalPoint(planet, trueAnomaly, normalizedDistance);
-    })
-  );
 
   function getOrbitDate(frameTime: number) {
     if (orbitClock.returning) {
@@ -446,7 +210,9 @@ if (canvas && system && context) {
     if (objectFocus.child) {
       const childTarget = objectFocus.childExiting ? 0 : 1;
       objectFocus.childProgress += (childTarget - objectFocus.childProgress) * (reducedMotion ? 1 : Math.min(.11, frameDelta * .0034));
-      if (objectFocus.childExiting && objectFocus.childProgress < .012) {
+      // At 6% linear progress, smoothstep leaves under 1.1% of the child scene
+      // visible. Complete here so the controls match the perceived end of the zoom.
+      if (objectFocus.childExiting && objectFocus.childProgress < .06) {
         objectFocus.child = null;
         objectFocus.childProgress = 0;
         objectFocus.childExiting = false;
@@ -459,12 +225,7 @@ if (canvas && system && context) {
       }
     }
     cosmicZoom.current += (cosmicZoom.target - cosmicZoom.current) * (reducedMotion ? 1 : .055);
-    const smoothstep = (value: number) => {
-      const clamped = Math.max(0, Math.min(1, value));
-      return clamped * clamped * (3 - 2 * clamped);
-    };
     const outwardZoom = Math.max(0, cosmicZoom.current);
-    const earthFocus = 0;
     const focusedPlanet = objectFocus.target?.kind === 'planet'
       ? PLANETS.find((planet) => planet.name === objectFocus.target?.name) ?? null
       : null;
@@ -522,18 +283,6 @@ if (canvas && system && context) {
         galaxyCamera.resetting = false;
       }
     }
-    if (earthCamera.resetting) {
-      const progress = Math.min(1, (frameTime - earthCamera.resetStartedAt) / 900);
-      const eased = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
-      const longitudeDifference = ((-earthCamera.resetLongitude + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-      earthCamera.longitude = earthCamera.resetLongitude + longitudeDifference * eased;
-      earthCamera.latitude = earthCamera.resetLatitude * (1 - eased);
-      if (progress === 1) {
-        earthCamera.longitude = 0;
-        earthCamera.latitude = 0;
-        earthCamera.resetting = false;
-      }
-    }
     if (objectFocus.resetting) {
       const progress = Math.min(1, (frameTime - objectFocus.resetStartedAt) / 700);
       const eased = 1 - (1 - progress) ** 3;
@@ -555,8 +304,8 @@ if (canvas && system && context) {
     };
     // Move Sol along a stable screen-space path while the galactic centre arrives behind it.
     // Coupling this movement to the enormous intermediate radius creates an empty visual jump.
-    const finalSolOffset = galacticOffset(galacticSol.x, galacticSol.y, finalGalaxyRadius);
-    const currentSolOffset = galacticOffset(galacticSol.x, galacticSol.y, galaxyRadius);
+    const finalSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, finalGalaxyRadius);
+    const currentSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, galaxyRadius);
     let centerX = viewportCenterX + finalSolOffset.x * galaxyProgress;
     let centerY = viewportCenterY + finalSolOffset.y * galaxyProgress;
     const galaxyCoreX = centerX - currentSolOffset.x;
@@ -600,7 +349,7 @@ if (canvas && system && context) {
     for (const glyph of ['.', '*', '+']) {
       context.fillStyle = glyph === '+' ? '#fabd2f' : '#928374';
       context.font = `${glyph === '+' ? 14 : 11}px "DM Mono", monospace`;
-      for (const star of stars) {
+      for (const star of STARS) {
         if (star.glyph !== glyph) continue;
         const pulse = reducedMotion ? .45 : .5 + .5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
         context.globalAlpha = (.12 + pulse * (glyph === '+' ? .78 : .4)) * localSkyOpacity;
@@ -611,7 +360,7 @@ if (canvas && system && context) {
 
     if (galaxyAlpha > .001) {
       context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
-      for (const star of galaxyStars) {
+      for (const star of GALAXY_STARS) {
         const offset = galacticOffset(star.x, star.y, galaxyRadius);
         const starX = galaxyCoreX + offset.x;
         const starY = galaxyCoreY + offset.y;
@@ -621,7 +370,7 @@ if (canvas && system && context) {
         context.fillStyle = star.radius < .2 ? '#ebdbb2' : star.glyph === '+' ? '#d3869b' : star.glyph === '*' ? '#b8bb26' : '#928374';
         context.fillText(star.glyph, starX, starY);
       }
-      for (const star of orionSpurStars) {
+      for (const star of ORION_SPUR_STARS) {
         const offset = galacticOffset(star.x, star.y, galaxyRadius);
         const starX = galaxyCoreX + offset.x;
         const starY = galaxyCoreY + offset.y;
@@ -648,8 +397,8 @@ if (canvas && system && context) {
       if (planet.easterEgg && !easterEgg.unlocked) return;
       for (let sample = 0; sample < ORBIT_SAMPLES; sample++) {
         if ((sample + dashTravel + planetIndex) % 3 === 0) continue;
-        const projected = cameraTransform(orbitPoints[planetIndex][sample]);
-        const next = cameraTransform(orbitPoints[planetIndex][(sample + 1) % ORBIT_SAMPLES]);
+        const projected = cameraTransform(ORBIT_POINTS[planetIndex][sample]);
+        const next = cameraTransform(ORBIT_POINTS[planetIndex][(sample + 1) % ORBIT_SAMPLES]);
         const dx = next.x - projected.x;
         const dy = next.y - projected.y;
         const slope = Math.abs(dy / (dx || .001));
@@ -678,7 +427,7 @@ if (canvas && system && context) {
     const canvasBounds = canvas.getBoundingClientRect();
     const localPointerX = pointer.clientX - canvasBounds.left;
     const localPointerY = pointer.clientY - canvasBounds.top;
-    const hoveredBody = pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > .45 && earthFocus < .35
+    const hoveredBody = pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > .45
       ? bodies.reduce<typeof bodies[number] | null>((closest, body) => {
           const distance = Math.hypot(body.x - localPointerX, body.y - localPointerY);
           const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
@@ -702,50 +451,6 @@ if (canvas && system && context) {
         }, null)
       : null;
 
-    const earthBody = bodies.find((body) => body.planet.name === 'Earth');
-    const moonReveal = smoothstep((earthFocus - .28) / .45);
-    // Begin the detailed globe at roughly the same silhouette as the solar-system
-    // sprite, then accelerate its growth once the crossfade is underway. This keeps
-    // the semantic zoom continuous instead of introducing a large, faint globe.
-    const earthCloseupGrowth = smoothstep((earthFocus - .08) / .92) ** 1.45;
-    const earthCloseupFontSize = 1.35 + earthCloseupGrowth * (width < 600 ? 8.65 : 13.65);
-    const earthVisualRadius = earthCloseupFontSize * EARTH_CLOSEUP_ROWS * .82 / 2;
-    const moonOrbitRadius = width < 600
-      ? Math.min(earthVisualRadius * 1.55, width * .42)
-      : Math.min(earthVisualRadius * 1.65, height * .38);
-    const moonEpochAngle = ((Date.now() - J2000) / 86400000 / 27.321661 * Math.PI * 2) % (Math.PI * 2);
-    const moonAngle = moonEpochAngle + (reducedMotion ? 0 : seconds * .014);
-    const localOrbitOffset = (angle: number, radius: number, inclination: number, node: number) => {
-      let point: Vec3 = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
-      point = rotateX(point, inclination);
-      point = rotateZ(point, node);
-      point = rotateY(point, -earthCamera.longitude);
-      return rotateX(point, earthCamera.latitude);
-    };
-    const lunarOffset = (angle: number) => localOrbitOffset(angle, moonOrbitRadius, 50 * DEG, -18 * DEG);
-    const moonOffset = lunarOffset(moonAngle);
-    const moonPosition = earthBody
-      ? { x: earthBody.x + moonOffset.x, y: earthBody.y + moonOffset.y }
-      : { x: viewportCenterX, y: viewportCenterY };
-
-    const issOrbitRadius = earthVisualRadius * 1.13;
-    const issAngle = 1.2 + (reducedMotion ? 0 : seconds * (Math.PI * 2 / 70));
-    const issOffsetAt = (angle: number) => localOrbitOffset(angle, issOrbitRadius, 44 * DEG, 24 * DEG);
-    const issOffset = issOffsetAt(issAngle);
-    const issPosition = earthBody
-      ? { x: earthBody.x + issOffset.x, y: earthBody.y + issOffset.y }
-      : { x: viewportCenterX, y: viewportCenterY };
-    const hoveredOrbitalObject = pointer.active && !camera.dragging && !objectFocus.target && moonReveal > .35
-      ? [
-          { id: 'moon', x: moonPosition.x, y: moonPosition.y },
-          { id: 'iss', x: issPosition.x, y: issPosition.y },
-        ].reduce<{ id: 'moon' | 'iss'; x: number; y: number } | null>((closest, object) => {
-          const distance = Math.hypot(object.x - localPointerX, object.y - localPointerY);
-          const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
-          return distance < 30 && distance < closestDistance ? object : closest;
-        }, null)
-      : null;
-
     activeFocusCandidate = hoveredBody
       ? {
           id: `planet:${hoveredBody.planet.name}`,
@@ -757,18 +462,7 @@ if (canvas && system && context) {
           originX: hoveredBody.x,
           originY: hoveredBody.y,
         }
-      : hoveredOrbitalObject
-        ? {
-            id: hoveredOrbitalObject.id,
-            name: hoveredOrbitalObject.id === 'moon' ? 'Moon' : 'International Space Station',
-            kind: hoveredOrbitalObject.id === 'moon' ? 'moon' : 'station',
-            color: hoveredOrbitalObject.id === 'moon' ? '#bdae93' : '#8ec07c',
-            subtitle: hoveredOrbitalObject.id === 'moon' ? 'natural satellite' : 'orbital laboratory',
-            detail: hoveredOrbitalObject.id === 'moon' ? 'mean distance 384,400 km' : 'low Earth orbit / ~90 min period',
-            originX: hoveredOrbitalObject.x,
-            originY: hoveredOrbitalObject.y,
-          }
-        : hoveredGalacticObject
+      : hoveredGalacticObject
           ? {
               id: `galactic:${hoveredGalacticObject.object.name}`,
               name: hoveredGalacticObject.object.name,
@@ -781,49 +475,8 @@ if (canvas && system && context) {
             }
           : null;
 
-    const drawMoon = () => {
-      if (!earthBody || moonReveal <= .001) return;
-      const moonFontSize = width < 600 ? 7 : 9;
-      const moonLines = [' .-. ', '(.:)', " '-' "];
-      context.globalAlpha = moonReveal;
-      context.fillStyle = '#bdae93';
-      context.strokeStyle = '#1d2021';
-      context.lineWidth = 2;
-      context.font = `bold ${moonFontSize}px "DM Mono", monospace`;
-      moonLines.forEach((line, index) => {
-        const lineY = moonPosition.y + (index - 1) * moonFontSize * .76;
-        context.strokeText(line, moonPosition.x, lineY);
-        context.fillText(line, moonPosition.x, lineY);
-      });
-      if (hoveredOrbitalObject?.id === 'moon') {
-        context.fillStyle = '#ebdbb2';
-        context.fillText('[', moonPosition.x - 22, moonPosition.y);
-        context.fillText(']', moonPosition.x + 22, moonPosition.y);
-      }
-      context.globalAlpha = 1;
-    };
-
-    const drawIss = () => {
-      if (!earthBody || moonReveal <= .001) return;
-      const isHovered = hoveredOrbitalObject?.id === 'iss';
-      context.globalAlpha = moonReveal;
-      context.fillStyle = '#8ec07c';
-      context.strokeStyle = '#1d2021';
-      context.lineWidth = 2;
-      context.font = `bold ${width < 600 ? 7 : isHovered ? 10 : 9}px "DM Mono", monospace`;
-      context.strokeText('=-[ISS]-=', issPosition.x, issPosition.y);
-      context.fillText('=-[ISS]-=', issPosition.x, issPosition.y);
-      if (isHovered) {
-        context.fillStyle = '#ebdbb2';
-        context.fillText('[', issPosition.x - 38, issPosition.y);
-        context.fillText(']', issPosition.x + 38, issPosition.y);
-      }
-      context.globalAlpha = 1;
-    };
-
     const drawBody = (body: typeof bodies[number]) => {
       const { planet } = body;
-      const isEarth = planet.name === 'Earth';
       const isFocusedPlanet = focusedPlanet === planet;
       const depthScale = Math.max(.68, Math.min(1.55, body.scale));
       const isHovered = body === hoveredBody;
@@ -832,14 +485,13 @@ if (canvas && system && context) {
       const lines = planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [planet.glyph] : planet.sprite;
       const lineHeight = fontSize * .78;
       const bodyOpacity = body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : 1 - planetSceneFocus);
-      const earthCloseupReveal = isEarth ? smoothstep((earthFocus - .08) / .28) : 0;
       const focusedDetailReveal = isFocusedPlanet ? smoothstep((planetSceneFocus - .08) / .28) : 0;
       const focusedSpriteScale = isFocusedPlanet ? 1 + planetSceneFocus * 2 : 1;
       context.fillStyle = planet.color;
       context.shadowBlur = 0;
       context.strokeStyle = '#1d2021';
       context.lineJoin = 'round';
-      context.globalAlpha = bodyOpacity * (1 - Math.max(earthCloseupReveal, focusedDetailReveal));
+      context.globalAlpha = bodyOpacity * (1 - focusedDetailReveal);
       context.font = `bold ${fontSize * focusedSpriteScale}px "DM Mono", monospace`;
       context.lineWidth = Math.max(2, fontSize * .2);
       lines.forEach((line, index) => {
@@ -847,51 +499,8 @@ if (canvas && system && context) {
         if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
         context.fillText(line, body.x, lineY);
       });
-      if (isEarth && earthCloseupReveal > .001) {
-        const closeupFontSize = earthCloseupFontSize;
-        const closeupLineHeight = closeupFontSize * .82;
-        const earthRotation = 20 * DEG + (reducedMotion ? 0 : seconds * .035) + earthCamera.longitude;
-        const earthAxisTilt = -8 * DEG;
-        context.globalAlpha = bodyOpacity * earthCloseupReveal;
-        context.font = `bold ${closeupFontSize}px "DM Mono", monospace`;
-        context.lineWidth = Math.max(2, closeupFontSize * .16);
-        context.save();
-        context.translate(body.x, 0);
-        context.scale(.72, 1);
-        const characterWidth = context.measureText('M').width;
-        for (let row = 0; row < EARTH_CLOSEUP_ROWS; row++) {
-          const normalizedY = (row + .5 - EARTH_CLOSEUP_ROWS / 2) / (EARTH_CLOSEUP_ROWS / 2);
-          const lineY = body.y + (row - (EARTH_CLOSEUP_ROWS - 1) / 2) * closeupLineHeight;
-          for (let column = 0; column < EARTH_CLOSEUP_COLUMNS; column++) {
-            const normalizedX = (column + .5 - EARTH_CLOSEUP_COLUMNS / 2) / (EARTH_CLOSEUP_COLUMNS / 2);
-            if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
-            const sphereX = normalizedX * Math.cos(earthAxisTilt) - normalizedY * Math.sin(earthAxisTilt);
-            const sphereY = normalizedX * Math.sin(earthAxisTilt) + normalizedY * Math.cos(earthAxisTilt);
-            const sphereZ = Math.sqrt(Math.max(0, 1 - sphereX ** 2 - sphereY ** 2));
-            const latitudeY = sphereY * Math.cos(earthCamera.latitude) + sphereZ * Math.sin(earthCamera.latitude);
-            const latitudeZ = -sphereY * Math.sin(earthCamera.latitude) + sphereZ * Math.cos(earthCamera.latitude);
-            const longitude = Math.atan2(sphereX, latitudeZ) + earthRotation;
-            const latitude = Math.asin(-latitudeY);
-            const mapX = Math.floor((((longitude / (Math.PI * 2) + .5) % 1 + 1) % 1) * EARTH_MAP_WIDTH);
-            const mapY = Math.max(0, Math.min(EARTH_MAP_HEIGHT - 1, Math.floor((.5 - latitude / Math.PI) * EARTH_MAP_HEIGHT)));
-            const character = EARTH_MAP[mapY][mapX];
-            const characterX = (column + .5 - EARTH_CLOSEUP_COLUMNS / 2) * characterWidth;
-            context.fillStyle = character === '#'
-              ? '#b8bb26'
-              : character === '%'
-                ? '#d79921'
-                : character === '*'
-                  ? '#ebdbb2'
-                  : '#83a598';
-            context.fillText(character, characterX, lineY);
-          }
-        }
-        context.restore();
-      }
       if (isHovered) {
-        const spriteWidth = earthCloseupReveal > .5
-          ? EARTH_CLOSEUP_COLUMNS * context.measureText('M').width * .72
-          : Math.max(...lines.map((line) => context.measureText(line).width));
+        const spriteWidth = Math.max(...lines.map((line) => context.measureText(line).width));
         context.fillStyle = '#ebdbb2';
         context.font = `bold ${Math.max(9, fontSize * .72)}px "DM Mono", monospace`;
         context.fillText('[', body.x - spriteWidth / 2 - 7, body.y);
@@ -902,10 +511,9 @@ if (canvas && system && context) {
     };
 
     const drawPlanetarySystem = (body: typeof bodies[number], foreground: boolean) => {
-      const system = planetaryMoonSystems[body.planet.name];
+      const system = PLANETARY_MOON_SYSTEMS[body.planet.name];
       if (!system || body.reveal < .35) return;
-      const earthMiniMoonFade = body.planet.name === 'Earth' ? 1 - smoothstep((earthFocus - .05) / .18) : 1;
-      const opacity = localDetailOpacity * (1 - planetSceneFocus) * earthMiniMoonFade;
+      const opacity = localDetailOpacity * (1 - planetSceneFocus);
       if (opacity <= .01) return;
       context.font = `${Math.max(5.5, 7 * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
       context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
@@ -935,7 +543,7 @@ if (canvas && system && context) {
 
     context.font = `${Math.max(5.5, 7.5 * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
     context.fillStyle = '#928374';
-    for (const asteroid of asteroidBelt) {
+    for (const asteroid of ASTEROID_BELT) {
       const angle = asteroid.angle + (reducedMotion ? 0 : seconds * (.0045 + asteroid.phase * .0015));
       let point: Vec3 = { x: Math.cos(angle) * asteroid.radius, y: Math.sin(angle) * asteroid.radius, z: 0 };
       point = rotateX(point, asteroid.inclination);
@@ -945,28 +553,6 @@ if (canvas && system && context) {
       context.fillText(asteroid.glyph, projected.x, projected.y);
     }
     context.globalAlpha = 1;
-
-    if (earthBody && moonReveal > .001) {
-      const drawLocalOrbit = (offsetAt: (angle: number) => { x: number; y: number }, samples: number, color: string, alpha: number) => {
-        context.globalAlpha = moonReveal * alpha;
-        context.fillStyle = color;
-        context.font = `${width < 600 ? 7 : 8}px "DM Mono", monospace`;
-        for (let sample = 0; sample < samples; sample += 2) {
-          const offset = offsetAt(sample / samples * Math.PI * 2);
-          const next = offsetAt((sample + 1) / samples * Math.PI * 2);
-          const dx = next.x - offset.x;
-          const dy = next.y - offset.y;
-          const slope = Math.abs(dy / (dx || .001));
-          const glyph = slope > 2.2 ? '|' : slope > .6 ? (dx * dy > 0 ? '\\' : '/') : '-';
-          context.fillText(glyph, earthBody.x + offset.x, earthBody.y + offset.y);
-        }
-      };
-      drawLocalOrbit(lunarOffset, 96, '#928374', .66);
-      drawLocalOrbit(issOffsetAt, 72, '#665c54', .52);
-      context.globalAlpha = 1;
-    }
-    if (moonOffset.z < 0) drawMoon();
-    if (issOffset.z < 0) drawIss();
 
     const sunPulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 2.1) * .08;
     const sunSize = 12 * sunPulse * Math.max(.28, Math.sqrt(solarSystemScale));
@@ -988,9 +574,6 @@ if (canvas && system && context) {
       drawBody(body);
       drawPlanetarySystem(body, true);
     });
-    if (moonOffset.z >= 0) drawMoon();
-    if (issOffset.z >= 0) drawIss();
-
     if (galaxyObjectOpacity > .001) {
       for (const galacticObject of galacticObjects) {
         if (galacticObject.x < -30 || galacticObject.x > width + 30 || galacticObject.y < -30 || galacticObject.y > height + 30) continue;
@@ -1026,94 +609,38 @@ if (canvas && system && context) {
     }
 
     if (hoveredBody) {
-      const readout = [
-        `[ ${hoveredBody.planet.name.toUpperCase()} ]`,
-        `lon  ${hoveredBody.position.longitude.toFixed(2).padStart(6)} deg`,
-        `lat  ${`${hoveredBody.position.latitude >= 0 ? '+' : '-'}${Math.abs(hoveredBody.position.latitude).toFixed(2)}`.padStart(6)} deg`,
-        `r    ${hoveredBody.position.distance.toFixed(3).padStart(6)} au`,
-        '[ click to zoom ]',
-      ];
-      const boxWidth = 174;
-      const boxHeight = 98;
-      const boxX = Math.min(width - boxWidth - 8, Math.max(8, hoveredBody.x + 25));
-      const boxY = Math.min(height - boxHeight - 8, Math.max(8, hoveredBody.y - boxHeight / 2));
-      context.globalAlpha = .94;
-      context.fillStyle = '#1d2021';
-      context.fillRect(boxX, boxY, boxWidth, boxHeight);
-      context.strokeStyle = '#665c54';
-      context.lineWidth = 1;
-      context.strokeRect(boxX + .5, boxY + .5, boxWidth - 1, boxHeight - 1);
-      context.globalAlpha = 1;
-      context.textAlign = 'left';
-      context.textBaseline = 'top';
-      context.font = '12px "DM Mono", monospace';
-      readout.forEach((line, index) => {
-        context.fillStyle = index === 0 ? hoveredBody.planet.color : index === readout.length - 1 ? '#fabd2f' : '#a89984';
-        context.fillText(line, boxX + 11, boxY + 10 + index * 16);
+      drawReadout(context, {
+        lines: [
+          `[ ${hoveredBody.planet.name.toUpperCase()} ]`,
+          `lon  ${hoveredBody.position.longitude.toFixed(2).padStart(6)} deg`,
+          `lat  ${`${hoveredBody.position.latitude >= 0 ? '+' : '-'}${Math.abs(hoveredBody.position.latitude).toFixed(2)}`.padStart(6)} deg`,
+          `r    ${hoveredBody.position.distance.toFixed(3).padStart(6)} au`,
+          '[ click to zoom ]',
+        ],
+        anchorX: hoveredBody.x,
+        anchorY: hoveredBody.y,
+        viewportWidth: width,
+        viewportHeight: height,
+        titleColor: hoveredBody.planet.color,
+        width: 174,
       });
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-    }
-
-    if (hoveredOrbitalObject) {
-      const isMoon = hoveredOrbitalObject.id === 'moon';
-      const readout = isMoon
-        ? ['[ MOON ]', 'natural satellite', 'mean r  384,400 km', 'sidereal 27.3 days', '[ click to zoom ]']
-        : ['[ ISS ]', 'orbital laboratory', 'alt     ~400 km', 'period  ~90 min', '[ click to zoom ]'];
-      const objectColor = isMoon ? '#bdae93' : '#8ec07c';
-      const boxWidth = Math.min(218, width - 16);
-      const boxHeight = 98;
-      const preferredBoxX = hoveredOrbitalObject.x < viewportCenterX
-        ? hoveredOrbitalObject.x - boxWidth - 25
-        : hoveredOrbitalObject.x + 25;
-      const boxX = Math.min(width - boxWidth - 8, Math.max(8, preferredBoxX));
-      const boxY = Math.min(height - boxHeight - 8, Math.max(8, hoveredOrbitalObject.y - boxHeight / 2));
-      context.globalAlpha = .94;
-      context.fillStyle = '#1d2021';
-      context.fillRect(boxX, boxY, boxWidth, boxHeight);
-      context.strokeStyle = '#665c54';
-      context.lineWidth = 1;
-      context.strokeRect(boxX + .5, boxY + .5, boxWidth - 1, boxHeight - 1);
-      context.globalAlpha = 1;
-      context.textAlign = 'left';
-      context.textBaseline = 'top';
-      context.font = '12px "DM Mono", monospace';
-      readout.forEach((line, index) => {
-        context.fillStyle = index === 0 ? objectColor : index === readout.length - 1 ? '#fabd2f' : '#a89984';
-        context.fillText(line, boxX + 11, boxY + 10 + index * 16);
-      });
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
     }
 
     if (hoveredGalacticObject) {
-      const readout = [
-        `[ ${hoveredGalacticObject.object.name.toUpperCase()} ]`,
-        hoveredGalacticObject.object.kind,
-        `dist  ${hoveredGalacticObject.object.distance}`,
-        hoveredGalacticObject.object.detail,
-        '[ click to zoom ]',
-      ];
-      const boxWidth = Math.min(224, width - 16);
-      const boxHeight = 98;
-      const boxX = Math.min(width - boxWidth - 8, Math.max(8, hoveredGalacticObject.x + 25));
-      const boxY = Math.min(height - boxHeight - 8, Math.max(8, hoveredGalacticObject.y - boxHeight / 2));
-      context.globalAlpha = .94;
-      context.fillStyle = '#1d2021';
-      context.fillRect(boxX, boxY, boxWidth, boxHeight);
-      context.strokeStyle = '#665c54';
-      context.lineWidth = 1;
-      context.strokeRect(boxX + .5, boxY + .5, boxWidth - 1, boxHeight - 1);
-      context.globalAlpha = 1;
-      context.textAlign = 'left';
-      context.textBaseline = 'top';
-      context.font = '12px "DM Mono", monospace';
-      readout.forEach((line, index) => {
-        context.fillStyle = index === 0 ? hoveredGalacticObject.object.color : index === readout.length - 1 ? '#fabd2f' : '#a89984';
-        context.fillText(line, boxX + 11, boxY + 10 + index * 16);
+      drawReadout(context, {
+        lines: [
+          `[ ${hoveredGalacticObject.object.name.toUpperCase()} ]`,
+          hoveredGalacticObject.object.kind,
+          `dist  ${hoveredGalacticObject.object.distance}`,
+          hoveredGalacticObject.object.detail,
+          '[ click to zoom ]',
+        ],
+        anchorX: hoveredGalacticObject.x,
+        anchorY: hoveredGalacticObject.y,
+        viewportWidth: width,
+        viewportHeight: height,
+        titleColor: hoveredGalacticObject.object.color,
       });
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
     }
 
     if (objectFocus.target && objectFocus.progress > .001) {
@@ -1323,19 +850,7 @@ if (canvas && system && context) {
         if (target.name === 'Earth') drawFocusedEarthSatellites(true);
       } else {
         drawFocusField(width < 600 ? 145 : 235, target.kind === 'galactic' ? 116 : 62, target.kind === 'galactic' ? ['.', ':', '*', '+'] : ['.', '-']);
-        const focusedArt: Record<string, string[]> = {
-          'International Space Station': [
-            '       |       ',
-            '===[###]===[###]===',
-            '    \___O___/    ',
-            '       / \\       ',
-          ],
-          'Sagittarius A*': ['       .   .       ', '   .-==\\|/==-.   ', '--==< ((@)) >==--', "   '-==/|\\==-'   ", '       .   .       '],
-          'Orion Nebula': ['    .  *  .    ', ' .:*::...::*:. ', ':..::*:+:*::..:', ' .::*:...:*::. ', '    .  *  .    '],
-          'Cygnus X-1': ['      \\ | /      ', '  ===(( O ))===  ', '      / | \\      ', '       <*         '],
-          'Crab Nebula': ['   .:*\\|/*:.   ', '.::*--{+}--*::.', '   :*/|\\*:   ', '     /|\\     '],
-        };
-        const lines = focusedArt[target.name] ?? [target.name];
+        const lines = FOCUSED_ART[target.name] ?? [target.name];
         const artFontSize = (width < 600 ? 14 : 22) * focusScale;
         context.font = `bold ${artFontSize}px "DM Mono", monospace`;
         context.fillStyle = target.color;
@@ -1348,31 +863,19 @@ if (canvas && system && context) {
 
       if (hoveredFocusedEarthObject) {
         const isMoon = hoveredFocusedEarthObject.id === 'moon';
-        const readout = isMoon
-          ? ['[ MOON ]', 'natural satellite', 'mean r  384,400 km', 'sidereal 27.3 days', '[ click to zoom ]']
-          : ['[ ISS ]', 'orbital laboratory', 'alt     ~400 km', 'period  ~90 min', '[ click to zoom ]'];
-        const boxWidth = Math.min(218, width - 16);
-        const boxHeight = 98;
-        const preferredX = hoveredFocusedEarthObject.x < viewportCenterX
-          ? hoveredFocusedEarthObject.x - boxWidth - 25
-          : hoveredFocusedEarthObject.x + 25;
-        const boxX = Math.min(width - boxWidth - 8, Math.max(8, preferredX));
-        const boxY = Math.min(height - boxHeight - 8, Math.max(8, hoveredFocusedEarthObject.y - boxHeight / 2));
-        context.globalAlpha = .94 * earthSatelliteReveal;
-        context.fillStyle = '#1d2021';
-        context.fillRect(boxX, boxY, boxWidth, boxHeight);
-        context.strokeStyle = '#665c54';
-        context.strokeRect(boxX + .5, boxY + .5, boxWidth - 1, boxHeight - 1);
-        context.globalAlpha = earthSatelliteReveal;
-        context.textAlign = 'left';
-        context.textBaseline = 'top';
-        context.font = '12px "DM Mono", monospace';
-        readout.forEach((line, index) => {
-          context.fillStyle = index === 0 ? (isMoon ? '#bdae93' : '#8ec07c') : index === readout.length - 1 ? '#fabd2f' : '#a89984';
-          context.fillText(line, boxX + 11, boxY + 10 + index * 16);
+        drawReadout(context, {
+          lines: isMoon
+            ? ['[ MOON ]', 'natural satellite', 'mean r  384,400 km', 'sidereal 27.3 days', '[ click to zoom ]']
+            : ['[ ISS ]', 'orbital laboratory', 'alt     ~400 km', 'period  ~90 min', '[ click to zoom ]'],
+          anchorX: hoveredFocusedEarthObject.x,
+          anchorY: hoveredFocusedEarthObject.y,
+          viewportWidth: width,
+          viewportHeight: height,
+          titleColor: isMoon ? '#bdae93' : '#8ec07c',
+          width: 218,
+          openAwayFromCenter: true,
+          opacity: earthSatelliteReveal,
         });
-        context.textAlign = 'center';
-        context.textBaseline = 'middle';
       }
 
       const infoY = Math.min(height - 72, focusCenterY + (width < 600 ? 150 : 205) * focusScale);
@@ -1499,9 +1002,6 @@ if (canvas && system && context) {
       } else if (camera.dragMode === 'galaxy') {
         galaxyCamera.rotation += deltaX * .005;
         galaxyCamera.tilt = Math.max(.5, Math.min(1.35, galaxyCamera.tilt + deltaY * .0035));
-      } else if (camera.dragMode === 'earth') {
-        earthCamera.longitude -= deltaX * .008;
-        earthCamera.latitude = Math.max(-60 * DEG, Math.min(60 * DEG, earthCamera.latitude + deltaY * .005));
       } else {
         camera.roll += deltaX * .0045;
         camera.yaw += deltaX * .0018;
@@ -1532,8 +1032,6 @@ if (canvas && system && context) {
       pointer.targetY = pointer.y;
     } else if (camera.dragMode === 'galaxy') {
       galaxyCamera.resetting = false;
-    } else if (camera.dragMode === 'earth') {
-      earthCamera.resetting = false;
     } else {
       objectFocus.resetting = false;
     }
@@ -1622,10 +1120,6 @@ if (canvas && system && context) {
     galaxyCamera.resetStartedAt = resetAt;
     galaxyCamera.resetRotation = galaxyCamera.rotation;
     galaxyCamera.resetTilt = galaxyCamera.tilt;
-    earthCamera.resetting = true;
-    earthCamera.resetStartedAt = resetAt;
-    earthCamera.resetLongitude = earthCamera.longitude;
-    earthCamera.resetLatitude = earthCamera.latitude;
     pointer.targetX = (event.clientX / window.innerWidth - .5) * 2;
     pointer.targetY = (event.clientY / window.innerHeight - .5) * 2;
     event.preventDefault();

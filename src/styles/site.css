@@ -24,6 +24,7 @@
 .solar-system.is-dragging canvas { cursor:grabbing; }
 .object-focus-return { position:absolute; z-index:7; top:14px; left:0; padding:8px 10px; border:1px solid #665c54; color:var(--yellow); background:rgba(29,32,33,.9); font:10px/1 var(--mono); letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:color .2s,border-color .2s,opacity .25s,transform .25s; }
 .object-focus-return:hover { color:var(--orange); border-color:var(--orange); }
+.object-focus-return:disabled { color:var(--muted); border-color:#504945; opacity:.7; cursor:wait; }
 .object-focus-return[hidden] { display:none; }
 .solar-system.is-object-focus .cosmic-zoom-control { opacity:0; pointer-events:none; }
 .cosmic-zoom-control { transition:opacity .3s; }
