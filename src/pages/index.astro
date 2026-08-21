@@ -14,6 +14,13 @@ import '../styles/site.css';
 				<div class="solar-heading"><p class="eyebrow"><span class="signal">●</span> signal acquired · software engineer · cz</p><h1>somewhere<br /><span>in the solar system.</span></h1></div>
 				<div class="solar-system" id="solar-system" aria-label="A live, approximate ASCII orrery of the solar system">
 					<canvas id="solar-canvas" role="img" aria-label="ASCII solar system with live approximate planetary positions"></canvas>
+					<div class="cosmic-zoom-control">
+						<span aria-hidden="true">MILKY WAY</span>
+						<label class="sr-only" for="cosmic-zoom">Zoom from the Solar System out to the Milky Way</label>
+						<input id="cosmic-zoom" type="range" min="0" max="100" value="0" step="1" />
+						<span aria-hidden="true">SOL</span>
+						<output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
+					</div>
 					<div class="solar-caption"><span>LIVE ASCII ORRERY / 3D HELIOCENTRIC</span><span id="solar-time">calculating ephemeris...</span><span>drag to spin · double-click to reset</span></div>
 				</div>
 				<div class="hero-footer"><span>↓ scroll to inspect the operator</span><span>orbital data: JPL / NASA · browser time</span></div>

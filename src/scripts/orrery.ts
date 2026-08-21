@@ -17,6 +17,17 @@ type Planet = {
   easterEgg?: boolean;
 };
 
+type GalacticObject = {
+  name: string;
+  kind: string;
+  x: number;
+  y: number;
+  glyph: string;
+  color: string;
+  distance: string;
+  detail: string;
+};
+
 const DEG = Math.PI / 180;
 const J2000 = Date.UTC(2000, 0, 1, 12);
 
@@ -32,10 +43,21 @@ const PLANETS: Planet[] = [
   { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '.', sprite: ['.'], color: '#d3869b', size: .64, easterEgg: true },
 ];
 
+// These are intentionally schematic positions on the face-on illustration, not a
+// claim that every object lies neatly in the same two-dimensional galactic plane.
+const GALACTIC_OBJECTS: GalacticObject[] = [
+  { name: 'Sagittarius A*', kind: 'supermassive black hole', x: 0, y: 0, glyph: '{(@)}', color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
+  { name: 'Orion Nebula', kind: 'stellar nursery', x: .48, y: -.15, glyph: ':.*.:', color: '#d3869b', distance: '~1,340 ly', detail: 'Orion molecular cloud' },
+  { name: 'Cygnus X-1', kind: 'stellar black hole', x: .2, y: .25, glyph: '<*O>', color: '#83a598', distance: '~7,200 ly', detail: 'x-ray binary system' },
+  { name: 'Crab Nebula', kind: 'supernova remnant', x: -.25, y: -.22, glyph: '{+}', color: '#b8bb26', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
+];
+
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const system = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
 const sceneLabel = document.querySelector<HTMLElement>('.solar-caption span:first-child');
+const zoomInput = document.querySelector<HTMLInputElement>('#cosmic-zoom');
+const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-status');
 const context = canvas?.getContext('2d');
 
 if (canvas && system && context) {
@@ -65,8 +87,18 @@ if (canvas && system && context) {
     lastY: 0,
     pointerId: -1,
     dragDistance: 0,
+    dragMode: 'solar' as 'solar' | 'galaxy',
+  };
+  const galaxyCamera = {
+    rotation: 0,
+    tilt: 1,
+    resetting: false,
+    resetStartedAt: 0,
+    resetRotation: 0,
+    resetTilt: 1,
   };
   const easterEgg = { clicks: 0, lastClickAt: 0, unlocked: false, revealedAt: 0 };
+  const cosmicZoom = { current: 0, target: 0 };
   const orbitClock = {
     active: false,
     returning: false,
@@ -79,6 +111,45 @@ if (canvas && system && context) {
   let reducedMotion = reducedMotionQuery.matches;
   let lastClockSecond = -1;
   let lastFrameAt = 0;
+
+  const randomUnit = (seed: number) => {
+    const value = Math.sin(seed * 91.733) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  const galacticSolRadius = .58;
+  const galacticSolAngle = Math.PI + galacticSolRadius * 6.25;
+  const galacticSol = {
+    x: Math.cos(galacticSolAngle) * galacticSolRadius,
+    y: Math.sin(galacticSolAngle) * galacticSolRadius * .58,
+  };
+  const galaxyStars = Array.from({ length: 1180 }, (_, index) => {
+    const inCore = index < 170;
+    const radius = inCore
+      ? Math.pow(randomUnit(index + 1), 2.15) * .24
+      : .08 + Math.pow(randomUnit(index + 1), .66) * .92;
+    const arm = index % 4;
+    const angle = inCore
+      ? randomUnit(index + 11) * Math.PI * 2
+      : arm * Math.PI / 2 + radius * 6.25 + (randomUnit(index + 11) - .5) * (.12 + radius * .3);
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius * .58,
+      radius,
+      phase: randomUnit(index + 31) * Math.PI * 2,
+      strength: randomUnit(index + 51),
+      glyph: index % 37 === 0 ? '+' : index % 8 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
+    };
+  });
+  const orionSpurStars = Array.from({ length: 72 }, (_, index) => {
+    const radius = galacticSolRadius + (index / 71 - .5) * .18;
+    const angle = Math.PI + radius * 6.25 + (randomUnit(index + 801) - .5) * .024;
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius * .58,
+      phase: randomUnit(index + 901) * Math.PI * 2,
+      glyph: index % 13 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
+    };
+  });
 
   reducedMotionQuery.addEventListener('change', (event) => {
     reducedMotion = event.matches;
@@ -176,6 +247,14 @@ if (canvas && system && context) {
     const seconds = frameTime / 1000;
     const frameDelta = Math.min(40, lastFrameAt ? frameTime - lastFrameAt : 16.67);
     lastFrameAt = frameTime;
+    cosmicZoom.current += (cosmicZoom.target - cosmicZoom.current) * (reducedMotion ? 1 : .055);
+    const smoothstep = (value: number) => {
+      const clamped = Math.max(0, Math.min(1, value));
+      return clamped * clamped * (3 - 2 * clamped);
+    };
+    const galaxyProgress = smoothstep((cosmicZoom.current - .24) / .76);
+    const localDetailOpacity = 1 - smoothstep((cosmicZoom.current - .2) / .26);
+    const solarSystemScale = Math.pow(.055, Math.min(1, cosmicZoom.current / .7));
     if (camera.manual && !camera.dragging && !camera.resetting && !reducedMotion) {
       camera.roll += .000035 * frameDelta;
     }
@@ -205,13 +284,48 @@ if (canvas && system && context) {
     camera.renderedPitch = cameraPitch;
     camera.renderedYaw = cameraYaw;
     camera.renderedRoll = cameraRoll;
-    const centerX = width * .52;
-    const centerY = height * .38;
+    const viewportCenterX = width * .52;
+    const viewportCenterY = height * .38;
+    const finalGalaxyRadius = Math.min(width * .48, height * .62);
+    const distantGalaxyRadius = Math.max(width, height) * 2.2;
+    const galaxyRadius = finalGalaxyRadius + (distantGalaxyRadius - finalGalaxyRadius) * (1 - galaxyProgress) ** 2;
+    if (!(camera.dragging && camera.dragMode === 'galaxy') && !galaxyCamera.resetting && !reducedMotion) {
+      galaxyCamera.rotation += .000025 * frameDelta;
+    }
+    if (galaxyCamera.resetting) {
+      const progress = Math.min(1, (frameTime - galaxyCamera.resetStartedAt) / 900);
+      const eased = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      const rotationDifference = ((-galaxyCamera.resetRotation + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      galaxyCamera.rotation = galaxyCamera.resetRotation + rotationDifference * eased;
+      galaxyCamera.tilt = galaxyCamera.resetTilt + (1 - galaxyCamera.resetTilt) * eased;
+      if (progress === 1) {
+        galaxyCamera.rotation = 0;
+        galaxyCamera.tilt = 1;
+        galaxyCamera.resetting = false;
+      }
+    }
+    const galacticOffset = (x: number, y: number, radius: number) => {
+      const tiltedY = y * galaxyCamera.tilt;
+      return {
+        x: (x * Math.cos(galaxyCamera.rotation) - tiltedY * Math.sin(galaxyCamera.rotation)) * radius,
+        y: (x * Math.sin(galaxyCamera.rotation) + tiltedY * Math.cos(galaxyCamera.rotation)) * radius,
+      };
+    };
+    // Move Sol along a stable screen-space path while the galactic centre arrives behind it.
+    // Coupling this movement to the enormous intermediate radius creates an empty visual jump.
+    const finalSolOffset = galacticOffset(galacticSol.x, galacticSol.y, finalGalaxyRadius);
+    const currentSolOffset = galacticOffset(galacticSol.x, galacticSol.y, galaxyRadius);
+    const centerX = viewportCenterX + finalSolOffset.x * galaxyProgress;
+    const centerY = viewportCenterY + finalSolOffset.y * galaxyProgress;
+    const galaxyCoreX = centerX - currentSolOffset.x;
+    const galaxyCoreY = centerY - currentSolOffset.y;
+    const galaxyAlpha = smoothstep((cosmicZoom.current - .28) / .34);
+    const localSkyOpacity = 1 - smoothstep((cosmicZoom.current - .06) / .24);
     // Leave enough room for Neptune even at the nearest point in the projection.
     const baseWorldScale = width < 600
       ? Math.min(width / 116, height / 54)
       : Math.min(width / 104, height / 50);
-    const worldScale = baseWorldScale * (1 - plutoReveal * .11);
+    const worldScale = baseWorldScale * (1 - plutoReveal * .11) * solarSystemScale;
     const cameraDistance = 145;
 
     const cameraTransform = (world: Vec3) => {
@@ -235,11 +349,40 @@ if (canvas && system && context) {
       for (const star of stars) {
         if (star.glyph !== glyph) continue;
         const pulse = reducedMotion ? .45 : .5 + .5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
-        context.globalAlpha = .12 + pulse * (glyph === '+' ? .78 : .4);
+        context.globalAlpha = (.12 + pulse * (glyph === '+' ? .78 : .4)) * localSkyOpacity;
         context.fillText(glyph, star.x * width + starParallaxX, star.y * height + starParallaxY);
       }
     }
     context.globalAlpha = 1;
+
+    if (galaxyAlpha > .001) {
+      context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+      for (const star of galaxyStars) {
+        const offset = galacticOffset(star.x, star.y, galaxyRadius);
+        const starX = galaxyCoreX + offset.x;
+        const starY = galaxyCoreY + offset.y;
+        if (starX < -12 || starX > width + 12 || starY < -12 || starY > height + 12) continue;
+        const twinkle = reducedMotion ? .7 : .68 + Math.sin(seconds * .9 + star.phase) * .22;
+        context.globalAlpha = galaxyAlpha * twinkle * (.5 + (1 - star.radius) * .42 + star.strength * .16);
+        context.fillStyle = star.radius < .2 ? '#ebdbb2' : star.glyph === '+' ? '#d3869b' : star.glyph === '*' ? '#b8bb26' : '#928374';
+        context.fillText(star.glyph, starX, starY);
+      }
+      for (const star of orionSpurStars) {
+        const offset = galacticOffset(star.x, star.y, galaxyRadius);
+        const starX = galaxyCoreX + offset.x;
+        const starY = galaxyCoreY + offset.y;
+        if (starX < -12 || starX > width + 12 || starY < -12 || starY > height + 12) continue;
+        const twinkle = reducedMotion ? .72 : .72 + Math.sin(seconds + star.phase) * .18;
+        context.globalAlpha = galaxyAlpha * twinkle * .78;
+        context.fillStyle = star.glyph === '*' ? '#b8bb26' : '#a89984';
+        context.fillText(star.glyph, starX, starY);
+      }
+      context.globalAlpha = galaxyAlpha;
+      context.fillStyle = '#fabd2f';
+      context.font = `${width < 600 ? 10 : 13}px "DM Mono", monospace`;
+      context.fillText('{:*:::*:}', galaxyCoreX, galaxyCoreY);
+      context.globalAlpha = 1;
+    }
 
     type OrbitMark = { x: number; y: number; z: number; scale: number; glyph: string; earth: boolean; alpha: number; reveal: number };
     const farMarks: OrbitMark[] = [];
@@ -257,7 +400,7 @@ if (canvas && system && context) {
         const dy = next.y - projected.y;
         const slope = Math.abs(dy / (dx || .001));
         const glyph = slope > 2.1 ? '|' : slope > .55 ? (dx * dy > 0 ? '\\' : '/') : '-';
-        const mark = { ...projected, glyph, earth: planet.name === 'Earth', alpha: planet.name === 'Earth' ? .78 : .62, reveal: planet.easterEgg ? plutoReveal : 1 };
+        const mark = { ...projected, glyph, earth: planet.name === 'Earth', alpha: (planet.name === 'Earth' ? .78 : .62) * localDetailOpacity, reveal: planet.easterEgg ? plutoReveal : 1 };
         (projected.z < 0 ? farMarks : nearMarks).push(mark);
       }
     });
@@ -281,11 +424,27 @@ if (canvas && system && context) {
     const canvasBounds = canvas.getBoundingClientRect();
     const localPointerX = pointer.clientX - canvasBounds.left;
     const localPointerY = pointer.clientY - canvasBounds.top;
-    const hoveredBody = pointer.active && !camera.dragging
+    const hoveredBody = pointer.active && !camera.dragging && localDetailOpacity > .45
       ? bodies.reduce<typeof bodies[number] | null>((closest, body) => {
           const distance = Math.hypot(body.x - localPointerX, body.y - localPointerY);
           const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
           return body.reveal > .35 && distance < 28 && distance < closestDistance ? body : closest;
+        }, null)
+      : null;
+    const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - .42) / .35);
+    const galacticObjects = GALACTIC_OBJECTS.map((object) => ({
+      object,
+      ...galacticOffset(object.x, object.y, galaxyRadius),
+    })).map((object) => ({
+      ...object,
+      x: galaxyCoreX + object.x,
+      y: galaxyCoreY + object.y,
+    }));
+    const hoveredGalacticObject = pointer.active && !camera.dragging && galaxyObjectOpacity > .35
+      ? galacticObjects.reduce<typeof galacticObjects[number] | null>((closest, object) => {
+          const distance = Math.hypot(object.x - localPointerX, object.y - localPointerY);
+          const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
+          return distance < 30 && distance < closestDistance ? object : closest;
         }, null)
       : null;
 
@@ -293,10 +452,11 @@ if (canvas && system && context) {
       const { planet } = body;
       const depthScale = Math.max(.68, Math.min(1.55, body.scale));
       const isHovered = body === hoveredBody;
-      const fontSize = planet.easterEgg ? 16 : Math.max(8, 15 * planet.size * depthScale) * (isHovered ? 1.14 : 1);
+      const cosmicGlyphScale = Math.max(.3, Math.sqrt(solarSystemScale));
+      const fontSize = (planet.easterEgg ? 16 : Math.max(8, 15 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) * cosmicGlyphScale;
       const lines = planet.easterEgg || fontSize < 9 ? [planet.glyph] : planet.sprite;
       const lineHeight = fontSize * .78;
-      context.globalAlpha = body.reveal;
+      context.globalAlpha = body.reveal * localDetailOpacity;
       context.fillStyle = planet.color;
       context.shadowBlur = 0;
       context.font = `bold ${fontSize}px "DM Mono", monospace`;
@@ -323,14 +483,14 @@ if (canvas && system && context) {
     drawMarks(nearMarks);
 
     const sunPulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 2.1) * .08;
-    const sunSize = 12 * sunPulse;
+    const sunSize = 12 * sunPulse * Math.max(.28, Math.sqrt(solarSystemScale));
     context.fillStyle = '#fabd2f';
-    context.globalAlpha = .24 + Math.sin(seconds * 2.1) * .05;
+    context.globalAlpha = localDetailOpacity * (.24 + Math.sin(seconds * 2.1) * .05);
     context.shadowColor = '#fe8019';
     context.shadowBlur = 35;
     context.font = `${sunSize * 3.4}px "DM Mono", monospace`;
     context.fillText('·', centerX, centerY);
-    context.globalAlpha = 1;
+    context.globalAlpha = localDetailOpacity;
     context.shadowBlur = 15;
     context.font = `bold ${sunSize}px "DM Mono", monospace`;
     ['    \\  |  /    ', "  `. \\ | / .'  ", '----  (@)  ----', "  .' / | \\ `.  ", '    /  |  \\    '].forEach((line, index) => context.fillText(line, centerX, centerY + (index - 2) * sunSize * .72));
@@ -338,6 +498,40 @@ if (canvas && system && context) {
 
     // Keep every body visible so each of the eight orbit lanes has a clear owner.
     bodies.forEach(drawBody);
+
+    if (galaxyObjectOpacity > .001) {
+      for (const galacticObject of galacticObjects) {
+        if (galacticObject.x < -30 || galacticObject.x > width + 30 || galacticObject.y < -30 || galacticObject.y > height + 30) continue;
+        const isHovered = galacticObject === hoveredGalacticObject;
+        const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.4 + galacticObject.x) * .08;
+        context.globalAlpha = galaxyObjectOpacity;
+        context.fillStyle = galacticObject.object.color;
+        context.font = `bold ${Math.round((isHovered ? 13 : 11) * pulse)}px "DM Mono", monospace`;
+        context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
+        if (isHovered) {
+          const glyphWidth = context.measureText(galacticObject.object.glyph).width;
+          context.fillStyle = '#ebdbb2';
+          context.font = 'bold 11px "DM Mono", monospace';
+          context.fillText('[', galacticObject.x - glyphWidth / 2 - 8, galacticObject.y);
+          context.fillText(']', galacticObject.x + glyphWidth / 2 + 8, galacticObject.y);
+        }
+      }
+      context.globalAlpha = 1;
+    }
+
+    if (galaxyAlpha > .001) {
+      const markerAlpha = galaxyAlpha * (1 - localDetailOpacity * .75);
+      context.globalAlpha = markerAlpha;
+      context.fillStyle = '#fabd2f';
+      context.font = 'bold 12px "DM Mono", monospace';
+      context.fillText('+', centerX, centerY);
+      if (galaxyProgress > .62) {
+        context.globalAlpha = markerAlpha * smoothstep((galaxyProgress - .62) / .25);
+        context.font = '9px "DM Mono", monospace';
+        context.fillText('[ SOL / YOU ARE HERE ]', centerX, centerY + 18);
+      }
+      context.globalAlpha = 1;
+    }
 
     if (hoveredBody) {
       const readout = [
@@ -368,6 +562,35 @@ if (canvas && system && context) {
       context.textBaseline = 'middle';
     }
 
+    if (hoveredGalacticObject) {
+      const readout = [
+        `[ ${hoveredGalacticObject.object.name.toUpperCase()} ]`,
+        hoveredGalacticObject.object.kind,
+        `dist  ${hoveredGalacticObject.object.distance}`,
+        hoveredGalacticObject.object.detail,
+      ];
+      const boxWidth = Math.min(224, width - 16);
+      const boxHeight = 82;
+      const boxX = Math.min(width - boxWidth - 8, Math.max(8, hoveredGalacticObject.x + 25));
+      const boxY = Math.min(height - boxHeight - 8, Math.max(8, hoveredGalacticObject.y - boxHeight / 2));
+      context.globalAlpha = .94;
+      context.fillStyle = '#1d2021';
+      context.fillRect(boxX, boxY, boxWidth, boxHeight);
+      context.strokeStyle = '#665c54';
+      context.lineWidth = 1;
+      context.strokeRect(boxX + .5, boxY + .5, boxWidth - 1, boxHeight - 1);
+      context.globalAlpha = 1;
+      context.textAlign = 'left';
+      context.textBaseline = 'top';
+      context.font = '12px "DM Mono", monospace';
+      readout.forEach((line, index) => {
+        context.fillStyle = index === 0 ? hoveredGalacticObject.object.color : '#a89984';
+        context.fillText(line, boxX + 11, boxY + 10 + index * 16);
+      });
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+    }
+
     context.globalAlpha = .35;
     context.fillStyle = '#a89984';
     context.font = '9px "DM Mono", monospace';
@@ -392,9 +615,14 @@ if (canvas && system && context) {
     if (camera.dragging && event.pointerId === camera.pointerId) {
       const deltaX = event.clientX - camera.lastX;
       const deltaY = event.clientY - camera.lastY;
-      camera.roll += deltaX * .0045;
-      camera.yaw += deltaX * .0018;
-      camera.pitch = Math.max(12 * DEG, Math.min(88 * DEG, camera.pitch + deltaY * .0055));
+      if (camera.dragMode === 'galaxy') {
+        galaxyCamera.rotation += deltaX * .005;
+        galaxyCamera.tilt = Math.max(.5, Math.min(1.35, galaxyCamera.tilt + deltaY * .0035));
+      } else {
+        camera.roll += deltaX * .0045;
+        camera.yaw += deltaX * .0018;
+        camera.pitch = Math.max(12 * DEG, Math.min(88 * DEG, camera.pitch + deltaY * .0055));
+      }
       camera.dragDistance += Math.hypot(deltaX, deltaY);
       camera.lastX = event.clientX;
       camera.lastY = event.clientY;
@@ -408,19 +636,24 @@ if (canvas && system && context) {
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
-    camera.manual = true;
-    camera.resetting = false;
+    camera.dragMode = cosmicZoom.current > .55 ? 'galaxy' : 'solar';
+    if (camera.dragMode === 'solar') {
+      camera.manual = true;
+      camera.resetting = false;
+      camera.pitch = camera.renderedPitch;
+      camera.yaw = camera.renderedYaw;
+      camera.roll = camera.renderedRoll;
+      pointer.targetX = pointer.x;
+      pointer.targetY = pointer.y;
+    } else {
+      galaxyCamera.resetting = false;
+    }
     camera.dragging = true;
-    camera.pitch = camera.renderedPitch;
-    camera.yaw = camera.renderedYaw;
-    camera.roll = camera.renderedRoll;
     camera.lastX = event.clientX;
     camera.lastY = event.clientY;
     camera.dragDistance = 0;
     camera.pointerId = event.pointerId;
     system.classList.add('is-dragging');
-    pointer.targetX = pointer.x;
-    pointer.targetY = pointer.y;
     canvas.setPointerCapture(event.pointerId);
     event.preventDefault();
   });
@@ -429,14 +662,14 @@ if (canvas && system && context) {
     if (!camera.dragging || event.pointerId !== camera.pointerId) return;
     camera.dragging = false;
     system.classList.remove('is-dragging');
-    if (event.type === 'pointerup' && camera.dragDistance >= 3) {
+    if (event.type === 'pointerup' && camera.dragMode === 'solar' && camera.dragDistance >= 3) {
       const startedAt = performance.now();
       orbitClock.anchorDate = getOrbitDate(startedAt);
       orbitClock.startedAt = startedAt;
       orbitClock.active = true;
       orbitClock.returning = false;
     }
-    if (event.type === 'pointerup' && !easterEgg.unlocked) {
+    if (event.type === 'pointerup' && camera.dragMode === 'solar' && !easterEgg.unlocked) {
       if (camera.dragDistance < 3) {
         const clickedAt = performance.now();
         if (clickedAt - easterEgg.lastClickAt > 650) easterEgg.clicks = 0;
@@ -471,6 +704,10 @@ if (canvas && system && context) {
     camera.resetPitch = camera.renderedPitch;
     camera.resetYaw = camera.renderedYaw;
     camera.resetRoll = camera.renderedRoll;
+    galaxyCamera.resetting = true;
+    galaxyCamera.resetStartedAt = resetAt;
+    galaxyCamera.resetRotation = galaxyCamera.rotation;
+    galaxyCamera.resetTilt = galaxyCamera.tilt;
     pointer.targetX = (event.clientX / window.innerWidth - .5) * 2;
     pointer.targetY = (event.clientY / window.innerHeight - .5) * 2;
     event.preventDefault();
@@ -479,6 +716,22 @@ if (canvas && system && context) {
     pointer.targetX = 0;
     pointer.targetY = 0;
     pointer.active = false;
+  });
+
+  zoomInput?.addEventListener('input', () => {
+    cosmicZoom.target = Number(zoomInput.value) / 100;
+    const status = cosmicZoom.target < .3 ? 'LOCAL SYSTEM' : cosmicZoom.target < .72 ? 'INTERSTELLAR' : 'MILKY WAY';
+    if (zoomStatus) zoomStatus.value = status;
+    zoomInput.setAttribute('aria-valuetext', status);
+    if (sceneLabel) {
+      sceneLabel.textContent = cosmicZoom.target >= .72
+        ? 'MILKY WAY / GALACTIC VIEW'
+        : cosmicZoom.target >= .3
+          ? 'DEPARTING LOCAL SYSTEM / ORION ARM'
+          : easterEgg.unlocked
+            ? 'OBJECT 134340 DETECTED / PLUTO'
+            : 'LIVE ASCII ORRERY / 3D HELIOCENTRIC';
+    }
   });
 
   requestAnimationFrame(render);
