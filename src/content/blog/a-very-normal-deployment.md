@@ -3,7 +3,7 @@ title: A very normal deployment
 description: A mock post about shipping a change without turning it into an event.
 published: 2026-08-21
 featured: true
-draft: false
+draft: true
 tags:
   - devops
   - deployments

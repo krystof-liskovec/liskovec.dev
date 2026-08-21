@@ -38,8 +38,8 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 				<div class="hero-footer"><a href="#about">↓ scroll to learn more</a></div>
 			</section>
 			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software engineering</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software engineer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
-			<section class="content-section" id="blog"><div class="section-label"><span>02 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section>
-			<section class="lower-grid"><div class="content-section compact"><div class="section-label"><span>03 / skills</span><span>tools &amp; technologies</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go · TypeScript · NestJS · Express</p></div><div><span>data</span><p>PostgreSQL · MariaDB · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></div><div class="content-section compact" id="contact"><div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a><a href="https://github.com/kristof-liskovec" target="_blank" rel="noreferrer">github <span>↗</span></a><a href="https://linkedin.com/in/krystof-liskovec" target="_blank" rel="noreferrer">linkedin <span>↗</span></a></div></div></section>
+			<section class="content-section skills-section" id="skills"><div class="section-label"><span>02 / skills</span><span>tools &amp; technologies</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go · TypeScript · NestJS · Express</p></div><div><span>data</span><p>PostgreSQL · MariaDB · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></section>
+			<div class="closing-grid"><section class="content-section" id="blog"><div class="section-label"><span>03 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section><section class="content-section compact" id="contact"><div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a></div></section></div>
 		</main>
 		<footer><span>© 2026 krystof liskovec</span><span>made with curiosity + caffeine</span></footer>
 	</div>
@@ -95,4 +95,53 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 
 <script>
 	import '../scripts/orrery.ts';
+
+	let arrivalFrame = 0;
+	const showSectionArrival = (section: HTMLElement) => {
+		section.classList.remove('is-arriving');
+		void section.offsetWidth;
+		section.classList.add('is-arriving');
+		section.querySelector('.section-label')?.addEventListener('animationend', () => {
+			section.classList.remove('is-arriving');
+		}, { once: true });
+		window.setTimeout(() => section.classList.remove('is-arriving'), 1000);
+	};
+
+	const waitForScrollEnd = (section: HTMLElement) => {
+		cancelAnimationFrame(arrivalFrame);
+		const startedAt = performance.now();
+		let previousY = window.scrollY;
+		let moved = false;
+		let stableFrames = 0;
+		const check = () => {
+			const currentY = window.scrollY;
+			if (Math.abs(currentY - previousY) > .5) {
+				moved = true;
+				stableFrames = 0;
+			} else {
+				stableFrames += 1;
+			}
+			previousY = currentY;
+			const elapsed = performance.now() - startedAt;
+			if ((moved && stableFrames >= 4) || (!moved && elapsed > 140) || elapsed > 1600) {
+				showSectionArrival(section);
+				return;
+			}
+			arrivalFrame = requestAnimationFrame(check);
+		};
+		arrivalFrame = requestAnimationFrame(check);
+	};
+
+	document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
+		link.addEventListener('click', () => {
+			const id = link.hash.slice(1);
+			const section = document.getElementById(id);
+			if (section?.classList.contains('content-section')) waitForScrollEnd(section);
+		});
+	});
+
+	if (window.location.hash) {
+		const initialSection = document.getElementById(window.location.hash.slice(1));
+		if (initialSection?.classList.contains('content-section')) waitForScrollEnd(initialSection);
+	}
 </script>
