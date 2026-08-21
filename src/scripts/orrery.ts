@@ -780,18 +780,35 @@ if (canvas && system && context) {
             context.fillText(glyph, focusCenterX + Math.cos(angle) * radiusX, focusCenterY + Math.sin(angle) * radiusY);
           }
         }
-        if (target.name === 'Saturn') {
-          for (let sample = 0; sample < 112; sample++) {
-            const angle = sample / 112 * Math.PI * 2;
-            const ringX = Math.cos(angle) * sphereWidth * .93;
-            const ringY = Math.sin(angle) * sphereHeight * .24;
-            const tiltedX = ringX * Math.cos(objectFocus.longitude * .22) - ringY * Math.sin(objectFocus.longitude * .22);
-            const tiltedY = (ringX * Math.sin(objectFocus.longitude * .22) + ringY * Math.cos(objectFocus.longitude * .22)) * Math.cos(latitudeTilt);
-            context.globalAlpha = objectReveal * (Math.sin(angle) < 0 ? .28 : .76);
-            context.fillStyle = Math.sin(angle) < 0 ? '#665c54' : target.color;
-            context.fillText(sample % 3 === 0 ? '=' : '-', focusCenterX + tiltedX, focusCenterY + tiltedY);
+        const drawPlanetRings = (foreground: boolean) => {
+          if (target.name !== 'Saturn' && target.name !== 'Uranus') return;
+          const isUranus = target.name === 'Uranus';
+          const ringTilt = isUranus ? 72 * DEG + objectFocus.longitude * .12 : objectFocus.longitude * .22;
+          const bands = isUranus
+            ? [{ x: .78, y: .12, alpha: .58, color: target.color, glyph: '.' }]
+            : [
+                { x: .82, y: .205, alpha: .5, color: '#d79921', glyph: '-' },
+                { x: .93, y: .238, alpha: .72, color: '#fabd2f', glyph: '=' },
+                { x: 1.055, y: .274, alpha: .48, color: '#bdae93', glyph: '-' },
+                { x: 1.16, y: .3, alpha: .68, color: '#d79921', glyph: '=' },
+              ];
+          for (const band of bands) {
+            for (let sample = 0; sample < 112; sample++) {
+              const angle = sample / 112 * Math.PI * 2;
+              const inFront = Math.sin(angle) >= 0;
+              if (inFront !== foreground) continue;
+              const ringX = Math.cos(angle) * sphereWidth * band.x;
+              const ringY = Math.sin(angle) * sphereHeight * band.y;
+              const tiltedX = ringX * Math.cos(ringTilt) - ringY * Math.sin(ringTilt);
+              const tiltedY = (ringX * Math.sin(ringTilt) + ringY * Math.cos(ringTilt)) * Math.cos(latitudeTilt * .45);
+              context.globalAlpha = objectReveal * band.alpha * (foreground ? 1 : .42);
+              context.fillStyle = foreground ? band.color : '#665c54';
+              const glyph = isUranus && sample % 4 === 0 ? '-' : band.glyph;
+              context.fillText(glyph, focusCenterX + tiltedX, focusCenterY + tiltedY);
+            }
           }
-        }
+        };
+        drawPlanetRings(false);
         for (let row = 0; row < rows; row++) {
           const normalizedY = (row + .5 - rows / 2) / (rows / 2);
           const lineY = focusCenterY + (row - (rows - 1) / 2) * lineHeight;
@@ -811,10 +828,13 @@ if (canvas && system && context) {
                 ? character === '@' ? '#d65d0e' : character === '*' ? '#fe8019' : character === ':' ? '#d79921' : '#fabd2f'
               : target.name === 'Jupiter' && (character === '@' || character === 'o')
                 ? '#fe8019'
+                : target.name === 'Saturn' && character === 'o'
+                  ? '#d79921'
                 : target.color;
             context.fillText(character, focusCenterX + (column + .5 - columns / 2) * characterWidth, lineY);
           }
         }
+        drawPlanetRings(true);
       };
 
       const earthSatelliteReveal = target.name === 'Earth' ? smoothstep((planetSceneFocus - .28) / .45) : 0;

@@ -51,8 +51,16 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
     return band % 4 === 0 ? '=' : band % 4 === 2 ? '-' : broadWave > .2 ? '~' : ':';
   }
   if (name === 'Saturn') {
+    if (latitude > 1.08) {
+      const hexagonSector = Math.floor((wrappedLongitude + Math.PI) / (Math.PI / 3));
+      return hexagonSector % 2 ? ':' : '=';
+    }
+    if (latitude > .18 && latitude < .34 && wrappedLongitude > .35 && wrappedLongitude < .7) return 'o';
     const band = Math.floor((latitude + Math.PI / 2) * 10);
-    return band % 4 === 0 ? '=' : band % 2 ? ':' : '~';
+    const cloudWave = Math.sin(longitude * 3 + latitude * 2.4);
+    if (band % 4 === 0) return cloudWave > .45 ? '~' : '=';
+    if (band % 2) return cloudWave < -.5 ? '.' : ':';
+    return cloudWave > .55 ? ':' : '~';
   }
   if (name === 'Venus') {
     const cloud = Math.sin(longitude * 3 + latitude * 5) + Math.sin(longitude - latitude * 7) * .35;
