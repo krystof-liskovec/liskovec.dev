@@ -1,16 +1,13 @@
 {
-  "name": "",
+  "name": "liskovec-dev",
   "type": "module",
   "version": "0.0.1",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "copy-wasm-exec": "cp /usr/lib/go/lib/wasm/wasm_exec.js public/wasm_exec.js",
-    "build:wasm": "cd terminal-go && GOOS=js GOARCH=wasm go build -o ../public/terminal.wasm",
-    "predev": "npm run copy-wasm-exec && npm run build:wasm",
-    "prebuild": "npm run copy-wasm-exec && npm run build:wasm",
     "dev": "astro dev",
+    "server": "go run ./server/main.go",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
