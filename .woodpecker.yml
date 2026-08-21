@@ -4,13 +4,13 @@ when:
 
 steps:
   - name: build-and-deploy
-    image: node:22.12-bookworm
+    image: node:26-alpine
     environment:
       CLOUDFLARE_API_TOKEN:
         from_secret: cloudflare_api_token
       CLOUDFLARE_ACCOUNT_ID:
         from_secret: cloudflare_account_id
-      CLOUDFLARE_PAGES_PROJECT: liskovec-dev
+      CLOUDFLARE_PAGES_PROJECT: liskovec
     commands:
       - npm ci
       - npm run build
