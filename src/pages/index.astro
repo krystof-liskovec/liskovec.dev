@@ -35,7 +35,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 					</div>
 					<div class="solar-caption"><span id="solar-time">UTC / BROWSER TIME</span><span>drag to explore · double-click to reset</span></div>
 				</div>
-				<div class="hero-footer"><span>↓ scroll to learn more</span></div>
+				<div class="hero-footer"><a href="#about">↓ scroll to learn more</a></div>
 			</section>
 			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software engineering</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software engineer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
 			<section class="content-section" id="blog"><div class="section-label"><span>02 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section>
