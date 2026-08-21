@@ -10,7 +10,6 @@ import type { FocusState, FocusTarget, Vec3 } from './orrery/types';
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const system = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
-const sceneLabel = document.querySelector<HTMLElement>('.solar-caption span:first-child');
 const zoomInput = document.querySelector<HTMLInputElement>('#cosmic-zoom');
 const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-status');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
@@ -62,7 +61,6 @@ if (canvas && system && context) {
     resetLatitude: 0,
     resetting: false,
     resetStartedAt: 0,
-    previousLabel: '',
   };
   let activeFocusCandidate: FocusTarget | null = null;
   let pressedFocusCandidate: FocusTarget | null = null;
@@ -109,7 +107,6 @@ if (canvas && system && context) {
     objectFocus.longitude = 0;
     objectFocus.latitude = 0;
     objectFocus.resetting = false;
-    objectFocus.previousLabel = sceneLabel?.textContent ?? '';
     activeFocusCandidate = null;
     system.classList.add('is-object-focus');
     if (focusReturn) {
@@ -119,9 +116,6 @@ if (canvas && system && context) {
     }
     if (zoomInput) zoomInput.disabled = true;
     setZoomLocation(`focus:${target.id}`, target.name === 'Earth' ? 'on planet Earth.' : target.kind === 'star' ? 'at Sol.' : `near ${target.name}.`);
-    if (sceneLabel) {
-      sceneLabel.textContent = `${target.name.toUpperCase()} / CLOSE-UP`;
-    }
   };
 
   const leaveObjectFocus = () => {
@@ -158,7 +152,6 @@ if (canvas && system && context) {
       focusReturn.textContent = `[ ← return to ${parentName} ]`;
     }
     setZoomLocation(`focus:${target.id}`, target.kind === 'moon' ? `near ${target.name}.` : 'aboard the ISS.');
-    if (sceneLabel) sceneLabel.textContent = `${target.name.toUpperCase()} / CLOSE-UP`;
   };
 
   reducedMotionQuery.addEventListener('change', (event) => {
@@ -220,7 +213,6 @@ if (canvas && system && context) {
         if (zoomInput) zoomInput.disabled = false;
         if (cosmicZoom.target >= .5) setZoomLocation('milky-way', 'in the Milky Way.');
         else setZoomLocation('solar', 'in the solar system.');
-        if (sceneLabel) sceneLabel.textContent = objectFocus.previousLabel;
       }
     }
     if (objectFocus.child) {
@@ -240,7 +232,6 @@ if (canvas && system && context) {
         const parent = objectFocus.target;
         if (parent) {
           setZoomLocation(`focus:${parent.id}`, parent.name === 'Earth' ? 'on planet Earth.' : `near ${parent.name}.`);
-          if (sceneLabel) sceneLabel.textContent = `${parent.name.toUpperCase()} / CLOSE-UP`;
         }
       }
     }
@@ -413,7 +404,7 @@ if (canvas && system && context) {
       context.globalAlpha = 1;
     }
 
-    type OrbitMark = { x: number; y: number; z: number; scale: number; glyph: string; earth: boolean; alpha: number; reveal: number };
+    type OrbitMark = { x: number; y: number; z: number; scale: number; glyph: string; alpha: number; reveal: number };
     const farMarks: OrbitMark[] = [];
     const nearMarks: OrbitMark[] = [];
     // The orbits are a stable spatial reference; motion belongs to the scene itself.
@@ -429,7 +420,7 @@ if (canvas && system && context) {
         const dy = next.y - projected.y;
         const slope = Math.abs(dy / (dx || .001));
         const glyph = slope > 2.1 ? '|' : slope > .55 ? (dx * dy > 0 ? '\\' : '/') : '-';
-        const mark = { ...projected, glyph, earth: planet.name === 'Earth', alpha: (planet.name === 'Earth' ? .78 : .62) * localDetailOpacity * (1 - planetSceneFocus), reveal: planet.easterEgg ? plutoReveal : 1 };
+        const mark = { ...projected, glyph, alpha: .62 * localDetailOpacity * (1 - planetSceneFocus), reveal: planet.easterEgg ? plutoReveal : 1 };
         (projected.z < 0 ? farMarks : nearMarks).push(mark);
       }
     });
@@ -438,7 +429,7 @@ if (canvas && system && context) {
       context.font = '9px "DM Mono", monospace';
       for (const mark of marks) {
         context.globalAlpha = mark.alpha * mark.reveal;
-        context.fillStyle = mark.earth ? '#83a598' : '#665c54';
+        context.fillStyle = '#665c54';
         context.fillText(mark.glyph, mark.x, mark.y);
       }
       context.globalAlpha = 1;
@@ -1147,14 +1138,6 @@ if (canvas && system && context) {
       context.globalAlpha = 1;
     }
 
-    context.globalAlpha = .35 * (1 - planetSceneFocus) * (1 - objectFocus.progress);
-    context.fillStyle = '#a89984';
-    context.font = '9px "DM Mono", monospace';
-    context.textAlign = 'left';
-    context.fillText('+Z / NEAR', 14, height - 41);
-    context.fillText('-Z / FAR', 14, height - 27);
-    context.globalAlpha = 1;
-
     const currentSecond = Math.floor(frameTime / 1000);
     if (clock && currentSecond !== lastClockSecond) {
       const clockMode = orbitClock.active && !orbitClock.returning ? ' · SIM 12H/S' : ' UTC';
@@ -1256,7 +1239,6 @@ if (canvas && system && context) {
         if (easterEgg.clicks === 9) {
           easterEgg.unlocked = true;
           easterEgg.revealedAt = clickedAt;
-          if (sceneLabel) sceneLabel.textContent = 'OBJECT 134340 DETECTED / PLUTO';
         }
       } else {
         easterEgg.clicks = 0;
@@ -1326,15 +1308,6 @@ if (canvas && system && context) {
         : 'MILKY WAY';
     if (zoomStatus) zoomStatus.value = status;
     zoomInput.setAttribute('aria-valuetext', status);
-    if (sceneLabel) {
-      sceneLabel.textContent = cosmicZoom.target >= .72
-        ? 'MILKY WAY / INTERACTIVE VIEW'
-        : cosmicZoom.target >= .3
-          ? 'ZOOMING OUT / ORION ARM'
-          : easterEgg.unlocked
-            ? 'OBJECT 134340 DETECTED / PLUTO'
-            : 'INTERACTIVE ASCII CANVAS';
-    }
   });
 
   requestAnimationFrame(render);

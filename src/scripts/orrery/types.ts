@@ -54,7 +54,6 @@ export type FocusState = {
   resetLatitude: number;
   resetting: boolean;
   resetStartedAt: number;
-  previousLabel: string;
 };
 
 export type ProjectedBody = {

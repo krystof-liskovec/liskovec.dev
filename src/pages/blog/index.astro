@@ -1,0 +1,34 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/site.css';
+---
+
+<Layout
+	title="blog — krystof.liskovec"
+	description="Random adventures and struggles from Krystof Liskovec—mostly about software, DevOps, and whatever he is figuring out."
+>
+	<div class="site-shell">
+		<header class="site-header">
+			<div class="brand-lockup">
+				<a class="wordmark" href="/" aria-label="Krystof Liskovec home"><span>/home/</span>krystof-liskovec</a>
+				<p class="eyebrow"><span class="signal">●</span> devops · software engineer · cz</p>
+			</div>
+			<nav aria-label="Primary navigation"><a href="/#about">[ about ]</a><a href="/blog" aria-current="page">[ blog ]</a><a href="/#contact">[ contact ]</a></nav>
+		</header>
+		<main class="blog-page">
+			<section class="blog-hero">
+				<p class="eyebrow">~/blog</p>
+				<h1>Random adventures<br /><span>and struggles.</span></h1>
+				<p>Mostly about software, DevOps, and whatever I happen to be figuring out. Sometimes with opinions included.</p>
+			</section>
+			<section class="post-index">
+				<div class="section-label"><span>all posts</span><span>0 published</span></div>
+				<div class="post-empty">
+					<div><h2>Nothing here yet.</h2><p>I’m still figuring out what the first post should be about. Check back later.</p></div>
+					<span>[ eventually ]</span>
+				</div>
+			</section>
+		</main>
+		<footer><span>© 2026 krystof liskovec</span><a href="/">← back home</a></footer>
+	</div>
+</Layout>
