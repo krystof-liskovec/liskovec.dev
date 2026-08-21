@@ -3,6 +3,7 @@ import { drawReadout } from './orrery/canvas-ui';
 import { EARTH_MAP, EARTH_MAP_HEIGHT, EARTH_MAP_WIDTH } from './orrery/earth-map';
 import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveOrbit } from './orrery/math';
 import { ASTEROID_BELT, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
+import { drawSun } from './orrery/sun-renderer';
 import type { FocusState, FocusTarget, Vec3 } from './orrery/types';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
@@ -478,12 +479,14 @@ if (canvas && system && context) {
     const drawBody = (body: typeof bodies[number]) => {
       const { planet } = body;
       const isFocusedPlanet = focusedPlanet === planet;
-      const depthScale = Math.max(.68, Math.min(1.55, body.scale));
+      const perspectiveScale = Math.max(.68, Math.min(1.55, body.scale));
+      const depthScale = .75 + perspectiveScale * .25;
       const isHovered = body === hoveredBody;
       const cosmicGlyphScale = Math.max(.3, Math.sqrt(solarSystemScale));
-      const fontSize = (planet.easterEgg ? 16 : Math.max(7, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) * cosmicGlyphScale;
+      const fontSize = (planet.easterEgg ? 16 : Math.max(6.2, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) * cosmicGlyphScale;
       const lines = planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [planet.glyph] : planet.sprite;
-      const lineHeight = fontSize * .78;
+      const hasCompactSphereRows = planet.name === 'Jupiter' || planet.name === 'Uranus' || planet.name === 'Neptune';
+      const lineHeight = fontSize * (hasCompactSphereRows ? .68 : .78);
       const bodyOpacity = body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : 1 - planetSceneFocus);
       const focusedDetailReveal = isFocusedPlanet ? smoothstep((planetSceneFocus - .08) / .28) : 0;
       const focusedSpriteScale = isFocusedPlanet ? 1 + planetSceneFocus * 2 : 1;
@@ -554,19 +557,14 @@ if (canvas && system && context) {
     }
     context.globalAlpha = 1;
 
-    const sunPulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 2.1) * .08;
-    const sunSize = 12 * sunPulse * Math.max(.28, Math.sqrt(solarSystemScale));
-    context.fillStyle = '#fabd2f';
-    context.globalAlpha = localDetailOpacity * (1 - planetSceneFocus) * (.24 + Math.sin(seconds * 2.1) * .05);
-    context.shadowColor = '#fe8019';
-    context.shadowBlur = 35;
-    context.font = `${sunSize * 3.4}px "DM Mono", monospace`;
-    context.fillText('·', centerX, centerY);
-    context.globalAlpha = localDetailOpacity * (1 - planetSceneFocus);
-    context.shadowBlur = 15;
-    context.font = `bold ${sunSize}px "DM Mono", monospace`;
-    ['    \\  |  /    ', "  `. \\ | / .'  ", '----  (@)  ----', "  .' / | \\ `.  ", '    /  |  \\    '].forEach((line, index) => context.fillText(line, centerX, centerY + (index - 2) * sunSize * .72));
-    context.shadowBlur = 0;
+    drawSun(context, {
+      x: centerX,
+      y: centerY,
+      scale: solarSystemScale,
+      opacity: localDetailOpacity * (1 - planetSceneFocus),
+      seconds,
+      reducedMotion,
+    });
 
     // Keep every body visible so each of the eight orbit lanes has a clear owner.
     bodies.forEach((body) => {
@@ -682,15 +680,29 @@ if (canvas && system && context) {
         }
         const noise = randomUnit(Math.floor((longitude + Math.PI) * 91) + Math.floor((latitude + Math.PI / 2) * 137) + name.length * 71);
         if (name === 'Jupiter') {
-          if (latitude > -.28 && latitude < -.08 && longitude > .15 && longitude < .75) return 'o';
-          return Math.floor((latitude + Math.PI / 2) * 9) % 2 ? '=' : '~';
+          const wrappedLongitude = Math.atan2(Math.sin(longitude), Math.cos(longitude));
+          if (latitude > -.48 && latitude < -.18 && wrappedLongitude > .1 && wrappedLongitude < .78) return wrappedLongitude > .28 && wrappedLongitude < .62 ? '@' : 'o';
+          const band = Math.floor((latitude + Math.PI / 2) * 11);
+          if (band % 4 === 0) return '=';
+          if (band % 4 === 2) return '-';
+          return noise > .82 ? 'o' : '~';
         }
         if (name === 'Saturn') return Math.floor((latitude + Math.PI / 2) * 8) % 2 ? ':' : '=';
         if (name === 'Venus') return noise > .68 ? '~' : noise > .34 ? '=' : ':';
         if (name === 'Mars') return Math.abs(latitude) > 1.15 ? '*' : noise > .72 ? 'o' : noise > .4 ? ':' : '.';
         if (name === 'Mercury' || name === 'Moon') return noise > .78 ? 'o' : noise > .42 ? ':' : '.';
-        if (name === 'Uranus') return Math.floor((latitude + Math.PI / 2) * 7) % 3 ? '~' : '-';
-        if (name === 'Neptune') return noise > .76 ? '=' : '~';
+        if (name === 'Uranus') {
+          const band = Math.floor((latitude + Math.PI / 2) * 10);
+          if (Math.abs(latitude) > 1.12) return ':';
+          return band % 4 === 0 ? '-' : noise > .9 ? '.' : '~';
+        }
+        if (name === 'Neptune') {
+          const wrappedLongitude = Math.atan2(Math.sin(longitude), Math.cos(longitude));
+          if (latitude > .08 && latitude < .38 && wrappedLongitude > -.85 && wrappedLongitude < -.28) return wrappedLongitude > -.7 && wrappedLongitude < -.42 ? 'O' : 'o';
+          const band = Math.floor((latitude + Math.PI / 2) * 9);
+          if (band % 4 === 1) return '=';
+          return noise > .84 ? ':' : '~';
+        }
         if (name === 'Pluto') return noise > .7 ? ':' : '.';
         return noise > .55 ? ':' : '.';
       };
