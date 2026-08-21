@@ -29,7 +29,7 @@ const PLANETS: Planet[] = [
   { name: 'Saturn', a: 9.53667594, e: .05386179, meanLongitude: 49.95424423, perihelion: 92.59887831, longitudeRate: 1222.49362201, inclination: 2.48599187, node: 113.66242448, displayRadius: 30, glyph: 'O', sprite: ['   .--.   ', '--(====)--', "   '--'   "], color: '#fabd2f', size: .82 },
   { name: 'Uranus', a: 19.18916464, e: .04725744, meanLongitude: 313.23810451, perihelion: 170.9542763, longitudeRate: 428.48202785, inclination: .77263783, node: 74.01692503, displayRadius: 36, glyph: 'O', sprite: [' .-. ', '( o )', " '-' "], color: '#8ec07c', size: .72 },
   { name: 'Neptune', a: 30.06992276, e: .00859048, meanLongitude: -55.12002969, perihelion: 44.96476227, longitudeRate: 218.45945325, inclination: 1.77004347, node: 131.78422574, displayRadius: 42, glyph: 'O', sprite: [' .-. ', '( ~ )', " '-' "], color: '#458588', size: .72 },
-  { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '*', sprite: [' .-. ', '(:.:)', " '-' "], color: '#d3869b', size: .64, easterEgg: true },
+  { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '.', sprite: ['.'], color: '#d3869b', size: .64, easterEgg: true },
 ];
 
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
@@ -66,10 +66,19 @@ if (canvas && system && context) {
     pointerId: -1,
     dragDistance: 0,
   };
-  const easterEgg = { clicks: 0, unlocked: false, revealedAt: 0 };
+  const easterEgg = { clicks: 0, lastClickAt: 0, unlocked: false, revealedAt: 0 };
+  const orbitClock = {
+    active: false,
+    returning: false,
+    anchorDate: Date.now(),
+    startedAt: 0,
+    returnFrom: Date.now(),
+    returnStartedAt: 0,
+  };
   const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reducedMotion = reducedMotionQuery.matches;
   let lastClockSecond = -1;
+  let lastFrameAt = 0;
 
   reducedMotionQuery.addEventListener('change', (event) => {
     reducedMotion = event.matches;
@@ -134,6 +143,21 @@ if (canvas && system && context) {
     })
   );
 
+  function getOrbitDate(frameTime: number) {
+    if (orbitClock.returning) {
+      const progress = Math.min(1, (frameTime - orbitClock.returnStartedAt) / 900);
+      const eased = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      const date = orbitClock.returnFrom + (Date.now() - orbitClock.returnFrom) * eased;
+      if (progress === 1) orbitClock.returning = false;
+      return date;
+    }
+    if (orbitClock.active) {
+      const speed = reducedMotion ? 1 : 43_200;
+      return orbitClock.anchorDate + (frameTime - orbitClock.startedAt) * speed;
+    }
+    return Date.now();
+  }
+
   function render(frameTime: number) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
@@ -150,6 +174,11 @@ if (canvas && system && context) {
     pointer.x += (pointer.targetX - pointer.x) * .055;
     pointer.y += (pointer.targetY - pointer.y) * .055;
     const seconds = frameTime / 1000;
+    const frameDelta = Math.min(40, lastFrameAt ? frameTime - lastFrameAt : 16.67);
+    lastFrameAt = frameTime;
+    if (camera.manual && !camera.dragging && !camera.resetting && !reducedMotion) {
+      camera.roll += .000035 * frameDelta;
+    }
     const revealProgress = easterEgg.unlocked
       ? Math.min(1, (frameTime - easterEgg.revealedAt) / (reducedMotion ? 1 : 1200))
       : 0;
@@ -243,7 +272,7 @@ if (canvas && system && context) {
       context.globalAlpha = 1;
     };
 
-    const now = Date.now();
+    const now = getOrbitDate(frameTime);
     const bodies = PLANETS.filter((planet) => !planet.easterEgg || easterEgg.unlocked).map((planet) => {
       const orbit = solveOrbit(planet, now);
       return { planet, reveal: planet.easterEgg ? plutoReveal : 1, position: heliocentricPosition(planet, orbit.angle, orbit.distance), ...cameraTransform(orbitalPoint(planet, orbit.angle, orbit.distance)) };
@@ -264,8 +293,8 @@ if (canvas && system && context) {
       const { planet } = body;
       const depthScale = Math.max(.68, Math.min(1.55, body.scale));
       const isHovered = body === hoveredBody;
-      const fontSize = Math.max(8, 15 * planet.size * depthScale) * (isHovered ? 1.14 : 1);
-      const lines = fontSize < 9 ? [planet.glyph] : planet.sprite;
+      const fontSize = planet.easterEgg ? 16 : Math.max(8, 15 * planet.size * depthScale) * (isHovered ? 1.14 : 1);
+      const lines = planet.easterEgg || fontSize < 9 ? [planet.glyph] : planet.sprite;
       const lineHeight = fontSize * .78;
       context.globalAlpha = body.reveal;
       context.fillStyle = planet.color;
@@ -276,7 +305,7 @@ if (canvas && system && context) {
       context.lineJoin = 'round';
       lines.forEach((line, index) => {
         const lineY = body.y + (index - (lines.length - 1) / 2) * lineHeight;
-        context.strokeText(line, body.x, lineY);
+        if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
         context.fillText(line, body.x, lineY);
       });
       if (isHovered) {
@@ -347,9 +376,10 @@ if (canvas && system && context) {
     context.fillText('-Z / FAR', 14, height - 27);
     context.globalAlpha = 1;
 
-    const currentSecond = Math.floor(now / 1000);
+    const currentSecond = Math.floor(frameTime / 1000);
     if (clock && currentSecond !== lastClockSecond) {
-      clock.textContent = new Date(now).toISOString().replace('T', ' / ').slice(0, 22) + ' UTC';
+      const clockMode = orbitClock.active && !orbitClock.returning ? ' · SIM 12H/S' : ' UTC';
+      clock.textContent = new Date(now).toISOString().replace('T', ' / ').slice(0, 22) + clockMode;
       lastClockSecond = currentSecond;
     }
     requestAnimationFrame(render);
@@ -388,6 +418,7 @@ if (canvas && system && context) {
     camera.lastY = event.clientY;
     camera.dragDistance = 0;
     camera.pointerId = event.pointerId;
+    system.classList.add('is-dragging');
     pointer.targetX = pointer.x;
     pointer.targetY = pointer.y;
     canvas.setPointerCapture(event.pointerId);
@@ -397,12 +428,28 @@ if (canvas && system && context) {
   const finishDrag = (event: PointerEvent) => {
     if (!camera.dragging || event.pointerId !== camera.pointerId) return;
     camera.dragging = false;
-    if (event.type === 'pointerup' && camera.dragDistance < 6 && !easterEgg.unlocked) {
-      easterEgg.clicks += 1;
-      if (easterEgg.clicks === 9) {
-        easterEgg.unlocked = true;
-        easterEgg.revealedAt = performance.now();
-        if (sceneLabel) sceneLabel.textContent = 'OBJECT 134340 DETECTED / PLUTO';
+    system.classList.remove('is-dragging');
+    if (event.type === 'pointerup' && camera.dragDistance >= 3) {
+      const startedAt = performance.now();
+      orbitClock.anchorDate = getOrbitDate(startedAt);
+      orbitClock.startedAt = startedAt;
+      orbitClock.active = true;
+      orbitClock.returning = false;
+    }
+    if (event.type === 'pointerup' && !easterEgg.unlocked) {
+      if (camera.dragDistance < 3) {
+        const clickedAt = performance.now();
+        if (clickedAt - easterEgg.lastClickAt > 650) easterEgg.clicks = 0;
+        easterEgg.clicks += 1;
+        easterEgg.lastClickAt = clickedAt;
+        if (easterEgg.clicks === 9) {
+          easterEgg.unlocked = true;
+          easterEgg.revealedAt = clickedAt;
+          if (sceneLabel) sceneLabel.textContent = 'OBJECT 134340 DETECTED / PLUTO';
+        }
+      } else {
+        easterEgg.clicks = 0;
+        easterEgg.lastClickAt = 0;
       }
     }
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
@@ -411,8 +458,14 @@ if (canvas && system && context) {
   window.addEventListener('pointercancel', finishDrag);
 
   canvas.addEventListener('dblclick', (event) => {
+    const resetAt = performance.now();
+    orbitClock.returnFrom = getOrbitDate(resetAt);
+    orbitClock.returnStartedAt = resetAt;
+    orbitClock.returning = orbitClock.active;
+    orbitClock.active = false;
     camera.manual = false;
     camera.dragging = false;
+    system.classList.remove('is-dragging');
     camera.resetting = true;
     camera.resetStartedAt = performance.now();
     camera.resetPitch = camera.renderedPitch;
