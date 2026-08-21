@@ -1,4 +1,4 @@
-import { FOCUSED_ART, GALACTIC_OBJECTS, PLANETARY_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
+import { FOCUSED_ART, GALACTIC_OBJECTS, MAJOR_MOON_SYSTEMS, PLANETARY_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
 import { drawReadout } from './orrery/canvas-ui';
 import { drawFocusedIss } from './orrery/iss-renderer';
 import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveOrbit } from './orrery/math';
@@ -575,7 +575,9 @@ if (canvas && system && context) {
       const opacity = localDetailOpacity * (1 - planetSceneFocus);
       if (opacity <= .01) return;
       const isJupiter = body.planet.name === 'Jupiter';
-      context.font = `${Math.max(isJupiter ? 7 : 5.5, (isJupiter ? 8.5 : 7) * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
+      const isSaturn = body.planet.name === 'Saturn';
+      const hasMajorMoons = isJupiter || isSaturn;
+      context.font = `${Math.max(hasMajorMoons ? 7 : 5.5, (hasMajorMoons ? 8.5 : 7) * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
       context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
       system.radii.forEach((radius, moonIndex) => {
         context.fillStyle = isJupiter ? '#665c54' : body.planet.name === 'Earth' ? '#bdae93' : '#928374';
@@ -585,7 +587,7 @@ if (canvas && system && context) {
           offset = rotateX(offset, system.tilt);
           const projected = cameraTransform({ x: body.world.x + offset.x, y: body.world.y + offset.y, z: body.world.z + offset.z });
           if ((projected.z >= body.z) !== foreground) continue;
-          context.globalAlpha = opacity * (isJupiter ? .32 : .22);
+          context.globalAlpha = opacity * (hasMajorMoons ? .32 : .22);
           context.fillText('.', projected.x, projected.y);
         }
         const moonAngle = seconds * system.speeds[moonIndex] + moonIndex * 1.73 + body.planet.displayRadius;
@@ -593,10 +595,13 @@ if (canvas && system && context) {
         moonOffset = rotateX(moonOffset, system.tilt);
         const moon = cameraTransform({ x: body.world.x + moonOffset.x, y: body.world.y + moonOffset.y, z: body.world.z + moonOffset.z });
         if ((moon.z >= body.z) !== foreground) return;
-        context.globalAlpha = opacity * (isJupiter ? 1 : .86);
+        context.globalAlpha = opacity * (hasMajorMoons ? 1 : .86);
         if (isJupiter) {
           context.fillStyle = ['#fe8019', '#d5c4a1', '#bdae93', '#928374'][moonIndex];
           context.fillText(['o', '·', 'O', 'o'][moonIndex], moon.x, moon.y);
+        } else if (isSaturn) {
+          context.fillStyle = ['#ebdbb2', '#bdae93', '#d79921', '#928374'][moonIndex];
+          context.fillText(['·', 'o', 'O', 'o'][moonIndex], moon.x, moon.y);
         } else {
           context.fillText(moonIndex > 1 ? 'o' : '.', moon.x, moon.y);
         }
@@ -941,59 +946,55 @@ if (canvas && system && context) {
         context.globalAlpha = 1;
       };
 
-      const jupiterMoonReveal = target.name === 'Jupiter' ? smoothstep((planetSceneFocus - .26) / .48) : 0;
-      const focusedJupiterRadius = focusedSphereRows * focusedSphereFontSize * .82 / 2;
-      const galileanMoons = [
-        { name: 'Io', radius: 1.28, speed: .092, phase: .4, glyph: 'o', color: '#fe8019', distance: '421,700 km', period: '1.77 days' },
-        { name: 'Europa', radius: 1.55, speed: .061, phase: 2.1, glyph: '·', color: '#d5c4a1', distance: '671,100 km', period: '3.55 days' },
-        { name: 'Ganymede', radius: 1.88, speed: .037, phase: 3.7, glyph: 'O', color: '#bdae93', distance: '1,070,400 km', period: '7.15 days' },
-        { name: 'Callisto', radius: 2.22, speed: .016, phase: 5.2, glyph: 'o', color: '#928374', distance: '1,882,700 km', period: '16.69 days' },
-      ].map((moon) => {
+      const majorMoonSystem = MAJOR_MOON_SYSTEMS[target.name];
+      const majorMoonReveal = majorMoonSystem ? smoothstep((planetSceneFocus - .26) / .48) : 0;
+      const focusedParentRadius = focusedSphereRows * focusedSphereFontSize * .82 / 2;
+      const majorMoons = (majorMoonSystem?.moons ?? []).map((moon) => {
         const angle = moon.phase + (reducedMotion ? 0 : seconds * moon.speed);
-        const offset = focusedOrbitOffset(angle, focusedJupiterRadius * moon.radius, 5 * DEG, -8 * DEG);
+        const offset = focusedOrbitOffset(angle, focusedParentRadius * moon.radius, majorMoonSystem.inclination, majorMoonSystem.node);
         return { ...moon, offset, x: focusCenterX + offset.x, y: focusCenterY + offset.y };
       });
-      const hoveredGalileanMoon = jupiterMoonReveal > .35 && pointer.active && !camera.dragging && !objectFocus.child
-        ? galileanMoons.reduce<typeof galileanMoons[number] | null>((closest, moon) => {
+      const hoveredMajorMoon = majorMoonReveal > .35 && pointer.active && !camera.dragging && !objectFocus.child
+        ? majorMoons.reduce<typeof majorMoons[number] | null>((closest, moon) => {
             const distance = Math.hypot(moon.x - localPointerX, moon.y - localPointerY);
             const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
             return distance < 26 && distance < closestDistance ? moon : closest;
           }, null)
         : null;
-      if (hoveredGalileanMoon) {
+      if (hoveredMajorMoon && majorMoonSystem) {
         activeFocusCandidate = {
-          id: `moon:Jupiter:${hoveredGalileanMoon.name}`,
-          name: hoveredGalileanMoon.name,
+          id: `moon:${target.name}:${hoveredMajorMoon.name}`,
+          name: hoveredMajorMoon.name,
           kind: 'moon',
-          color: hoveredGalileanMoon.color,
-          subtitle: 'Galilean moon',
-          detail: `mean distance ${hoveredGalileanMoon.distance} / period ${hoveredGalileanMoon.period}`,
-          originX: hoveredGalileanMoon.x,
-          originY: hoveredGalileanMoon.y,
+          color: hoveredMajorMoon.color,
+          subtitle: majorMoonSystem.subtitle,
+          detail: `mean distance ${hoveredMajorMoon.distance} / period ${hoveredMajorMoon.period}`,
+          originX: hoveredMajorMoon.x,
+          originY: hoveredMajorMoon.y,
         };
       }
 
-      const drawFocusedJupiterMoons = (foreground: boolean) => {
-        if (jupiterMoonReveal <= .001) return;
-        for (const moon of galileanMoons) {
+      const drawFocusedMajorMoons = (foreground: boolean) => {
+        if (!majorMoonSystem || majorMoonReveal <= .001) return;
+        for (const moon of majorMoons) {
           context.font = `${Math.max(5, (width < 600 ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
           for (let sample = 0; sample < 84; sample += 3) {
-            const offset = focusedOrbitOffset(sample / 84 * Math.PI * 2, focusedJupiterRadius * moon.radius, 5 * DEG, -8 * DEG);
+            const offset = focusedOrbitOffset(sample / 84 * Math.PI * 2, focusedParentRadius * moon.radius, majorMoonSystem.inclination, majorMoonSystem.node);
             if ((offset.z >= 0) !== foreground) continue;
-            context.globalAlpha = jupiterMoonReveal * .3;
+            context.globalAlpha = majorMoonReveal * .3;
             context.fillStyle = '#665c54';
             context.fillText('.', focusCenterX + offset.x, focusCenterY + offset.y);
           }
           if ((moon.offset.z >= 0) !== foreground) continue;
-          context.globalAlpha = jupiterMoonReveal;
+          context.globalAlpha = majorMoonReveal;
           context.fillStyle = moon.color;
           context.strokeStyle = '#1d2021';
           context.lineWidth = 2;
-          context.font = `bold ${Math.max(7, (moon.name === 'Ganymede' ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
+          context.font = `bold ${Math.max(7, (moon.name === 'Ganymede' || moon.name === 'Titan' ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
           context.strokeText(moon.glyph, moon.x, moon.y);
           context.fillText(moon.glyph, moon.x, moon.y);
-          if (moon === hoveredGalileanMoon) {
-            const bracketOffset = Math.max(11, (moon.name === 'Ganymede' ? 17 : 13) * focusScale);
+          if (moon === hoveredMajorMoon) {
+            const bracketOffset = Math.max(11, (moon.name === 'Ganymede' || moon.name === 'Titan' ? 17 : 13) * focusScale);
             context.fillStyle = '#ebdbb2';
             context.font = `bold ${Math.max(8, 10 * focusScale)}px "DM Mono", monospace`;
             context.fillText('[', moon.x - bracketOffset, moon.y);
@@ -1006,10 +1007,10 @@ if (canvas && system && context) {
       if (target.kind === 'star' || target.kind === 'planet' || target.kind === 'moon') {
         drawFocusField(width < 600 ? 145 : 225, target.kind === 'star' ? 12 : target.name === 'Earth' ? 28 : target.name === 'Jupiter' || target.name === 'Saturn' ? 18 : 24, ['.', ':']);
         if (target.name === 'Earth') drawFocusedEarthSatellites(false);
-        if (target.name === 'Jupiter') drawFocusedJupiterMoons(false);
+        drawFocusedMajorMoons(false);
         drawFocusedSphere();
         if (target.name === 'Earth') drawFocusedEarthSatellites(true);
-        if (target.name === 'Jupiter') drawFocusedJupiterMoons(true);
+        drawFocusedMajorMoons(true);
       } else {
         drawFocusField(width < 600 ? 145 : 235, target.kind === 'galactic' ? 116 : 62, target.kind === 'galactic' ? ['.', ':', '*', '+'] : ['.', '-']);
         const lines = FOCUSED_ART[target.name] ?? [target.name];
@@ -1023,23 +1024,23 @@ if (canvas && system && context) {
         });
       }
 
-      if (hoveredGalileanMoon) {
+      if (hoveredMajorMoon && majorMoonSystem) {
         drawReadout(context, {
           lines: [
-            `[ ${hoveredGalileanMoon.name.toUpperCase()} ]`,
-            'Galilean moon',
-            `mean r  ${hoveredGalileanMoon.distance}`,
-            `period  ${hoveredGalileanMoon.period}`,
+            `[ ${hoveredMajorMoon.name.toUpperCase()} ]`,
+            majorMoonSystem.subtitle,
+            `mean r  ${hoveredMajorMoon.distance}`,
+            `period  ${hoveredMajorMoon.period}`,
             '[ click to zoom ]',
           ],
-          anchorX: hoveredGalileanMoon.x,
-          anchorY: hoveredGalileanMoon.y,
+          anchorX: hoveredMajorMoon.x,
+          anchorY: hoveredMajorMoon.y,
           viewportWidth: width,
           viewportHeight: height,
-          titleColor: hoveredGalileanMoon.color,
+          titleColor: hoveredMajorMoon.color,
           width: 224,
           openAwayFromCenter: true,
-          opacity: jupiterMoonReveal,
+          opacity: majorMoonReveal,
         });
       }
 

@@ -25,9 +25,50 @@ export const PLANETARY_MOON_SYSTEMS: Record<string, { radii: number[]; speeds: n
   Earth: { radii: [1.15], speeds: [.13], tilt: 5 * DEG },
   Mars: { radii: [.72, 1], speeds: [.24, .17], tilt: 2 * DEG },
   Jupiter: { radii: [1.35, 1.72, 2.1, 2.58], speeds: [.34, .23, .17, .11], tilt: 3 * DEG },
-  Saturn: { radii: [1.72, 2.42], speeds: [.2, .1], tilt: 7 * DEG },
+  Saturn: { radii: [1.58, 1.92, 2.35, 2.88], speeds: [.3, .21, .12, .055], tilt: 7 * DEG },
   Uranus: { radii: [1.45, 2], speeds: [.18, .12], tilt: 28 * DEG },
   Neptune: { radii: [1.62], speeds: [-.13], tilt: 18 * DEG },
+};
+
+type MajorMoon = {
+  name: string;
+  radius: number;
+  speed: number;
+  phase: number;
+  glyph: string;
+  color: string;
+  distance: string;
+  period: string;
+};
+
+export const MAJOR_MOON_SYSTEMS: Record<string, {
+  subtitle: string;
+  inclination: number;
+  node: number;
+  moons: MajorMoon[];
+}> = {
+  Jupiter: {
+    subtitle: 'Galilean moon',
+    inclination: 5 * DEG,
+    node: -8 * DEG,
+    moons: [
+      { name: 'Io', radius: 1.28, speed: .092, phase: .4, glyph: 'o', color: '#fe8019', distance: '421,700 km', period: '1.77 days' },
+      { name: 'Europa', radius: 1.55, speed: .061, phase: 2.1, glyph: '·', color: '#d5c4a1', distance: '671,100 km', period: '3.55 days' },
+      { name: 'Ganymede', radius: 1.88, speed: .037, phase: 3.7, glyph: 'O', color: '#bdae93', distance: '1,070,400 km', period: '7.15 days' },
+      { name: 'Callisto', radius: 2.22, speed: .016, phase: 5.2, glyph: 'o', color: '#928374', distance: '1,882,700 km', period: '16.69 days' },
+    ],
+  },
+  Saturn: {
+    subtitle: 'moon of Saturn',
+    inclination: 7 * DEG,
+    node: -12 * DEG,
+    moons: [
+      { name: 'Enceladus', radius: 1.9, speed: .104, phase: .8, glyph: '·', color: '#ebdbb2', distance: '238,000 km', period: '1.37 days' },
+      { name: 'Rhea', radius: 2.35, speed: .064, phase: 2.35, glyph: 'o', color: '#bdae93', distance: '527,100 km', period: '4.52 days' },
+      { name: 'Titan', radius: 2.9, speed: .032, phase: 4.1, glyph: 'O', color: '#d79921', distance: '1,221,900 km', period: '15.95 days' },
+      { name: 'Iapetus', radius: 3.6, speed: .014, phase: 5.55, glyph: 'o', color: '#928374', distance: '3,560,800 km', period: '79.32 days' },
+    ],
+  },
 };
 
 export const FOCUSED_ART: Record<string, string[]> = {

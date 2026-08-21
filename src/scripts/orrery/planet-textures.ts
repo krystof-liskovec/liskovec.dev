@@ -15,6 +15,10 @@ const ROTATION_SPEEDS: Record<string, number> = {
   Europa: .036,
   Ganymede: .023,
   Callisto: .012,
+  Enceladus: .052,
+  Rhea: .026,
+  Titan: .016,
+  Iapetus: .009,
   Sol: .024,
 };
 
@@ -96,6 +100,25 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
       || insideFeature(longitude, latitude, .45, -.4, .12)
       || insideFeature(longitude, latitude, 1.8, .2, .1);
     return crater ? 'O' : broadWave > .3 ? ':' : '.';
+  }
+  if (name === 'Enceladus') {
+    const fracture = Math.sin(longitude * 5 + latitude * 9);
+    return Math.abs(fracture) < .12 ? '/' : Math.abs(latitude) > 1.08 ? '*' : broadWave > .4 ? ':' : '.';
+  }
+  if (name === 'Rhea') {
+    const crater = insideFeature(longitude, latitude, -.65, .28, .16)
+      || insideFeature(longitude, latitude, 1.5, -.35, .11);
+    return crater ? 'o' : broadWave > .45 ? ':' : '.';
+  }
+  if (name === 'Titan') {
+    const hazeBand = Math.sin(latitude * 7 + longitude * .65);
+    if (insideFeature(longitude, latitude, .8, -.72, .14)) return 'o';
+    return hazeBand > .35 ? '~' : hazeBand < -.45 ? ':' : '=';
+  }
+  if (name === 'Iapetus') {
+    const darkHemisphere = Math.cos(wrappedLongitude) > .08;
+    if (Math.abs(latitude) < .08) return '-';
+    return darkHemisphere ? (broadWave > .25 ? '#' : ':') : (broadWave > .4 ? ':' : '.');
   }
   if (name === 'Uranus') {
     if (Math.abs(latitude) > 1.12) return ':';
