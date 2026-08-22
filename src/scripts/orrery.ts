@@ -6,6 +6,7 @@ import { FocusController } from './orrery/focus-controller';
 import { updateFocusRotation, updateGalaxyCamera, updateSolarCamera } from './orrery/frame-state';
 import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-renderer';
 import { bindOrreryInteractions } from './orrery/interactions';
+import { OrreryIntroController } from './orrery/intro-controller';
 import { DEG, J2000, smoothstep, solveKeplerOrbit } from './orrery/math';
 import { createRuntimeState, getOrbitDate as resolveOrbitDate } from './orrery/runtime-state';
 import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
@@ -37,6 +38,12 @@ if (canvasElement && systemElement && canvasContext) {
     let activeFocusCandidate: FocusTarget | null = null;
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = reducedMotionQuery.matches;
+    const introController = new OrreryIntroController(reducedMotion);
+    const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
+    if (introController.running) {
+        system.classList.add('is-intro-running');
+        solarHeading?.classList.add('is-intro-running');
+    }
     let lastClockSecond = -1;
     let lastFrameAt = 0;
     let zoomLocationState = 'solar';
@@ -147,6 +154,12 @@ if (canvasElement && systemElement && canvasContext) {
         context.clearRect(0, 0, width, height);
         context.textAlign = 'center';
         context.textBaseline = 'middle';
+
+        const intro = introController.update(frameTime, reducedMotion);
+        if (!introController.running) {
+            system.classList.remove('is-intro-running');
+            solarHeading?.classList.remove('is-intro-running');
+        }
 
         pointer.x += (pointer.targetX - pointer.x) * 0.055;
         pointer.y += (pointer.targetY - pointer.y) * 0.055;
@@ -279,7 +292,7 @@ if (canvasElement && systemElement && canvasContext) {
             pointerY: pointer.y,
             seconds,
             reducedMotion,
-            opacity: localSkyOpacity,
+            opacity: localSkyOpacity * intro.stars,
         });
         drawGalaxyBackdrop(context, {
             width,
@@ -299,12 +312,14 @@ if (canvasElement && systemElement && canvasContext) {
             plutoReveal,
             localDetailOpacity,
             planetSceneFocus,
+            introProgress: intro.orbits,
         });
         solarSystemModel.projectBodies({
             cameraTransform,
             now,
             plutoUnlocked: easterEgg.unlocked,
             plutoReveal,
+            introProgress: intro.bodies,
         });
         const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
 
@@ -323,7 +338,11 @@ if (canvasElement && systemElement && canvasContext) {
                   })
                 : null;
         const cometHoverCandidate =
-            pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > 0.45
+            pointer.active &&
+            !camera.dragging &&
+            !objectFocus.target &&
+            localDetailOpacity > 0.45 &&
+            intro.details > 0.4
                 ? findHoveredComet(projectedHalley, localPointerX, localPointerY)
                 : null;
         const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - 0.42) / 0.35);
@@ -355,6 +374,7 @@ if (canvasElement && systemElement && canvasContext) {
             !camera.dragging &&
             !objectFocus.target &&
             localDetailOpacity > 0.45 &&
+            intro.sun > 0.55 &&
             Math.hypot(centerX - localPointerX, centerY - localPointerY) <
                 48 * Math.max(0.55, Math.sqrt(renderedSunScale));
 
@@ -391,6 +411,8 @@ if (canvasElement && systemElement && canvasContext) {
             viewportGlyphScale,
             localDetailOpacity,
             planetSceneFocus,
+            introSunOpacity: intro.sun,
+            introDetailOpacity: intro.details,
         });
         galaxyObjectRenderer.draw(context, {
             width,
@@ -472,6 +494,11 @@ if (canvasElement && systemElement && canvasContext) {
         beginChildFocus: (target) => focusController.beginChild(target),
         leaveObjectFocus: () => focusController.leave(),
         setZoomLocation,
+        onInteract: () => {
+            introController.skip();
+            system.classList.remove('is-intro-running');
+            solarHeading?.classList.remove('is-intro-running');
+        },
     });
 
     scheduleRender();

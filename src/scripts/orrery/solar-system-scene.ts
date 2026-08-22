@@ -116,6 +116,8 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            introSunOpacity: number;
+            introDetailOpacity: number;
         },
     ) {
         this.drawOrbitMarks(context, options.farMarks);
@@ -145,11 +147,12 @@ export class SolarSystemSceneRenderer {
             localDetailOpacity: number;
             planetSceneFocus: number;
             cameraTransform: CameraTransform;
+            introDetailOpacity: number;
         },
     ) {
         const { seconds, reducedMotion, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform } =
             options;
-        const opacity = localDetailOpacity * (1 - planetSceneFocus);
+        const opacity = localDetailOpacity * (1 - planetSceneFocus) * options.introDetailOpacity;
         const scaleRoot = Math.sqrt(solarSystemScale);
 
         this.drawParticleField(
@@ -222,6 +225,7 @@ export class SolarSystemSceneRenderer {
             solarSystemScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            introDetailOpacity: number;
         },
     ) {
         let jupiter: ProjectedBody | null = null;
@@ -234,7 +238,7 @@ export class SolarSystemSceneRenderer {
         if (!jupiter) return;
 
         const baseAngle = Math.atan2(jupiter.world.y, jupiter.world.x);
-        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus);
+        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
         context.fillStyle = '#d79921';
         context.font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
         for (const trojan of JUPITER_TROJANS) {
@@ -292,12 +296,13 @@ export class SolarSystemSceneRenderer {
             localDetailOpacity: number;
             planetSceneFocus: number;
             showHoverVisuals: boolean;
+            introDetailOpacity: number;
         },
     ) {
         const head = this.halley;
         const tail = this.cometTailProjection;
         const farTail = this.cometFarTailProjection;
-        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus);
+        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
         const fontSize = Math.max(7.5, 9.5 * Math.sqrt(options.solarSystemScale));
         context.font = `bold ${fontSize}px "DM Mono", monospace`;
         context.fillStyle = '#83a598';
@@ -343,6 +348,7 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            introSunOpacity: number;
         },
     ) {
         const {
@@ -363,13 +369,15 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale,
             localDetailOpacity,
             planetSceneFocus,
+            introSunOpacity,
         } = options;
 
         drawSun(context, {
             x: centerX,
             y: centerY,
             scale: renderedSunScale * focusedSunBridgeScale ** 2,
-            opacity: localDetailOpacity * (focusedSun ? 1 - focusedSunDetailReveal : 1 - planetSceneFocus),
+            opacity:
+                localDetailOpacity * introSunOpacity * (focusedSun ? 1 - focusedSunDetailReveal : 1 - planetSceneFocus),
             seconds,
             reducedMotion,
         });
@@ -440,7 +448,7 @@ export class SolarSystemSceneRenderer {
     ) {
         const system = PLANETARY_MOON_SYSTEMS[body.planet.name];
         if (!system || body.reveal < 0.35) return;
-        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus);
+        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * body.reveal;
         if (opacity <= 0.01) return;
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[body.planet.name];
         const systemGlyphSize = Math.max(8, 9.5 * Math.sqrt(options.solarSystemScale));

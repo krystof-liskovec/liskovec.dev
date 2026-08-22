@@ -28,6 +28,7 @@ type InteractionOptions = {
     beginChildFocus: (target: FocusTarget) => void;
     leaveObjectFocus: () => void;
     setZoomLocation: (state: string, copy: string) => void;
+    onInteract: () => void;
 };
 
 export const bindOrreryInteractions = ({
@@ -49,6 +50,7 @@ export const bindOrreryInteractions = ({
     beginChildFocus,
     leaveObjectFocus,
     setZoomLocation,
+    onInteract,
 }: InteractionOptions) => {
     let pressedFocusCandidate: FocusTarget | null = null;
     const touchGesture = { pending: false, pointerId: -1, startX: 0, startY: 0 };
@@ -135,6 +137,7 @@ export const bindOrreryInteractions = ({
 
     canvas.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
+        onInteract();
         pointer.clientX = event.clientX;
         pointer.clientY = event.clientY;
         pointer.active = true;
@@ -262,6 +265,7 @@ export const bindOrreryInteractions = ({
 
     focusReturn?.addEventListener('click', leaveObjectFocus);
     zoomInput?.addEventListener('input', () => {
+        onInteract();
         cosmicZoom.target = Number(zoomInput.value) / 100;
         const location =
             cosmicZoom.target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];

@@ -1,5 +1,5 @@
 import { PLANETS } from './catalog';
-import { heliocentricPosition, orbitalPoint, solveOrbit } from './math';
+import { heliocentricPosition, orbitalPoint, smoothstep, solveOrbit } from './math';
 import { ORBIT_POINTS, ORBIT_SAMPLES } from './scene-data';
 import type { Planet, ProjectedBody, Vec3 } from './types';
 
@@ -44,14 +44,17 @@ export class SolarSystemModel {
         plutoReveal: number;
         localDetailOpacity: number;
         planetSceneFocus: number;
+        introProgress: number;
     }) {
-        const { cameraTransform, plutoUnlocked, plutoReveal, localDetailOpacity, planetSceneFocus } = options;
+        const { cameraTransform, plutoUnlocked, plutoReveal, localDetailOpacity, planetSceneFocus, introProgress } =
+            options;
         this.farMarks.length = 0;
         this.nearMarks.length = 0;
         let markCount = 0;
 
         PLANETS.forEach((planet, planetIndex) => {
             if (planet.easterEgg && !plutoUnlocked) return;
+            const introReveal = smoothstep((introProgress - planetIndex * 0.055) / 0.58);
             for (let sample = 0; sample < ORBIT_SAMPLES; sample++) {
                 if ((sample + planetIndex) % 3 === 0) continue;
                 const projected = cameraTransform(ORBIT_POINTS[planetIndex][sample], this.orbitProjection);
@@ -69,7 +72,7 @@ export class SolarSystemModel {
                 mark.scale = projected.scale;
                 mark.glyph = slope > 2.1 ? '|' : slope > 0.55 ? (dx * dy > 0 ? '\\' : '/') : '-';
                 mark.alpha = 0.7 * localDetailOpacity * (1 - planetSceneFocus);
-                mark.reveal = planet.easterEgg ? plutoReveal : 1;
+                mark.reveal = introReveal * (planet.easterEgg ? plutoReveal : 1);
                 (projected.z < 0 ? this.farMarks : this.nearMarks).push(mark);
             }
         });
@@ -80,8 +83,9 @@ export class SolarSystemModel {
         now: number;
         plutoUnlocked: boolean;
         plutoReveal: number;
+        introProgress: number;
     }) {
-        const { cameraTransform, now, plutoUnlocked, plutoReveal } = options;
+        const { cameraTransform, now, plutoUnlocked, plutoReveal, introProgress } = options;
         this.bodies.length = 0;
         for (let index = 0; index < PLANETS.length; index++) {
             const planet = PLANETS[index];
@@ -89,7 +93,8 @@ export class SolarSystemModel {
             const body = this.bodyPool[index];
             const orbit = solveOrbit(planet, now, this.orbitSolutions[index]);
             orbitalPoint(planet, orbit.angle, orbit.distance, body.world);
-            body.reveal = planet.easterEgg ? plutoReveal : 1;
+            const introReveal = smoothstep((introProgress - index * 0.055) / 0.56);
+            body.reveal = introReveal * (planet.easterEgg ? plutoReveal : 1);
             heliocentricPosition(planet, orbit.angle, orbit.distance, body.position);
             cameraTransform(body.world, body);
             this.bodies.push(body);

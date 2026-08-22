@@ -8,6 +8,7 @@
 - `math.ts` — coordinate, orbit, and projection helpers
 - `runtime-state.ts` — mutable camera/focus/clock state and its defaults
 - `frame-state.ts` — passive camera motion and reset interpolation
+- `intro-controller.ts` — interruptible, session-scoped opening sequence
 - `focus-controller.ts` — parent/child focus transition lifecycle
 - `interactions.ts` — pointer, touch, drag, reset, and zoom controls
 - `solar-system-model.ts` — pooled orbit/body projection for each frame
@@ -19,7 +20,7 @@
 - `solar-body-renderer.ts` — compact planet sprites used by the orrery
 - `focus-scene.ts` — detailed object views and satellite systems
 - `galactic-renderer.ts` — detailed Milky Way object artwork
-- `sun-renderer.ts`, `moon-renderer.ts`, `iss-renderer.ts` — specialized artwork
+- `sun-renderer.ts`, `moon-renderer.ts`, `iss-renderer.ts`, `comet-renderer.ts` — specialized artwork
 - `planet-textures.ts`, `earth-map.ts` — sphere surface glyphs and textures
 - `canvas-ui.ts` — canvas readouts and labels
 - `types.ts` — shared scene types

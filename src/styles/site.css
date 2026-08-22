@@ -578,6 +578,19 @@ footer a:hover {
     margin: 14px 0 0;
     font-size: clamp(42px, 5.4vw, 76px);
 }
+.solar-heading.is-intro-running h1 {
+    animation: solar-heading-intro 0.8s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes solar-heading-intro {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 .zoom-location-frame {
     display: inline-block;
 }
@@ -641,6 +654,10 @@ footer a:hover {
     opacity: 0.72;
     transition: opacity 0.2s ease;
 }
+.is-hydrating .solar-static {
+    visibility: hidden;
+    opacity: 0;
+}
 .solar-static pre {
     margin: 0;
     font: clamp(8px, 1.15vw, 13px) / 1.55 var(--mono);
@@ -659,6 +676,30 @@ footer a:hover {
 }
 .solar-system.is-dragging canvas {
     cursor: grabbing;
+}
+.solar-system.is-intro-running .cosmic-zoom-control {
+    animation: solar-interface-opacity-intro 0.5s 1.25s ease-out both;
+}
+.solar-system.is-intro-running .solar-caption {
+    animation: solar-interface-intro 0.5s 1.25s ease-out both;
+}
+@keyframes solar-interface-opacity-intro {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes solar-interface-intro {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 .object-focus-return {
     position: absolute;
