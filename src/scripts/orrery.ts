@@ -32,6 +32,9 @@ import { COMPACT_PLANET_GRIDS, drawSolarBody } from './orrery/solar-body-rendere
 import { drawSun } from './orrery/sun-renderer';
 import type { FocusTarget, ProjectedBody, Vec3 } from './orrery/types';
 
+const MAX_RENDER_FPS = 120;
+const MIN_RENDER_INTERVAL = 1000 / MAX_RENDER_FPS;
+
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
@@ -219,6 +222,10 @@ if (canvasElement && systemElement && canvasContext) {
     function render(frameTime: number) {
         animationFrame = 0;
         if (!systemVisible || !pageVisible) return;
+        if (lastFrameAt && frameTime - lastFrameAt < MIN_RENDER_INTERVAL) {
+            scheduleRender();
+            return;
+        }
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
