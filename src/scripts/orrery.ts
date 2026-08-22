@@ -17,7 +17,7 @@ const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-ret
 const context = canvas?.getContext('2d');
 
 if (canvas && system && context) {
-  const pointer = { x: 0, y: 0, targetX: 0, targetY: 0, clientX: -1000, clientY: -1000, active: false };
+  const pointer = { x: 0, y: 0, targetX: 0, targetY: 0, clientX: -1000, clientY: -1000, active: false, showsHover: true };
   const camera = {
     manual: false,
     dragging: false,
@@ -80,6 +80,12 @@ if (canvas && system && context) {
   let lastFrameAt = 0;
   let zoomLocationState = 'solar';
   let zoomLocationTimer = 0;
+  const touchGesture = {
+    pending: false,
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+  };
 
   const setZoomLocation = (state: string, copy: string) => {
     if (!zoomLocation || state === zoomLocationState) return;
@@ -112,7 +118,7 @@ if (canvas && system && context) {
     if (focusReturn) {
       focusReturn.hidden = false;
       focusReturn.classList.remove('is-transitioning');
-      focusReturn.textContent = '[ ← return to previous view ]';
+      focusReturn.textContent = '[ ← return ]';
     }
     if (zoomInput) zoomInput.disabled = true;
     setZoomLocation(`focus:${target.id}`, target.name === 'Earth' ? 'on planet Earth.' : target.kind === 'star' ? 'at Sol.' : `near ${target.name}.`);
@@ -146,10 +152,9 @@ if (canvas && system && context) {
     objectFocus.childLongitude = 0;
     objectFocus.childLatitude = 0;
     activeFocusCandidate = null;
-    const parentName = objectFocus.target?.name ?? 'previous view';
     if (focusReturn) {
       focusReturn.classList.remove('is-transitioning');
-      focusReturn.textContent = `[ ← return to ${parentName} ]`;
+      focusReturn.textContent = '[ ← return ]';
     }
     setZoomLocation(`focus:${target.id}`, target.kind === 'moon' ? `near ${target.name}.` : 'aboard the ISS.');
   };
@@ -176,6 +181,12 @@ if (canvas && system && context) {
   function render(frameTime: number) {
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
+    // Orbital spacing has to contract on a phone so Neptune remains visible.
+    // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
+    // crowded into the smaller scene.
+    const viewportGlyphScale = Math.min(1, Math.max(.68, width / 700));
+    const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
+    const viewportSunScale = .58 + mobileSunProgress * .42;
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     const pixelWidth = Math.max(1, Math.round(width * dpr));
     const pixelHeight = Math.max(1, Math.round(height * dpr));
@@ -226,7 +237,7 @@ if (canvas && system && context) {
         objectFocus.childExiting = false;
         if (focusReturn) {
           focusReturn.disabled = false;
-          focusReturn.textContent = '[ ← return to previous view ]';
+          focusReturn.textContent = '[ ← return ]';
           focusReturn.classList.remove('is-transitioning');
         }
         const parent = objectFocus.target;
@@ -250,6 +261,7 @@ if (canvas && system && context) {
     const galaxyProgress = smoothstep((outwardZoom - .24) / .76);
     const localDetailOpacity = 1 - smoothstep((outwardZoom - .2) / .26);
     const solarSystemScale = Math.pow(.055, Math.min(1, outwardZoom / .7));
+    const renderedSunScale = solarSystemScale * viewportSunScale ** 2;
     if (camera.manual && !camera.dragging && !camera.resetting && !reducedMotion) {
       camera.roll += .000035 * frameDelta;
     }
@@ -444,12 +456,13 @@ if (canvas && system && context) {
     const canvasBounds = canvas.getBoundingClientRect();
     const localPointerX = pointer.clientX - canvasBounds.left;
     const localPointerY = pointer.clientY - canvasBounds.top;
+    const showHoverVisuals = pointer.showsHover;
     const bodyHoverCandidate = pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > .45
       ? bodies.reduce<typeof bodies[number] | null>((frontmost, body) => {
           if (body.reveal <= .35) return frontmost;
           const perspectiveScale = Math.max(.68, Math.min(1.55, body.scale));
           const depthScale = .75 + perspectiveScale * .25;
-          const glyphScale = Math.max(.3, Math.sqrt(solarSystemScale));
+          const glyphScale = Math.max(.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
           const fontSize = (body.planet.easterEgg ? 16 : Math.max(6.2, 12.5 * body.planet.size * depthScale)) * glyphScale;
           const lines = body.planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [body.planet.glyph] : body.planet.sprite;
           const compactRows = body.planet.name === 'Jupiter' || body.planet.name === 'Uranus' || body.planet.name === 'Neptune';
@@ -481,7 +494,7 @@ if (canvas && system && context) {
     const hoveredBody = hoveredGalacticObject ? null : bodyHoverCandidate;
     const hoveredSun = !hoveredGalacticObject && !hoveredBody
       && pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > .45
-      && Math.hypot(centerX - localPointerX, centerY - localPointerY) < 48 * Math.max(.55, Math.sqrt(solarSystemScale));
+      && Math.hypot(centerX - localPointerX, centerY - localPointerY) < 48 * Math.max(.55, Math.sqrt(renderedSunScale));
 
     activeFocusCandidate = hoveredBody
       ? {
@@ -523,8 +536,8 @@ if (canvas && system && context) {
       const isFocusedPlanet = focusedPlanet === planet;
       const perspectiveScale = Math.max(.68, Math.min(1.55, body.scale));
       const depthScale = .75 + perspectiveScale * .25;
-      const isHovered = body === hoveredBody;
-      const cosmicGlyphScale = Math.max(.3, Math.sqrt(solarSystemScale));
+      const isHovered = body === hoveredBody && showHoverVisuals;
+      const cosmicGlyphScale = Math.max(.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
       const fontSize = (planet.easterEgg ? 16 : Math.max(6.2, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) * cosmicGlyphScale;
       const lines = planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [planet.glyph] : planet.sprite;
       const hasCompactSphereRows = planet.name === 'Jupiter' || planet.name === 'Uranus' || planet.name === 'Neptune';
@@ -568,7 +581,8 @@ if (canvas && system && context) {
       const isJupiter = body.planet.name === 'Jupiter';
       const isSaturn = body.planet.name === 'Saturn';
       const hasMajorMoons = isJupiter || isSaturn;
-      context.font = `${Math.max(hasMajorMoons ? 7 : 5.5, (hasMajorMoons ? 8.5 : 7) * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
+      const systemGlyphSize = Math.max(hasMajorMoons ? 7 : 5.5, (hasMajorMoons ? 8.5 : 7) * Math.sqrt(solarSystemScale));
+      context.font = `${systemGlyphSize * viewportGlyphScale}px "DM Mono", monospace`;
       context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
       system.radii.forEach((radius, moonIndex) => {
         context.fillStyle = isJupiter ? '#665c54' : body.planet.name === 'Earth' ? '#bdae93' : '#928374';
@@ -619,16 +633,16 @@ if (canvas && system && context) {
     drawSun(context, {
       x: centerX,
       y: centerY,
-      scale: solarSystemScale,
+      scale: renderedSunScale,
       opacity: localDetailOpacity * (1 - planetSceneFocus),
       seconds,
       reducedMotion,
     });
-    if (hoveredSun) {
+    if (hoveredSun && showHoverVisuals) {
       context.globalAlpha = localDetailOpacity;
       context.fillStyle = '#ebdbb2';
       context.font = 'bold 12px "DM Mono", monospace';
-      const bracketOffset = 54 * Math.max(.55, Math.sqrt(solarSystemScale));
+      const bracketOffset = 54 * Math.max(.55, Math.sqrt(renderedSunScale));
       context.fillText('[', centerX - bracketOffset, centerY);
       context.fillText(']', centerX + bracketOffset, centerY);
       context.globalAlpha = 1;
@@ -643,7 +657,7 @@ if (canvas && system && context) {
     if (galaxyObjectOpacity > .001) {
       for (const galacticObject of galacticObjects) {
         if (galacticObject.x < -30 || galacticObject.x > width + 30 || galacticObject.y < -30 || galacticObject.y > height + 30) continue;
-        const isHovered = galacticObject === hoveredGalacticObject;
+        const isHovered = galacticObject === hoveredGalacticObject && showHoverVisuals;
         const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.4 + galacticObject.x) * .08;
         context.globalAlpha = galaxyObjectOpacity;
         context.fillStyle = galacticObject.object.color;
@@ -674,7 +688,7 @@ if (canvas && system && context) {
       context.globalAlpha = 1;
     }
 
-    if (hoveredBody) {
+    if (hoveredBody && showHoverVisuals) {
       drawReadout(context, {
         lines: [
           `[ ${hoveredBody.planet.name.toUpperCase()} ]`,
@@ -692,7 +706,7 @@ if (canvas && system && context) {
       });
     }
 
-    if (hoveredSun) {
+    if (hoveredSun && showHoverVisuals) {
       drawReadout(context, {
         lines: ['[ SOL ]', 'G-type main-sequence star', 'mass  1.000 M☉', 'age   ~4.6 billion years', '[ click to zoom ]'],
         anchorX: centerX,
@@ -704,7 +718,7 @@ if (canvas && system && context) {
       });
     }
 
-    if (hoveredGalacticObject) {
+    if (hoveredGalacticObject && showHoverVisuals) {
       drawReadout(context, {
         lines: [
           `[ ${hoveredGalacticObject.object.name.toUpperCase()} ]`,
@@ -913,7 +927,7 @@ if (canvas && system && context) {
             context.strokeText(line, focusedMoonPosition.x, lineY);
             context.fillText(line, focusedMoonPosition.x, lineY);
           });
-          if (hoveredFocusedEarthObject?.id === 'moon') {
+          if (showHoverVisuals && hoveredFocusedEarthObject?.id === 'moon') {
             context.fillStyle = '#ebdbb2';
             context.fillText('[', focusedMoonPosition.x - 22 * focusScale, focusedMoonPosition.y);
             context.fillText(']', focusedMoonPosition.x + 22 * focusScale, focusedMoonPosition.y);
@@ -928,7 +942,7 @@ if (canvas && system && context) {
           context.font = `bold ${issFontSize}px "DM Mono", monospace`;
           context.strokeText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
           context.fillText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
-          if (hoveredFocusedEarthObject?.id === 'iss') {
+          if (showHoverVisuals && hoveredFocusedEarthObject?.id === 'iss') {
             context.fillStyle = '#ebdbb2';
             context.fillText('[', focusedIssPosition.x - 38 * focusScale, focusedIssPosition.y);
             context.fillText(']', focusedIssPosition.x + 38 * focusScale, focusedIssPosition.y);
@@ -984,7 +998,7 @@ if (canvas && system && context) {
           context.font = `bold ${Math.max(7, (moon.name === 'Ganymede' || moon.name === 'Titan' ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
           context.strokeText(moon.glyph, moon.x, moon.y);
           context.fillText(moon.glyph, moon.x, moon.y);
-          if (moon === hoveredMajorMoon) {
+          if (showHoverVisuals && moon === hoveredMajorMoon) {
             const bracketOffset = Math.max(11, (moon.name === 'Ganymede' || moon.name === 'Titan' ? 17 : 13) * focusScale);
             context.fillStyle = '#ebdbb2';
             context.font = `bold ${Math.max(8, 10 * focusScale)}px "DM Mono", monospace`;
@@ -1015,7 +1029,7 @@ if (canvas && system && context) {
         });
       }
 
-      if (hoveredMajorMoon && majorMoonSystem) {
+      if (showHoverVisuals && hoveredMajorMoon && majorMoonSystem) {
         drawReadout(context, {
           lines: [
             `[ ${hoveredMajorMoon.name.toUpperCase()} ]`,
@@ -1035,7 +1049,7 @@ if (canvas && system && context) {
         });
       }
 
-      if (hoveredFocusedEarthObject) {
+      if (showHoverVisuals && hoveredFocusedEarthObject) {
         const isMoon = hoveredFocusedEarthObject.id === 'moon';
         drawReadout(context, {
           lines: isMoon
@@ -1147,10 +1161,51 @@ if (canvas && system && context) {
     requestAnimationFrame(render);
   }
 
+  const startCameraDrag = (event: PointerEvent, startX = event.clientX, startY = event.clientY) => {
+    if (camera.dragMode === 'solar') {
+      camera.manual = true;
+      camera.resetting = false;
+      camera.pitch = camera.renderedPitch;
+      camera.yaw = camera.renderedYaw;
+      camera.roll = camera.renderedRoll;
+      pointer.targetX = pointer.x;
+      pointer.targetY = pointer.y;
+    } else if (camera.dragMode === 'galaxy') {
+      galaxyCamera.resetting = false;
+    } else {
+      objectFocus.resetting = false;
+    }
+    camera.dragging = true;
+    camera.lastX = startX;
+    camera.lastY = startY;
+    camera.dragDistance = 0;
+    camera.pointerId = event.pointerId;
+    system.classList.add('is-dragging');
+    canvas.setPointerCapture(event.pointerId);
+    if (event.pointerType !== 'touch') event.preventDefault();
+  };
+
   window.addEventListener('pointermove', (event) => {
     pointer.clientX = event.clientX;
     pointer.clientY = event.clientY;
     pointer.active = true;
+    pointer.showsHover = event.pointerType !== 'touch';
+    if (touchGesture.pending && event.pointerId === touchGesture.pointerId) {
+      const travelX = event.clientX - touchGesture.startX;
+      const travelY = event.clientY - touchGesture.startY;
+      if (Math.hypot(travelX, travelY) < 8) return;
+
+      // A mostly vertical gesture belongs to the document. Leaving it entirely
+      // alone here lets the browser start scrolling without rotating the scene.
+      if (Math.abs(travelY) >= Math.abs(travelX) * .85) {
+        touchGesture.pending = false;
+        pressedFocusCandidate = null;
+        return;
+      }
+
+      touchGesture.pending = false;
+      startCameraDrag(event, touchGesture.startX, touchGesture.startY);
+    }
     if (camera.dragging && event.pointerId === camera.pointerId) {
       const deltaX = event.clientX - camera.lastX;
       const deltaY = event.clientY - camera.lastY;
@@ -1184,36 +1239,27 @@ if (canvas && system && context) {
 
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
+    pointer.clientX = event.clientX;
+    pointer.clientY = event.clientY;
+    pointer.active = true;
+    pointer.showsHover = event.pointerType !== 'touch';
     pressedFocusCandidate = activeFocusCandidate;
     camera.dragMode = objectFocus.target ? 'focus' : cosmicZoom.current > .55 ? 'galaxy' : 'solar';
-    if (camera.dragMode === 'solar') {
-      camera.manual = true;
-      camera.resetting = false;
-      camera.pitch = camera.renderedPitch;
-      camera.yaw = camera.renderedYaw;
-      camera.roll = camera.renderedRoll;
-      pointer.targetX = pointer.x;
-      pointer.targetY = pointer.y;
-    } else if (camera.dragMode === 'galaxy') {
-      galaxyCamera.resetting = false;
-    } else {
-      objectFocus.resetting = false;
+    if (event.pointerType === 'touch') {
+      pressedFocusCandidate = null;
+      touchGesture.pending = true;
+      touchGesture.pointerId = event.pointerId;
+      touchGesture.startX = event.clientX;
+      touchGesture.startY = event.clientY;
+      camera.pointerId = event.pointerId;
+      camera.dragDistance = 0;
+      return;
     }
-    camera.dragging = true;
-    camera.lastX = event.clientX;
-    camera.lastY = event.clientY;
-    camera.dragDistance = 0;
-    camera.pointerId = event.pointerId;
-    system.classList.add('is-dragging');
-    canvas.setPointerCapture(event.pointerId);
-    event.preventDefault();
+    startCameraDrag(event);
   });
 
-  const finishDrag = (event: PointerEvent) => {
-    if (!camera.dragging || event.pointerId !== camera.pointerId) return;
-    camera.dragging = false;
-    system.classList.remove('is-dragging');
-    const clickedFocusCandidate = event.type === 'pointerup' && camera.dragDistance < 3
+  const completeInteraction = (event: PointerEvent, dragDistance: number, clickThreshold: number) => {
+    const clickedFocusCandidate = event.type === 'pointerup' && dragDistance < clickThreshold
       ? pressedFocusCandidate
       : null;
     if (clickedFocusCandidate) {
@@ -1223,7 +1269,7 @@ if (canvas && system && context) {
         beginObjectFocus(clickedFocusCandidate);
       }
     }
-    if (event.type === 'pointerup' && camera.dragMode === 'solar' && camera.dragDistance >= 3) {
+    if (event.type === 'pointerup' && camera.dragMode === 'solar' && dragDistance >= clickThreshold) {
       const startedAt = performance.now();
       orbitClock.anchorDate = getOrbitDate(startedAt);
       orbitClock.startedAt = startedAt;
@@ -1231,7 +1277,7 @@ if (canvas && system && context) {
       orbitClock.returning = false;
     }
     if (event.type === 'pointerup' && camera.dragMode === 'solar' && !clickedFocusCandidate && !easterEgg.unlocked) {
-      if (camera.dragDistance < 3) {
+      if (dragDistance < clickThreshold) {
         const clickedAt = performance.now();
         if (clickedAt - easterEgg.lastClickAt > 650) easterEgg.clicks = 0;
         easterEgg.clicks += 1;
@@ -1245,6 +1291,25 @@ if (canvas && system && context) {
         easterEgg.lastClickAt = 0;
       }
     }
+  };
+
+  const finishDrag = (event: PointerEvent) => {
+    if (touchGesture.pending && event.pointerId === touchGesture.pointerId) {
+      const travel = Math.hypot(event.clientX - touchGesture.startX, event.clientY - touchGesture.startY);
+      touchGesture.pending = false;
+      // Touchscreens have no hover phase before pointerdown. By pointerup the
+      // render loop has resolved the object beneath the stationary fingertip.
+      if (event.type === 'pointerup' && travel < 8 && !pressedFocusCandidate) {
+        pressedFocusCandidate = activeFocusCandidate;
+      }
+      completeInteraction(event, travel, 8);
+      pressedFocusCandidate = null;
+      return;
+    }
+    if (!camera.dragging || event.pointerId !== camera.pointerId) return;
+    camera.dragging = false;
+    system.classList.remove('is-dragging');
+    completeInteraction(event, camera.dragDistance, 3);
     pressedFocusCandidate = null;
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   };

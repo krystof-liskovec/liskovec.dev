@@ -14,7 +14,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 		<header class="site-header">
 			<div class="brand-lockup">
 				<a class="wordmark" href="/" aria-label="Kryštof Liskovec home"><span>/home/</span>krystof-liskovec</a>
-				<p class="eyebrow"><span class="signal">●</span> devops · software engineer</p>
+				<p class="eyebrow">devops · software developer</p>
 			</div>
 			<nav aria-label="Primary navigation"><a href="#about">[ about ]</a><a href="/blog">[ blog ]</a><a href="#contact">[ contact ]</a></nav>
 		</header>
@@ -23,7 +23,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 				<div class="solar-heading"><h1>somewhere<br /><span class="zoom-location-frame"><span id="zoom-location">in the solar system.</span></span></h1></div>
 				<div class="solar-system" id="solar-system" aria-label="A live, approximate ASCII orrery of the solar system">
 					<canvas id="solar-canvas" role="img" aria-label="ASCII solar system with live approximate planetary positions"></canvas>
-					<button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return to previous view ]</button>
+					<button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return ]</button>
 					<div class="cosmic-zoom-control">
 						<label class="sr-only" for="cosmic-zoom">Zoom between the Solar System and the Milky Way</label>
 						<div class="cosmic-zoom-scale">
@@ -37,11 +37,11 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 				</div>
 				<div class="hero-footer"><a href="#about">↓ scroll to learn more</a></div>
 			</section>
-			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software engineering</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software engineer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
-			<section class="content-section skills-section" id="skills"><div class="section-label"><span>02 / skills</span><span>tools &amp; technologies</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go · TypeScript · NestJS · Express</p></div><div><span>data</span><p>PostgreSQL · MariaDB · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></section>
+			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software development</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software developer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
+			<section class="content-section skills-section" id="skills"><div class="section-label"><span>02 / toolbox</span><span>tools &amp; tech</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go <3 · NestJS · Symfony</p></div><div><span>data</span><p>PostgreSQL · MySQL · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></section>
 			<div class="closing-grid"><section class="content-section" id="blog"><div class="section-label"><span>03 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section><section class="content-section compact" id="contact"><div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a></div></section></div>
 		</main>
-		<footer><span>© 2026 krystof liskovec</span><span>made with curiosity + caffeine</span></footer>
+		<footer><span>© 2026 Kryštof Lískovec</span><span>made with curiosity + caffeine</span></footer>
 	</div>
 </Layout>
 
