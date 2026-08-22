@@ -9,17 +9,6 @@ type SunRenderOptions = {
   reducedMotion: boolean;
 };
 
-const CORONA_RAYS = [
-  { x: 0, y: -4.45, glyph: '|' },
-  { x: 3.7, y: -3.55, glyph: '/' },
-  { x: 5.25, y: 0, glyph: '--' },
-  { x: 3.7, y: 3.55, glyph: '\\' },
-  { x: 0, y: 4.45, glyph: '|' },
-  { x: -3.7, y: 3.55, glyph: '/' },
-  { x: -5.25, y: 0, glyph: '--' },
-  { x: -3.7, y: -3.55, glyph: '\\' },
-];
-
 const SURFACE_COLUMNS = 17;
 const SURFACE_ROW_WIDTHS = [7, 13, 15, 17, 17, 17, 15, 13, 7];
 
@@ -30,7 +19,6 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
   const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.35) * .018;
   const fontSize = 8.9 * pulse * Math.max(.3, Math.sqrt(scale));
   const lineHeight = fontSize * .78;
-  const shimmer = reducedMotion ? 0 : Math.sin(seconds * 1.8) * .025;
 
   context.save();
   context.translate(x, y);
@@ -40,15 +28,6 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.font = `bold ${fontSize}px "DM Mono", monospace`;
-
-  context.fillStyle = '#d79921';
-  context.shadowColor = '#fabd2f';
-  context.shadowBlur = 2;
-  CORONA_RAYS.forEach((ray, index) => {
-    const flicker = reducedMotion ? 0 : Math.sin(seconds * 1.45 + index * 1.9) * .05;
-    context.globalAlpha = opacity * (.56 + shimmer + flicker);
-    context.fillText(ray.glyph, ray.x * fontSize, ray.y * fontSize);
-  });
 
   context.shadowBlur = 0;
   context.strokeStyle = '#1d2021';

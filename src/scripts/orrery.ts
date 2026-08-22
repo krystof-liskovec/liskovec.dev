@@ -882,19 +882,6 @@ if (canvas && system && context) {
         const latitudeTilt = objectFocus.latitude;
         const sphereWidth = columns * characterWidth;
         const sphereHeight = rows * lineHeight;
-        if (target.kind === 'star') {
-          const rayCount = 16;
-          for (let ray = 0; ray < rayCount; ray++) {
-            const angle = ray / rayCount * Math.PI * 2 + objectFocus.longitude * .16;
-            const pulse = reducedMotion ? 0 : Math.sin(seconds * 1.4 + ray * 1.9) * 8 * focusScale;
-            const radiusX = sphereWidth * .57 + pulse;
-            const radiusY = sphereHeight * .64 + pulse;
-            const glyph = Math.abs(Math.cos(angle)) > .8 ? '--' : Math.abs(Math.sin(angle)) > .8 ? '|' : Math.sin(angle) * Math.cos(angle) > 0 ? '\\' : '/';
-            context.globalAlpha = objectReveal * (.42 + (ray % 3) * .1);
-            context.fillStyle = ray % 3 === 0 ? '#fe8019' : '#d79921';
-            context.fillText(glyph, focusCenterX + Math.cos(angle) * radiusX, focusCenterY + Math.sin(angle) * radiusY);
-          }
-        }
         const drawPlanetRings = (foreground: boolean) => {
           if (target.name !== 'Saturn' && target.name !== 'Uranus') return;
           const isUranus = target.name === 'Uranus';
