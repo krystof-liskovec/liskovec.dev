@@ -12,11 +12,6 @@ type CameraTransform = (world: Vec3, target: ProjectedPoint) => ProjectedPoint;
 type MoonOrbit = { angle: number; distance: number };
 type SolveMoonOrbit = (moon: MajorMoon, target?: MoonOrbit) => MoonOrbit;
 
-const JUPITER_MOON_COLORS = ['#fe8019', '#d5c4a1', '#bdae93', '#928374'];
-const JUPITER_MOON_GLYPHS = ['o', '·', 'O', 'o'];
-const SATURN_MOON_COLORS = ['#ebdbb2', '#bdae93', '#d79921', '#928374'];
-const SATURN_MOON_GLYPHS = ['·', 'o', 'O', 'o'];
-
 export class SolarSystemSceneRenderer {
     private readonly moonOffset = { x: 0, y: 0, z: 0 };
     private readonly moonWorld = { x: 0, y: 0, z: 0 };
@@ -192,15 +187,9 @@ export class SolarSystemSceneRenderer {
         if (!system || body.reveal < 0.35) return;
         const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus);
         if (opacity <= 0.01) return;
-        const isJupiter = body.planet.name === 'Jupiter';
-        const isSaturn = body.planet.name === 'Saturn';
-        const hasMajorMoons = isJupiter || isSaturn;
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[body.planet.name];
-        const systemGlyphSize = Math.max(
-            hasMajorMoons ? 7 : 5.5,
-            (hasMajorMoons ? 8.5 : 7) * Math.sqrt(options.solarSystemScale),
-        );
-        context.font = `${systemGlyphSize * options.viewportGlyphScale}px "DM Mono", monospace`;
+        const systemGlyphSize = Math.max(8, 9.5 * Math.sqrt(options.solarSystemScale));
+        context.font = `bold ${systemGlyphSize * options.viewportGlyphScale}px "DM Mono", monospace`;
 
         for (let moonIndex = 0; moonIndex < system.radii.length; moonIndex++) {
             const majorMoon = majorMoonSystem?.moons[moonIndex];
@@ -223,17 +212,9 @@ export class SolarSystemSceneRenderer {
             const moon = options.cameraTransform(this.moonWorld, this.moonProjection);
             if (moon.z >= body.z !== foreground) continue;
 
-            context.globalAlpha = opacity * (hasMajorMoons ? 1 : 0.86);
-            if (isJupiter) {
-                context.fillStyle = JUPITER_MOON_COLORS[moonIndex];
-                context.fillText(JUPITER_MOON_GLYPHS[moonIndex], moon.x, moon.y);
-            } else if (isSaturn) {
-                context.fillStyle = SATURN_MOON_COLORS[moonIndex];
-                context.fillText(SATURN_MOON_GLYPHS[moonIndex], moon.x, moon.y);
-            } else {
-                context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
-                context.fillText(moonIndex > 1 ? 'o' : '.', moon.x, moon.y);
-            }
+            context.globalAlpha = opacity;
+            context.fillStyle = '#bdae93';
+            context.fillText('.', moon.x, moon.y);
         }
         context.globalAlpha = 1;
     }

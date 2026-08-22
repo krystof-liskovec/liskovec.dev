@@ -65,8 +65,9 @@ export const createFocusCandidate = (options: {
             name: hoveredBody.planet.name,
             kind: 'planet',
             color: hoveredBody.planet.color,
-            subtitle: hoveredBody.planet.easterEgg ? 'dwarf planet' : 'planet',
-            detail: `${hoveredBody.position.distance.toFixed(3)} au from Sol`,
+            subtitle: hoveredBody.planet.kind,
+            detail: hoveredBody.planet.detail,
+            fact: hoveredBody.planet.fact,
             originX: hoveredBody.x,
             originY: hoveredBody.y,
         };
@@ -79,6 +80,7 @@ export const createFocusCandidate = (options: {
             color: '#fabd2f',
             subtitle: 'G-type main-sequence star',
             detail: '1.000 solar mass / system barycentre',
+            fact: 'contains 99.8% of system mass',
             originX: sunX,
             originY: sunY,
         };
@@ -91,6 +93,7 @@ export const createFocusCandidate = (options: {
         color: hoveredGalacticObject.object.color,
         subtitle: hoveredGalacticObject.object.kind,
         detail: `${hoveredGalacticObject.object.distance} / ${hoveredGalacticObject.object.detail}`,
+        fact: hoveredGalacticObject.object.fact,
         originX: hoveredGalacticObject.x,
         originY: hoveredGalacticObject.y,
     };
@@ -113,6 +116,9 @@ export const drawHoverReadouts = (
         drawReadout(context, {
             lines: [
                 `[ ${hoveredBody.planet.name.toUpperCase()} ]`,
+                hoveredBody.planet.kind,
+                hoveredBody.planet.detail,
+                hoveredBody.planet.fact,
                 `lon  ${hoveredBody.position.longitude.toFixed(2).padStart(6)} deg`,
                 `lat  ${`${hoveredBody.position.latitude >= 0 ? '+' : '-'}${Math.abs(hoveredBody.position.latitude).toFixed(2)}`.padStart(6)} deg`,
                 `r    ${hoveredBody.position.distance.toFixed(3).padStart(6)} au`,
@@ -123,7 +129,7 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: hoveredBody.planet.color,
-            width: 174,
+            width: 260,
         });
     }
     if (hoveredSun) {
@@ -133,6 +139,7 @@ export const drawHoverReadouts = (
                 'G-type main-sequence star',
                 'mass  1.000 M☉',
                 'age   ~4.6 billion years',
+                'contains 99.8% of system mass',
                 '[ click to zoom ]',
             ],
             anchorX: sunX,
@@ -140,7 +147,7 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: '#fabd2f',
-            width: 220,
+            width: 260,
         });
     }
     if (hoveredGalacticObject) {
@@ -150,6 +157,7 @@ export const drawHoverReadouts = (
                 hoveredGalacticObject.object.kind,
                 `dist  ${hoveredGalacticObject.object.distance}`,
                 hoveredGalacticObject.object.detail,
+                hoveredGalacticObject.object.fact,
                 '[ click to zoom ]',
             ],
             anchorX: hoveredGalacticObject.x,
@@ -157,6 +165,7 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: hoveredGalacticObject.object.color,
+            width: 260,
         });
     }
 };

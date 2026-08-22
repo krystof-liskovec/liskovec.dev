@@ -19,6 +19,16 @@ const ROTATION_SPEEDS: Record<string, number> = {
     Rhea: 0.026,
     Titan: 0.016,
     Iapetus: 0.009,
+    Phobos: 0.11,
+    Deimos: 0.045,
+    Triton: -0.02,
+    Charon: 0.009,
+    Styx: 0.041,
+    Nix: 0.034,
+    Kerberos: 0.029,
+    Hydra: 0.026,
+    Titania: 0.018,
+    Oberon: 0.013,
     Sol: 0.024,
 };
 
@@ -95,6 +105,7 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
     }
     if (name === 'Mars') {
         if (Math.abs(latitude) > 1.12) return '*';
+        if (insideFeature(longitude, latitude, -2.34, 0.33, 0.13)) return '^';
         if (
             insideFeature(longitude, latitude, -0.7, 0.15, 0.18) ||
             insideFeature(longitude, latitude, 1.3, -0.35, 0.12)
@@ -175,6 +186,38 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
         const band = Math.floor((latitude + Math.PI / 2) * 9);
         return band % 4 === 1 ? '=' : broadWave > 0.75 ? ':' : '~';
     }
-    if (name === 'Pluto') return broadWave > 0.4 ? ':' : broadWave < -0.55 ? ',' : '.';
+    if (name === 'Phobos' || name === 'Deimos') {
+        const crater =
+            insideFeature(longitude, latitude, -0.7, 0.24, name === 'Phobos' ? 0.24 : 0.17) ||
+            insideFeature(longitude, latitude, 1.35, -0.32, 0.12);
+        return crater ? 'O' : broadWave > 0.35 ? ':' : '.';
+    }
+    if (name === 'Triton') {
+        if (latitude < -0.82) return '*';
+        const cantaloupeTerrain = Math.sin(longitude * 5 + latitude * 4);
+        return cantaloupeTerrain > 0.52 ? '=' : cantaloupeTerrain < -0.55 ? ':' : '~';
+    }
+    if (name === 'Charon') {
+        if (latitude > 0.82) return '@';
+        if (insideFeature(longitude, latitude, 0.75, -0.12, 0.15)) return 'O';
+        return broadWave > 0.4 ? ':' : '.';
+    }
+    if (name === 'Titania' || name === 'Oberon') {
+        const canyon = Math.sin(longitude * 4.5 + latitude * 6.5);
+        if (insideFeature(longitude, latitude, name === 'Titania' ? -0.7 : 0.9, -0.2, 0.15)) return 'O';
+        return Math.abs(canyon) < 0.12 ? '/' : broadWave > 0.4 ? ':' : '.';
+    }
+    if (name === 'Styx' || name === 'Nix' || name === 'Kerberos' || name === 'Hydra') {
+        return broadWave > 0.42 ? ':' : broadWave < -0.58 ? ',' : '.';
+    }
+    if (name === 'Pluto') {
+        const heartLobes =
+            insideFeature(longitude, latitude, -0.46, 0.18, 0.22) ||
+            insideFeature(longitude, latitude, -0.08, 0.18, 0.22);
+        const heartPoint =
+            latitude < 0.2 && latitude > -0.42 && Math.abs(wrapLongitude(longitude + 0.27)) < 0.3 + latitude * 0.45;
+        if (heartLobes || heartPoint) return '*';
+        return broadWave > 0.4 ? ':' : broadWave < -0.55 ? ',' : '.';
+    }
     return broadWave > 0 ? ':' : '.';
 }

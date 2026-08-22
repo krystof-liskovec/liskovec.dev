@@ -20,6 +20,7 @@ const majorOrbitNextScratch: Vec3 = { x: 0, y: 0, z: 0 };
 const sampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
 const nextSampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
 const liveMoonOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
+const LARGE_MOON_GLYPHS = new Set(['Ganymede', 'Titan', 'Titania', 'Triton', 'Charon']);
 
 type FocusSceneOptions = {
     width: number;
@@ -175,7 +176,11 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                                 ? '#fe8019'
                                 : target.name === 'Saturn' && character === 'o'
                                   ? '#d79921'
-                                  : target.color;
+                                  : target.name === 'Mars' && character === '^'
+                                    ? '#fabd2f'
+                                    : target.name === 'Pluto' && character === '*'
+                                      ? '#ebdbb2'
+                                      : target.color;
                     context.fillText(character, focusCenterX + (column + 0.5 - columns / 2) * characterWidth, lineY);
                 }
             }
@@ -410,14 +415,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 context.fillStyle = moon.color;
                 context.strokeStyle = '#1d2021';
                 context.lineWidth = 2;
-                context.font = `bold ${Math.max(7, (moon.name === 'Ganymede' || moon.name === 'Titan' ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
+                const isLargeMoon = LARGE_MOON_GLYPHS.has(moon.name);
+                context.font = `bold ${Math.max(7, (isLargeMoon ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
                 context.strokeText(moon.glyph, moon.x, moon.y);
                 context.fillText(moon.glyph, moon.x, moon.y);
                 if (showHoverVisuals && moon === hoveredMajorMoon) {
-                    const bracketOffset = Math.max(
-                        11,
-                        (moon.name === 'Ganymede' || moon.name === 'Titan' ? 17 : 13) * focusScale,
-                    );
+                    const bracketOffset = Math.max(11, (isLargeMoon ? 17 : 13) * focusScale);
                     context.fillStyle = '#ebdbb2';
                     context.font = `bold ${Math.max(8, 10 * focusScale)}px "DM Mono", monospace`;
                     context.fillText('[', moon.x - bracketOffset, moon.y);
@@ -518,7 +521,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             });
         }
 
-        const infoY = Math.min(height - 72, focusCenterY + (width < 600 ? 150 : 205) * focusScale);
+        const infoY = Math.min(height - (target.fact ? 93 : 72), focusCenterY + (width < 600 ? 150 : 205) * focusScale);
         const infoReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.45) / 0.4) : focusEase;
         context.globalAlpha = infoReveal;
         context.fillStyle = target.color;
@@ -527,7 +530,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         context.fillStyle = '#a89984';
         context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
         context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
-        context.fillText('drag to inspect · double-click to reset orientation', viewportCenterX, infoY + 42);
+        if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
+        context.fillText(
+            'drag to inspect · double-click to reset orientation',
+            viewportCenterX,
+            infoY + (target.fact ? 63 : 42),
+        );
 
         if (objectFocus.child && objectFocus.childProgress > 0.001) {
             const child = objectFocus.child;

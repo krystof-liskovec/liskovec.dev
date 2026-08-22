@@ -2,6 +2,9 @@ export type Vec3 = { x: number; y: number; z: number };
 
 export type Planet = {
     name: string;
+    kind: string;
+    detail: string;
+    fact: string;
     a: number;
     e: number;
     meanLongitude: number;
@@ -28,6 +31,7 @@ export type GalacticObject = {
     color: string;
     distance: string;
     detail: string;
+    fact: string;
 };
 
 export type FocusTarget = {
@@ -37,6 +41,7 @@ export type FocusTarget = {
     color: string;
     subtitle: string;
     detail: string;
+    fact?: string;
     originX: number;
     originY: number;
 };
