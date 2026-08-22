@@ -1,17 +1,17 @@
 when:
-  event: [push, manual]
-  branch: main
+    event: [push, manual]
+    branch: main
 
 steps:
-  - name: build-and-deploy
-    image: node:26-alpine
-    environment:
-      CLOUDFLARE_API_TOKEN:
-        from_secret: cloudflare_api_token
-      CLOUDFLARE_ACCOUNT_ID:
-        from_secret: cloudflare_account_id
-      CLOUDFLARE_PAGES_PROJECT: liskovec
-    commands:
-      - npm ci
-      - npm run build
-      - npx --yes wrangler pages deploy dist --project-name="$CLOUDFLARE_PAGES_PROJECT" --branch="$CI_COMMIT_BRANCH" --commit-hash="$CI_COMMIT_SHA" --commit-message="$CI_COMMIT_MESSAGE"
+    - name: build-and-deploy
+      image: node:26-alpine
+      environment:
+          CLOUDFLARE_API_TOKEN:
+              from_secret: cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID:
+              from_secret: cloudflare_account_id
+          CLOUDFLARE_PAGES_PROJECT: liskovec
+      commands:
+          - npm ci
+          - npm run build
+          - npx --yes wrangler pages deploy dist --project-name="$CLOUDFLARE_PAGES_PROJECT" --branch="$CI_COMMIT_BRANCH" --commit-hash="$CI_COMMIT_SHA" --commit-message="$CI_COMMIT_MESSAGE"

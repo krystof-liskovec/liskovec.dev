@@ -6,33 +6,37 @@ import SiteShell from '../../components/SiteShell.astro';
 import '../../styles/site.css';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog', ({ data }) => !data.draft);
-	return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+    const posts = await getCollection('blog', ({ data }) => !data.draft);
+    return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
 }
 
 interface Props {
-	post: CollectionEntry<'blog'>;
+    post: CollectionEntry<'blog'>;
 }
 
 const { post } = Astro.props;
 const { Content } = await render(post);
 const published = new Intl.DateTimeFormat('en-GB', {
-	day: '2-digit',
-	month: 'long',
-	year: 'numeric',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
 }).format(post.data.published);
 ---
 
 <Layout title={`${post.data.title} — krystof.liskovec`} description={post.data.description}>
-	<SiteShell mainClass="post-page">
-			<article>
-				<a class="post-back" href="/blog">← all posts</a>
-				<header class="post-header">
-					<div class="post-meta"><time datetime={post.data.published.toISOString()}>{published}</time><span>{post.data.tags.join(' · ')}</span></div>
-					<h1>{post.data.title}</h1>
-					<p>{post.data.description}</p>
-				</header>
-				<div class="post-body"><Content /></div>
-			</article>
-	</SiteShell>
+    <SiteShell mainClass="post-page">
+        <article>
+            <a class="post-back" href="/blog">← all posts</a>
+            <header class="post-header">
+                <div class="post-meta">
+                    <time datetime={post.data.published.toISOString()}>{published}</time><span
+                        >{post.data.tags.join(' · ')}</span
+                    >
+                </div>
+                <h1>{post.data.title}</h1>
+                <p>{post.data.description}</p>
+            </header>
+            <div class="post-body"><Content /></div>
+        </article>
+    </SiteShell>
 </Layout>

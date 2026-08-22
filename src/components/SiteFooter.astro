@@ -5,12 +5,14 @@ const onBlogIndex = pathname === '/blog' || pathname === '/blog/';
 ---
 
 <footer>
-	<span>© 2026 Kryštof Lískovec</span>
-	{onHomepage ? (
-		<span>made with curiosity + caffeine</span>
-	) : onBlogIndex ? (
-		<a href="/">← back home</a>
-	) : (
-		<a href="/blog">← back to blog</a>
-	)}
+    <span>© 2026 Kryštof Lískovec</span>
+    {
+        onHomepage ? (
+            <span>made with curiosity + caffeine</span>
+        ) : onBlogIndex ? (
+            <a href="/">← back home</a>
+        ) : (
+            <a href="/blog">← back to blog</a>
+        )
+    }
 </footer>

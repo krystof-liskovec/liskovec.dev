@@ -5,8 +5,8 @@ published: 2026-08-21
 featured: true
 draft: true
 tags:
-  - devops
-  - deployments
+    - devops
+    - deployments
 ---
 
 This is a mock post. It is here to make sure the blog works from Markdown file to finished page—and to give me something real to replace later.
@@ -19,11 +19,11 @@ No clever orchestration. No heroic terminal session. Just a deployment that coul
 
 ```yaml
 deploy:
-  stage: deploy
-  script:
-    - ./deploy --environment production --strategy blue-green
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    stage: deploy
+    script:
+        - ./deploy --environment production --strategy blue-green
+    rules:
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 ```
 
 ## What went wrong

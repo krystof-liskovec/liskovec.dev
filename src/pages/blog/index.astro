@@ -5,23 +5,27 @@ import SiteShell from '../../components/SiteShell.astro';
 import { getCollection } from 'astro:content';
 import '../../styles/site.css';
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft))
-	.sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
+);
 ---
 
 <Layout
-	title="blog — krystof.liskovec"
-	description="Random adventures and struggles from Krystof Liskovec—mostly about software, DevOps, and whatever he is figuring out."
+    title="blog — krystof.liskovec"
+    description="Random adventures and struggles from Krystof Liskovec—mostly about software, DevOps, and whatever he is figuring out."
 >
-	<SiteShell mainClass="blog-page">
-			<section class="blog-hero">
-				<p class="eyebrow">~/blog</p>
-				<h1>Random adventures<br /><span>and struggles.</span></h1>
-				<p>Mostly about software, DevOps, and whatever I happen to be figuring out. Sometimes with opinions included.</p>
-			</section>
-			<section class="post-index">
-				<div class="section-label"><span>all posts</span><span>{posts.length} published</span></div>
-				<PostList posts={posts} />
-			</section>
-	</SiteShell>
+    <SiteShell mainClass="blog-page">
+        <section class="blog-hero">
+            <p class="eyebrow">~/blog</p>
+            <h1>Random adventures<br /><span>and struggles.</span></h1>
+            <p>
+                Mostly about software, DevOps, and whatever I happen to be figuring out. Sometimes with opinions
+                included.
+            </p>
+        </section>
+        <section class="post-index">
+            <div class="section-label"><span>all posts</span><span>{posts.length} published</span></div>
+            <PostList posts={posts} />
+        </section>
+    </SiteShell>
 </Layout>

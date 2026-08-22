@@ -3,16 +3,16 @@ import SiteFooter from './SiteFooter.astro';
 import SiteHeader from './SiteHeader.astro';
 
 interface Props {
-	mainClass?: string;
+    mainClass?: string;
 }
 
 const { mainClass } = Astro.props;
 ---
 
 <div class="site-shell">
-	<SiteHeader />
-	<main class={mainClass}>
-		<slot />
-	</main>
-	<SiteFooter />
+    <SiteHeader />
+    <main class={mainClass}>
+        <slot />
+    </main>
+    <SiteFooter />
 </div>

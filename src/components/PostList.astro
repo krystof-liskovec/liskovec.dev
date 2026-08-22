@@ -2,30 +2,35 @@
 import type { CollectionEntry } from 'astro:content';
 
 interface Props {
-	posts: CollectionEntry<'blog'>[];
-	emptyMessage?: string;
+    posts: CollectionEntry<'blog'>[];
+    emptyMessage?: string;
 }
 
 const { posts, emptyMessage = 'Nothing here yet.' } = Astro.props;
-const formatDate = (date: Date) => new Intl.DateTimeFormat('en-GB', {
-	day: '2-digit',
-	month: 'short',
-	year: 'numeric',
-}).format(date);
+const formatDate = (date: Date) =>
+    new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }).format(date);
 ---
 
 <div class="post-list">
-	{posts.length > 0 ? posts.map((post) => (
-		<a class="post-card" href={`/blog/${post.id}`}>
-			<div class="post-card-date">{formatDate(post.data.published)}</div>
-			<div class="post-card-body">
-				<h2>{post.data.title}</h2>
-				<p>{post.data.description}</p>
-				{post.data.tags.length > 0 && <span>{post.data.tags.join(' · ')}</span>}
-			</div>
-			<b aria-hidden="true">→</b>
-		</a>
-	)) : (
-		<div class="post-list-empty">{emptyMessage}</div>
-	)}
+    {
+        posts.length > 0 ? (
+            posts.map((post) => (
+                <a class="post-card" href={`/blog/${post.id}`}>
+                    <div class="post-card-date">{formatDate(post.data.published)}</div>
+                    <div class="post-card-body">
+                        <h2>{post.data.title}</h2>
+                        <p>{post.data.description}</p>
+                        {post.data.tags.length > 0 && <span>{post.data.tags.join(' · ')}</span>}
+                    </div>
+                    <b aria-hidden="true">→</b>
+                </a>
+            ))
+        ) : (
+            <div class="post-list-empty">{emptyMessage}</div>
+        )
+    }
 </div>
