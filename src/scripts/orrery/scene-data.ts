@@ -44,6 +44,7 @@ export const GALAXY_STARS = Array.from({ length: GALACTIC_BAR_STARS + GALACTIC_A
             strength: 0.55 + randomUnit(index + 51) * 0.45,
             opacity: 0.72 + randomUnit(index + 71) * 0.28,
             glyph: index % 29 === 0 ? '+' : index % 7 === 0 ? '*' : index % 4 === 0 ? ':' : '.',
+            mobileVisible: index % 2 === 0,
         };
     }
 
@@ -65,6 +66,9 @@ export const GALAXY_STARS = Array.from({ length: GALACTIC_BAR_STARS + GALACTIC_A
         strength: randomUnit(index + 51),
         opacity: 0.72 + randomUnit(index + 71) * 0.28,
         glyph: index % 53 === 0 ? '+' : index % 17 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
+        // Arms are interleaved in the array. Cull alternating samples along
+        // each arm, not alternating array entries, or two arm families vanish.
+        mobileVisible: sampleIndex % 2 === 0,
     };
 });
 

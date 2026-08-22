@@ -83,9 +83,10 @@ export const drawGalaxyBackdrop = (
     }
 
     context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
-    const starStride = width < 600 ? 2 : 1;
-    for (let index = 0; index < GALAXY_STARS.length; index += starStride) {
+    const compact = width < 600;
+    for (let index = 0; index < GALAXY_STARS.length; index++) {
         const star = GALAXY_STARS[index];
+        if (compact && !star.mobileVisible) continue;
         const offset = projectOffset(star.x, star.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
