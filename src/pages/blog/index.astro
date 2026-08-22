@@ -26,6 +26,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
         <section class="post-index">
             <div class="section-label"><span>all posts</span><span>{posts.length} published</span></div>
             <PostList posts={posts} />
+            <div class="blog-actions"><a class="blog-link" href="/rss.xml">[ subscribe via rss → ]</a></div>
         </section>
     </SiteShell>
 </Layout>
