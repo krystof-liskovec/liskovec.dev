@@ -43,9 +43,18 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
     return EARTH_MAP[mapY][mapX];
   }
   if (name === 'Sol') {
-    const granulation = Math.sin(longitude * 5 + latitude * 3) + Math.sin(longitude * 2 - latitude * 7) * .55;
-    if (insideFeature(longitude, latitude, -.75, .24, .11) || insideFeature(longitude, latitude, 1.35, -.32, .08)) return '@';
-    return granulation > .75 ? '*' : granulation < -.65 ? ':' : 'o';
+    const granulation = Math.sin(longitude * 11 + Math.sin(latitude * 7) * 2.3)
+      + Math.sin(latitude * 13 - longitude * 4.1) * .62
+      + Math.sin((longitude + latitude) * 19) * .28;
+    const activity = Math.sin(longitude * 1.7 + latitude * 2.8)
+      + Math.sin(latitude * 3.9 - longitude * .65) * .72;
+    const turbulentSpot = (activity > 1.18 && granulation < .45)
+      || (activity < -1.32 && granulation > -.25);
+    if (turbulentSpot) return granulation > .38 || granulation < -.78 ? '@' : ':';
+    return granulation > 1.02 ? '*'
+      : granulation > .28 ? '~'
+        : granulation > -.28 ? 'o'
+          : granulation > -.9 ? ':' : '.';
   }
   if (name === 'Jupiter') {
     if (latitude > -.48 && latitude < -.18 && wrappedLongitude > .1 && wrappedLongitude < .78) {

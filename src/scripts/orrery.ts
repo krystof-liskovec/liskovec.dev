@@ -5,7 +5,30 @@ import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, ro
 import { focusedRotation, planetSurfaceGlyph } from './orrery/planet-textures';
 import { ASTEROID_BELT, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
 import { drawSun } from './orrery/sun-renderer';
-import type { FocusState, FocusTarget, Vec3 } from './orrery/types';
+import type { FocusState, FocusTarget, Planet, Vec3 } from './orrery/types';
+
+const COMPACT_PLANET_GRIDS: Record<string, { columns: number; rows: number; rowWidths: number[]; fontScale: number }> = {
+  Mercury: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .62 },
+  Venus: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .62 },
+  Earth: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .62 },
+  Mars: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .62 },
+  Jupiter: { columns: 11, rows: 7, rowWidths: [5, 9, 11, 11, 11, 9, 5], fontScale: .78 },
+  Saturn: { columns: 9, rows: 7, rowWidths: [3, 7, 9, 9, 9, 7, 3], fontScale: .82 },
+  Uranus: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .86 },
+  Neptune: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: .86 },
+};
+
+const compactSurfaceColor = (planet: Planet, glyph: string) => {
+  if (planet.name === 'Earth') {
+    return glyph === '#' ? '#b8bb26' : glyph === '%' ? '#d79921' : glyph === '*' ? '#ebdbb2' : '#83a598';
+  }
+  if (planet.name === 'Jupiter' && (glyph === '@' || glyph === 'o')) return '#fe8019';
+  if (planet.name === 'Saturn' && glyph === 'o') return '#d79921';
+  if (planet.name === 'Mars' && glyph === '*') return '#ebdbb2';
+  if (planet.name === 'Venus' && glyph === '=') return '#fabd2f';
+  if (planet.name === 'Neptune' && (glyph === 'O' || glyph === 'o')) return '#83a598';
+  return planet.color;
+};
 
 const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const system = document.querySelector<HTMLElement>('#solar-system');
@@ -258,6 +281,9 @@ if (canvas && system && context) {
       ? Math.max(0, (objectFocus.progress - .06) / .94)
       : objectFocus.progress;
     const planetSceneFocus = focusedPlanet || focusedSun ? smoothstep(localFocusProgress) : 0;
+    const localSphereGrowth = smoothstep((planetSceneFocus - .08) / .92) ** 1.45;
+    const focusedSunDetailReveal = focusedSun ? smoothstep((planetSceneFocus - .06) / .3) : 0;
+    const focusedSunBridgeScale = focusedSun ? (.24 + localSphereGrowth * .76) / .24 : 1;
     const galaxyProgress = smoothstep((outwardZoom - .24) / .76);
     const localDetailOpacity = 1 - smoothstep((outwardZoom - .2) / .26);
     const solarSystemScale = Math.pow(.055, Math.min(1, outwardZoom / .7));
@@ -465,9 +491,19 @@ if (canvas && system && context) {
           const glyphScale = Math.max(.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
           const fontSize = (body.planet.easterEgg ? 16 : Math.max(6.2, 12.5 * body.planet.size * depthScale)) * glyphScale;
           const lines = body.planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [body.planet.glyph] : body.planet.sprite;
+          const compactGrid = solarSystemScale >= .45 && !body.planet.easterEgg ? COMPACT_PLANET_GRIDS[body.planet.name] : null;
+          const compactFontSize = compactGrid ? fontSize * compactGrid.fontScale : fontSize;
+          const compactSphereWidth = compactGrid ? compactGrid.columns * compactFontSize * .6 : 0;
+          const ringWidth = body.planet.name === 'Saturn'
+            ? compactSphereWidth * .88
+            : body.planet.name === 'Uranus' ? compactSphereWidth * .74 : 0;
           const compactRows = body.planet.name === 'Jupiter' || body.planet.name === 'Uranus' || body.planet.name === 'Neptune';
-          const halfWidth = Math.max(...lines.map((line) => line.length)) * fontSize * .31 + 6;
-          const halfHeight = lines.length * fontSize * (compactRows ? .68 : .78) / 2 + 6;
+          const halfWidth = compactGrid
+            ? Math.max(compactSphereWidth / 2, ringWidth) + 6
+            : Math.max(...lines.map((line) => line.length)) * fontSize * .31 + 6;
+          const halfHeight = compactGrid
+            ? compactGrid.rows * compactFontSize * .72 / 2 + 7
+            : lines.length * fontSize * (compactRows ? .68 : .78) / 2 + 6;
           const normalizedDistance = ((body.x - localPointerX) / halfWidth) ** 2 + ((body.y - localPointerY) / halfHeight) ** 2;
           if (normalizedDistance > 1) return frontmost;
           return !frontmost || body.z > frontmost.z ? body : frontmost;
@@ -540,6 +576,7 @@ if (canvas && system && context) {
       const cosmicGlyphScale = Math.max(.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
       const fontSize = (planet.easterEgg ? 16 : Math.max(6.2, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) * cosmicGlyphScale;
       const lines = planet.easterEgg || (fontSize < 9 && solarSystemScale < .45) ? [planet.glyph] : planet.sprite;
+      const compactGrid = solarSystemScale >= .45 && !planet.easterEgg ? COMPACT_PLANET_GRIDS[planet.name] : null;
       const hasCompactSphereRows = planet.name === 'Jupiter' || planet.name === 'Uranus' || planet.name === 'Neptune';
       const lineHeight = fontSize * (hasCompactSphereRows ? .68 : .78);
       const bodyOpacity = body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : 1 - planetSceneFocus);
@@ -550,24 +587,95 @@ if (canvas && system && context) {
       context.strokeStyle = '#1d2021';
       context.lineJoin = 'round';
       context.globalAlpha = bodyOpacity * (1 - focusedDetailReveal);
-      context.font = `bold ${fontSize * focusedSpriteScale}px "DM Mono", monospace`;
-      context.lineWidth = Math.max(2, fontSize * .2);
-      lines.forEach((line, index) => {
-        const lineY = body.y + (index - (lines.length - 1) / 2) * lineHeight * focusedSpriteScale;
-        if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
-        context.fillText(line, body.x, lineY);
-      });
-      if (planet.name === 'Jupiter' && lines === planet.sprite) {
-        const characterWidth = context.measureText('M').width;
-        context.fillStyle = '#fb4934';
-        context.fillText('@', body.x - characterWidth, body.y);
+      let spriteWidth = 0;
+
+      if (compactGrid) {
+        const compactFontSize = fontSize * compactGrid.fontScale * focusedSpriteScale;
+        const compactLineHeight = compactFontSize * .72;
+        context.font = `bold ${compactFontSize}px "DM Mono", monospace`;
+        const characterWidth = context.measureText('M').width * .76;
+        const sphereWidth = compactGrid.columns * characterWidth;
+        const sphereHeight = compactGrid.rows * compactLineHeight;
+        const spin = focusedRotation(planet.name, seconds, reducedMotion);
+        spriteWidth = sphereWidth;
+
+        const drawCompactRings = (foreground: boolean) => {
+          if (planet.name !== 'Saturn' && planet.name !== 'Uranus') return;
+          const isUranus = planet.name === 'Uranus';
+          const tilt = isUranus ? 68 * DEG : -8 * DEG;
+          const bands = isUranus
+            ? [{ x: .74, y: .12, glyph: '-', color: '#83a598', alpha: .72 }]
+            : [
+                { x: .69, y: .105, glyph: '-', color: '#bdae93', alpha: .5 },
+                { x: .79, y: .14, glyph: '=', color: '#fabd2f', alpha: .78 },
+                { x: .88, y: .175, glyph: '-', color: '#d79921', alpha: .58 },
+              ];
+          for (const band of bands) {
+            for (let sample = 0; sample < 48; sample += 2) {
+              const angle = sample / 48 * Math.PI * 2;
+              if ((Math.sin(angle) >= 0) !== foreground) continue;
+              const ringX = Math.cos(angle) * sphereWidth * band.x;
+              const ringY = Math.sin(angle) * sphereHeight * band.y;
+              const tiltedX = ringX * Math.cos(tilt) - ringY * Math.sin(tilt);
+              const tiltedY = ringX * Math.sin(tilt) + ringY * Math.cos(tilt);
+              context.globalAlpha = bodyOpacity * (1 - focusedDetailReveal) * band.alpha * (foreground ? 1 : .48);
+              context.fillStyle = foreground ? band.color : '#665c54';
+              context.fillText(band.glyph, body.x + tiltedX, body.y + tiltedY);
+            }
+          }
+        };
+
+        drawCompactRings(false);
+        context.lineWidth = Math.max(1.25, compactFontSize * .16);
+        for (let row = 0; row < compactGrid.rows; row++) {
+          const normalizedY = (row - (compactGrid.rows - 1) / 2) / (compactGrid.rows / 2);
+          const cellY = body.y + (row - (compactGrid.rows - 1) / 2) * compactLineHeight;
+          const rowWidth = compactGrid.rowWidths[row];
+          const firstColumn = (compactGrid.columns - rowWidth) / 2;
+          for (let rowColumn = 0; rowColumn < rowWidth; rowColumn++) {
+            const column = firstColumn + rowColumn;
+            const normalizedX = (column - (compactGrid.columns - 1) / 2) / (compactGrid.columns / 2);
+            const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
+            const longitude = Math.atan2(normalizedX, sphereZ) + spin;
+            const latitude = Math.asin(-normalizedY);
+            const isFirst = rowColumn === 0;
+            const isLast = rowColumn === rowWidth - 1;
+            const isTop = row === 0;
+            const isBottom = row === compactGrid.rows - 1;
+            const isContour = isFirst || isLast || isTop || isBottom;
+            const glyph = isTop
+              ? isFirst ? '.' : isLast ? '.' : '-'
+              : isBottom
+                ? isFirst ? "'" : isLast ? "'" : '-'
+                : isFirst
+                  ? row < (compactGrid.rows - 1) / 2 ? '/' : row > (compactGrid.rows - 1) / 2 ? '\\' : '|'
+                  : isLast
+                    ? row < (compactGrid.rows - 1) / 2 ? '\\' : row > (compactGrid.rows - 1) / 2 ? '/' : '|'
+                    : planetSurfaceGlyph(planet.name, longitude, latitude);
+            const cellX = body.x + (column - (compactGrid.columns - 1) / 2) * characterWidth;
+            context.globalAlpha = bodyOpacity * (1 - focusedDetailReveal) * (.66 + sphereZ * .34);
+            context.fillStyle = isContour ? planet.color : compactSurfaceColor(planet, glyph);
+            context.strokeText(glyph, cellX, cellY);
+            context.fillText(glyph, cellX, cellY);
+          }
+        }
+        drawCompactRings(true);
+      } else {
+        context.font = `bold ${fontSize * focusedSpriteScale}px "DM Mono", monospace`;
+        context.lineWidth = Math.max(2, fontSize * .2);
+        lines.forEach((line, index) => {
+          const lineY = body.y + (index - (lines.length - 1) / 2) * lineHeight * focusedSpriteScale;
+          if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
+          context.fillText(line, body.x, lineY);
+        });
+        spriteWidth = Math.max(...lines.map((line) => context.measureText(line).width));
       }
       if (isHovered) {
-        const spriteWidth = Math.max(...lines.map((line) => context.measureText(line).width));
         context.fillStyle = '#ebdbb2';
         context.font = `bold ${Math.max(9, fontSize * .72)}px "DM Mono", monospace`;
-        context.fillText('[', body.x - spriteWidth / 2 - 7, body.y);
-        context.fillText(']', body.x + spriteWidth / 2 + 7, body.y);
+        const ringExpansion = planet.name === 'Saturn' ? spriteWidth * .88 : planet.name === 'Uranus' ? spriteWidth * .74 : spriteWidth / 2;
+        context.fillText('[', body.x - ringExpansion - 7, body.y);
+        context.fillText(']', body.x + ringExpansion + 7, body.y);
       }
       context.shadowBlur = 0;
       context.globalAlpha = 1;
@@ -586,15 +694,6 @@ if (canvas && system && context) {
       context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
       system.radii.forEach((radius, moonIndex) => {
         context.fillStyle = isJupiter ? '#665c54' : body.planet.name === 'Earth' ? '#bdae93' : '#928374';
-        for (let sample = 0; sample < 28; sample += 3) {
-          const angle = sample / 28 * Math.PI * 2;
-          let offset: Vec3 = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
-          offset = rotateX(offset, system.tilt);
-          const projected = cameraTransform({ x: body.world.x + offset.x, y: body.world.y + offset.y, z: body.world.z + offset.z });
-          if ((projected.z >= body.z) !== foreground) continue;
-          context.globalAlpha = opacity * (hasMajorMoons ? .32 : .22);
-          context.fillText('.', projected.x, projected.y);
-        }
         const moonAngle = seconds * system.speeds[moonIndex] + moonIndex * 1.73 + body.planet.displayRadius;
         let moonOffset: Vec3 = { x: Math.cos(moonAngle) * radius, y: Math.sin(moonAngle) * radius, z: 0 };
         moonOffset = rotateX(moonOffset, system.tilt);
@@ -633,8 +732,8 @@ if (canvas && system && context) {
     drawSun(context, {
       x: centerX,
       y: centerY,
-      scale: renderedSunScale,
-      opacity: localDetailOpacity * (1 - planetSceneFocus),
+      scale: renderedSunScale * focusedSunBridgeScale ** 2,
+      opacity: localDetailOpacity * (focusedSun ? 1 - focusedSunDetailReveal : 1 - planetSceneFocus),
       seconds,
       reducedMotion,
     });
@@ -742,8 +841,10 @@ if (canvas && system && context) {
       const isLocalDestination = (target.kind === 'planet' && !!focusedPlanetBody) || target.kind === 'star';
       const focusCenterX = focusedPlanetBody?.x ?? target.originX + (viewportCenterX - target.originX) * focusEase;
       const focusCenterY = focusedPlanetBody?.y ?? target.originY + (viewportCenterY - target.originY) * focusEase;
-      const planetGrowth = smoothstep((planetSceneFocus - .08) / .92) ** 1.45;
-      const focusScale = isLocalDestination ? .1 + planetGrowth * .9 : .18 + focusEase * .82;
+      const localFocusStartScale = target.kind === 'star' ? .24 : .1;
+      const focusScale = isLocalDestination
+        ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
+        : .18 + focusEase * .82;
       const objectReveal = isLocalDestination ? smoothstep((planetSceneFocus - .06) / .3) : focusEase;
       if (!isLocalDestination) {
         context.globalAlpha = focusEase;
@@ -839,7 +940,9 @@ if (canvas && system && context) {
             context.fillStyle = target.name === 'Earth'
               ? character === '#' ? '#b8bb26' : character === '%' ? '#d79921' : character === '*' ? '#ebdbb2' : '#83a598'
               : target.kind === 'star'
-                ? character === '@' ? '#d65d0e' : character === '*' ? '#fe8019' : character === ':' ? '#d79921' : '#fabd2f'
+                ? character === '@' ? '#d65d0e'
+                  : character === '*' || character === '~' ? '#fe8019'
+                    : character === ':' || character === '.' ? '#d79921' : '#fabd2f'
               : target.name === 'Jupiter' && (character === '@' || character === 'o')
                 ? '#fe8019'
                 : target.name === 'Saturn' && character === 'o'
