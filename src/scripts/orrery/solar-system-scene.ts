@@ -1,7 +1,7 @@
 import { MAJOR_MOON_SYSTEMS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { rotateX, rotateZ } from './math';
-import { ASTEROID_BELT } from './scene-data';
+import { ASTEROID_BELT, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
 import { drawSolarBody } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
 import type { Planet, ProjectedBody, Vec3 } from './types';
@@ -11,6 +11,35 @@ type OrbitMark = ProjectedPoint & { glyph: string; alpha: number; reveal: number
 type CameraTransform = (world: Vec3, target: ProjectedPoint) => ProjectedPoint;
 type MoonOrbit = { angle: number; distance: number };
 type SolveMoonOrbit = (moon: MajorMoon, target?: MoonOrbit) => MoonOrbit;
+type ParticleFieldStyle = {
+    color: string;
+    baseAlpha: number;
+    alphaVariation: number;
+    baseSpeed: number;
+    speedVariation: number;
+};
+
+const ZODIACAL_DUST_STYLE: ParticleFieldStyle = {
+    color: '#d79921',
+    baseAlpha: 0.065,
+    alphaVariation: 0.1,
+    baseSpeed: 0.007,
+    speedVariation: 0.005,
+};
+const ASTEROID_BELT_STYLE: ParticleFieldStyle = {
+    color: '#a89984',
+    baseAlpha: 0.2,
+    alphaVariation: 0.32,
+    baseSpeed: 0.0045,
+    speedVariation: 0.0015,
+};
+const KUIPER_BELT_STYLE: ParticleFieldStyle = {
+    color: '#83a598',
+    baseAlpha: 0.3,
+    alphaVariation: 0.3,
+    baseSpeed: 0.0012,
+    speedVariation: 0.0005,
+};
 
 export class SolarSystemSceneRenderer {
     private readonly moonOffset = { x: 0, y: 0, z: 0 };
@@ -48,7 +77,7 @@ export class SolarSystemSceneRenderer {
     ) {
         this.drawOrbitMarks(context, options.farMarks);
         this.drawOrbitMarks(context, options.nearMarks);
-        this.drawAsteroids(context, options);
+        this.drawSmallBodyFields(context, options);
         this.drawBodies(context, options);
     }
 
@@ -62,7 +91,7 @@ export class SolarSystemSceneRenderer {
         context.globalAlpha = 1;
     }
 
-    private drawAsteroids(
+    private drawSmallBodyFields(
         context: CanvasRenderingContext2D,
         options: {
             seconds: number;
@@ -75,20 +104,67 @@ export class SolarSystemSceneRenderer {
     ) {
         const { seconds, reducedMotion, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform } =
             options;
-        context.font = `${Math.max(5.5, 7.5 * Math.sqrt(solarSystemScale))}px "DM Mono", monospace`;
-        context.fillStyle = '#928374';
-        for (const asteroid of ASTEROID_BELT) {
-            const angle = asteroid.angle + (reducedMotion ? 0 : seconds * (0.0045 + asteroid.phase * 0.0015));
-            this.asteroidPoint.x = Math.cos(angle) * asteroid.radius;
-            this.asteroidPoint.y = Math.sin(angle) * asteroid.radius;
-            this.asteroidPoint.z = 0;
-            rotateX(this.asteroidPoint, asteroid.inclination, this.asteroidPoint);
-            rotateZ(this.asteroidPoint, asteroid.node, this.asteroidPoint);
-            const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
-            context.globalAlpha = localDetailOpacity * (1 - planetSceneFocus) * (0.14 + asteroid.phase * 0.28);
-            context.fillText(asteroid.glyph, projected.x, projected.y);
-        }
+        const opacity = localDetailOpacity * (1 - planetSceneFocus);
+        const scaleRoot = Math.sqrt(solarSystemScale);
+
+        this.drawParticleField(
+            context,
+            ZODIACAL_DUST,
+            cameraTransform,
+            seconds,
+            reducedMotion,
+            opacity,
+            Math.max(5, 6.5 * scaleRoot),
+            ZODIACAL_DUST_STYLE,
+        );
+        this.drawParticleField(
+            context,
+            ASTEROID_BELT,
+            cameraTransform,
+            seconds,
+            reducedMotion,
+            opacity,
+            Math.max(5.5, 7.5 * scaleRoot),
+            ASTEROID_BELT_STYLE,
+        );
+        this.drawParticleField(
+            context,
+            KUIPER_BELT,
+            cameraTransform,
+            seconds,
+            reducedMotion,
+            opacity,
+            Math.max(6.5, 8.35 * scaleRoot),
+            KUIPER_BELT_STYLE,
+        );
         context.globalAlpha = 1;
+    }
+
+    private drawParticleField(
+        context: CanvasRenderingContext2D,
+        particles: SolarParticle[],
+        cameraTransform: CameraTransform,
+        seconds: number,
+        reducedMotion: boolean,
+        opacity: number,
+        fontSize: number,
+        style: ParticleFieldStyle,
+    ) {
+        context.font = `${fontSize}px "DM Mono", monospace`;
+        context.fillStyle = style.color;
+        for (const particle of particles) {
+            const angle =
+                particle.angle +
+                (reducedMotion ? 0 : seconds * (style.baseSpeed + particle.phase * style.speedVariation));
+            this.asteroidPoint.x = Math.cos(angle) * particle.radius;
+            this.asteroidPoint.y = Math.sin(angle) * particle.radius;
+            this.asteroidPoint.z = 0;
+            rotateX(this.asteroidPoint, particle.inclination, this.asteroidPoint);
+            rotateZ(this.asteroidPoint, particle.node, this.asteroidPoint);
+            const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
+            context.globalAlpha = opacity * (style.baseAlpha + particle.phase * style.alphaVariation);
+            context.fillText(particle.glyph, projected.x, projected.y);
+        }
     }
 
     private drawBodies(

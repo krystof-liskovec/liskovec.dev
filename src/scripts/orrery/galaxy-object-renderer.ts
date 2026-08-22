@@ -95,11 +95,22 @@ export class GalaxyObjectRenderer {
             context.lineWidth = Math.max(1.25, spriteFontSize * 0.16);
 
             galacticObject.object.sprite.forEach((line, row) => {
+                const rowSpacing = galacticObject.object.name === 'Sagittarius A*' ? 0.9 : 0.76;
                 const lineY =
-                    galacticObject.y + (row - (galacticObject.object.sprite.length - 1) / 2) * spriteFontSize * 0.76;
+                    galacticObject.y +
+                    (row - (galacticObject.object.sprite.length - 1) / 2) * spriteFontSize * rowSpacing;
                 context.strokeText(line, galacticObject.x, lineY);
                 context.fillText(line, galacticObject.x, lineY);
-                if (galacticObject.object.name === 'Cygnus X-1' && row === 1) {
+                if (galacticObject.object.name === 'Sagittarius A*' && row === 2) {
+                    context.fillStyle = '#1d2021';
+                    context.strokeStyle = '#fabd2f';
+                    context.lineWidth = Math.max(1, spriteFontSize * 0.12);
+                    context.strokeText('@', galacticObject.x, lineY);
+                    context.fillText('@', galacticObject.x, lineY);
+                    context.fillStyle = galacticObject.object.color;
+                    context.strokeStyle = '#1d2021';
+                    context.lineWidth = Math.max(1.25, spriteFontSize * 0.16);
+                } else if (galacticObject.object.name === 'Cygnus X-1' && row === 1) {
                     const lineWidth = context.measureText(line).width;
                     const characterWidth = context.measureText('M').width;
                     context.fillStyle = '#8ec07c';

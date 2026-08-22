@@ -183,7 +183,7 @@ export const GALACTIC_OBJECTS: GalacticObject[] = [
         galacticLatitude: 0,
         heliocentricDistanceKpc: 8.2,
         glyph: '{(@)}',
-        sprite: ['  .-=-.  ', '==<(@)>==', "  '-=-'  "],
+        sprite: ['   .---.   ', ' .-~~~~~-. ', '==<( @ )>==', " '-~~~~~-' ", "   '---'   "],
         color: '#fe8019',
         distance: '~26,700 ly',
         detail: 'galactic centre',
