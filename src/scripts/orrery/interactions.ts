@@ -104,23 +104,23 @@ export const bindOrreryInteractions = ({
                     objectFocus.childLongitude -= deltaX * 0.008;
                     objectFocus.childLatitude = Math.max(
                         -65 * DEG,
-                        Math.min(65 * DEG, objectFocus.childLatitude + deltaY * 0.006),
+                        Math.min(65 * DEG, objectFocus.childLatitude - deltaY * 0.006),
                     );
                 } else {
                     objectFocus.resetting = false;
                     objectFocus.longitude -= deltaX * 0.008;
                     objectFocus.latitude = Math.max(
                         -65 * DEG,
-                        Math.min(65 * DEG, objectFocus.latitude + deltaY * 0.006),
+                        Math.min(65 * DEG, objectFocus.latitude - deltaY * 0.006),
                     );
                 }
             } else if (camera.dragMode === 'galaxy') {
                 galaxyCamera.rotation += deltaX * 0.005;
-                galaxyCamera.tilt = Math.max(0.5, Math.min(1.35, galaxyCamera.tilt + deltaY * 0.0035));
+                galaxyCamera.tilt = Math.max(0.5, Math.min(1.35, galaxyCamera.tilt - deltaY * 0.0035));
             } else {
                 camera.roll += deltaX * 0.0045;
                 camera.yaw += deltaX * 0.0018;
-                camera.pitch = Math.max(12 * DEG, Math.min(88 * DEG, camera.pitch + deltaY * 0.0055));
+                camera.pitch = Math.max(12 * DEG, Math.min(88 * DEG, camera.pitch - deltaY * 0.0055));
             }
             camera.dragDistance += Math.hypot(deltaX, deltaY);
             camera.lastX = event.clientX;
