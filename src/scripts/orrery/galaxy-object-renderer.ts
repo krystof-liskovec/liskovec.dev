@@ -71,6 +71,10 @@ export class GalaxyObjectRenderer {
     ) {
         const { width, height, seconds, reducedMotion, opacity, galaxyProgress, hovered, showHoverVisuals } = options;
         if (opacity <= 0.001) return;
+        // The galaxy contracts substantially on phones while the canvas glyphs
+        // would otherwise retain their desktop pixel size. Scale landmarks with
+        // the available width so nearby real-world positions stay legible.
+        const viewportScale = width < 600 ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
 
         for (let index = 0; index < this.objects.length; index++) {
             const galacticObject = this.objects[index];
@@ -88,10 +92,10 @@ export class GalaxyObjectRenderer {
             // produces a rapid strobe, especially during fast slider movement.
             const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 0.8 + index * 1.73) * 0.045;
             const spriteReveal = smoothstep((galaxyProgress - 0.58) / 0.28);
-            const spriteFontSize = (isHovered ? 8.8 : 7.8) * pulse;
+            const spriteFontSize = (isHovered ? 8.8 : 7.8) * pulse * viewportScale;
             context.fillStyle = galacticObject.object.color;
             context.globalAlpha = opacity * (1 - spriteReveal);
-            context.font = `bold ${(isHovered ? 13 : 11) * pulse}px "DM Mono", monospace`;
+            context.font = `bold ${(isHovered ? 13 : 11) * pulse * viewportScale}px "DM Mono", monospace`;
             context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
             context.globalAlpha = opacity * spriteReveal;
             context.font = `bold ${spriteFontSize}px "DM Mono", monospace`;
@@ -135,9 +139,9 @@ export class GalaxyObjectRenderer {
                     glyphWidth = Math.max(glyphWidth, context.measureText(line).width);
                 }
                 context.fillStyle = '#ebdbb2';
-                context.font = 'bold 11px "DM Mono", monospace';
-                context.fillText('[', galacticObject.x - glyphWidth / 2 - 8, galacticObject.y);
-                context.fillText(']', galacticObject.x + glyphWidth / 2 + 8, galacticObject.y);
+                context.font = `bold ${11 * viewportScale}px "DM Mono", monospace`;
+                context.fillText('[', galacticObject.x - glyphWidth / 2 - 8 * viewportScale, galacticObject.y);
+                context.fillText(']', galacticObject.x + glyphWidth / 2 + 8 * viewportScale, galacticObject.y);
             }
         }
         context.globalAlpha = 1;
