@@ -112,6 +112,7 @@ export const createFocusCandidate = (options: {
         subtitle: hoveredGalacticObject.object.kind,
         detail: `${hoveredGalacticObject.object.distance} / ${hoveredGalacticObject.object.detail}`,
         fact: hoveredGalacticObject.object.fact,
+        sourceSprite: hoveredGalacticObject.object.sprite,
         originX: hoveredGalacticObject.x,
         originY: hoveredGalacticObject.y,
     };

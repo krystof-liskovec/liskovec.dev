@@ -42,6 +42,7 @@ export type FocusTarget = {
     subtitle: string;
     detail: string;
     fact?: string;
+    sourceSprite?: string[];
     originX: number;
     originY: number;
 };

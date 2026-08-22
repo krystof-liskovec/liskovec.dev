@@ -83,10 +83,32 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         const focusCenterX = focusedPlanetBody?.x ?? target.originX + (viewportCenterX - target.originX) * focusEase;
         const focusCenterY = focusedPlanetBody?.y ?? target.originY + (viewportCenterY - target.originY) * focusEase;
         const localFocusStartScale = target.kind === 'star' ? 0.24 : 0.1;
+        const galacticViewportScale = width < 600 ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
+        const galacticSourceFontSize = 7.8 * galacticViewportScale;
+        const galacticSourceWidth =
+            (target.sourceSprite?.reduce((longest, line) => Math.max(longest, line.length), 1) ?? 1) *
+            galacticSourceFontSize *
+            0.31;
+        const galacticSourceHeight = ((target.sourceSprite?.length ?? 1) * galacticSourceFontSize * 0.76) / 2;
+        const galacticFocusedRadius = width < 600 ? 112 : 190;
+        const galacticStartScale = Math.max(
+            0.06,
+            Math.min(0.22, Math.max(galacticSourceWidth, galacticSourceHeight) / galacticFocusedRadius),
+        );
+        const galacticBridgeGrowth = smoothstep((focusEase - 0.02) / 0.36);
+        const galacticBridgeScale = 1 + galacticBridgeGrowth * 1.4;
+        const galacticMatchedScale = galacticStartScale * galacticBridgeScale;
+        const galacticDetailGrowth = smoothstep((focusEase - 0.4) / 0.6);
         const focusScale = isLocalDestination
             ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
-            : 0.18 + focusEase * 0.82;
-        const objectReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.06) / 0.3) : focusEase;
+            : target.kind === 'galactic'
+              ? galacticMatchedScale + galacticDetailGrowth * (1 - galacticMatchedScale)
+              : 0.18 + focusEase * 0.82;
+        const objectReveal = isLocalDestination
+            ? smoothstep((planetSceneFocus - 0.06) / 0.3)
+            : target.kind === 'galactic'
+              ? smoothstep((focusEase - 0.08) / 0.32)
+              : focusEase;
         // Galactic close-ups can use the page's identical #1d2021 background
         // directly. Painting another full-canvas layer is unnecessary and can
         // produce a one-frame compositing flash as that layer disappears.
@@ -468,6 +490,24 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 target.kind === 'galactic' ? 32 : 62,
                 target.kind === 'galactic' ? ['.', ':', '*'] : ['.', '-'],
             );
+            if (target.kind === 'galactic' && target.sourceSprite) {
+                // Carry the exact compact landmark away from its projected
+                // Galactic coordinate before the detailed renderer takes over.
+                // This is the equivalent of the compact-to-detailed bridge used
+                // by planets, and reverses cleanly when returning to the galaxy.
+                const bridgeReveal = smoothstep(focusEase / 0.1) * (1 - objectReveal);
+                const bridgeFontSize = galacticSourceFontSize * galacticBridgeScale;
+                context.globalAlpha = bridgeReveal;
+                context.fillStyle = target.color;
+                context.strokeStyle = '#1d2021';
+                context.lineWidth = Math.max(1.25, bridgeFontSize * 0.16);
+                context.font = `bold ${bridgeFontSize}px "DM Mono", monospace`;
+                target.sourceSprite.forEach((line, row) => {
+                    const lineY = focusCenterY + (row - (target.sourceSprite!.length - 1) / 2) * bridgeFontSize * 0.76;
+                    context.strokeText(line, focusCenterX, lineY);
+                    context.fillText(line, focusCenterX, lineY);
+                });
+            }
             const renderedGalacticObject =
                 target.kind === 'galactic' &&
                 drawFocusedGalacticObject(context, {
