@@ -72,7 +72,8 @@ export class GalaxyObjectRenderer {
         const { width, height, seconds, reducedMotion, opacity, galaxyProgress, hovered, showHoverVisuals } = options;
         if (opacity <= 0.001) return;
 
-        for (const galacticObject of this.objects) {
+        for (let index = 0; index < this.objects.length; index++) {
+            const galacticObject = this.objects[index];
             if (
                 galacticObject.x < -30 ||
                 galacticObject.x > width + 30 ||
@@ -82,12 +83,15 @@ export class GalaxyObjectRenderer {
                 continue;
 
             const isHovered = galacticObject === hovered && showHoverVisuals;
-            const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.4 + galacticObject.x) * 0.08;
+            // Keep animation phase in object space. Using a projected screen
+            // coordinate here makes zooming scrub through the sine wave and
+            // produces a rapid strobe, especially during fast slider movement.
+            const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 0.8 + index * 1.73) * 0.045;
             const spriteReveal = smoothstep((galaxyProgress - 0.58) / 0.28);
             const spriteFontSize = (isHovered ? 8.8 : 7.8) * pulse;
             context.fillStyle = galacticObject.object.color;
             context.globalAlpha = opacity * (1 - spriteReveal);
-            context.font = `bold ${Math.round((isHovered ? 13 : 11) * pulse)}px "DM Mono", monospace`;
+            context.font = `bold ${(isHovered ? 13 : 11) * pulse}px "DM Mono", monospace`;
             context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
             context.globalAlpha = opacity * spriteReveal;
             context.font = `bold ${spriteFontSize}px "DM Mono", monospace`;
