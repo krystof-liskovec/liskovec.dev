@@ -631,6 +631,32 @@ footer a:hover {
     touch-action: pan-y pinch-zoom;
     user-select: none;
 }
+.solar-static {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    color: var(--yellow);
+    opacity: 0.72;
+    transition: opacity 0.2s ease;
+}
+.solar-static pre {
+    margin: 0;
+    font: clamp(8px, 1.15vw, 13px) / 1.55 var(--mono);
+    white-space: pre;
+}
+.solar-system:not(.is-canvas-ready) canvas {
+    opacity: 0;
+}
+.solar-system.is-canvas-ready .solar-static {
+    visibility: hidden;
+    opacity: 0;
+}
+.solar-system:not(.is-canvas-ready) .cosmic-zoom-control,
+.solar-system:not(.is-canvas-ready) .solar-caption {
+    visibility: hidden;
+}
 .solar-system.is-dragging canvas {
     cursor: grabbing;
 }

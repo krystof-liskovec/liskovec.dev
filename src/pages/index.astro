@@ -25,6 +25,23 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
                 id="solar-system"
                 aria-label="A live, approximate ASCII orrery of the solar system"
             >
+                <div class="solar-static" aria-hidden="true">
+                    <pre>
+                                      .  neptune
+                              .  uranus
+                       ===o===  saturn
+                  O  jupiter
+              .  mars       .  earth
+           .  venus   .  mercury
+                        .---.
+                       ( SOL )
+                        '---'</pre>
+                </div>
+                <p class="sr-only">
+                    An interactive ASCII visualization of the Solar System and Milky Way introduces Kryštof Liskovec’s
+                    portfolio. The portfolio content continues below with information about his DevOps and software
+                    development work, technical skills, blog posts, and contact details.
+                </p>
                 <canvas
                     id="solar-canvas"
                     role="img"
@@ -35,7 +52,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
                     <div class="cosmic-zoom-scale">
                         <span aria-hidden="true">MILKY WAY</span>
                         <input id="cosmic-zoom" type="range" min="0" max="100" value="0" step="1" />
-                        <span aria-hiddeny="true">SOL</span>
+                        <span aria-hidden="true">SOL</span>
                     </div>
                     <output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
                 </div>
@@ -69,7 +86,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
             >
                 <div>
                     <span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p>
-                </div><div><span>backend</span><p>Go <3 · NestJS · Symfony</p></div><div>
+                </div><div><span>backend</span><p>Go &lt;3 · NestJS · Symfony</p></div><div>
                     <span>data</span><p>PostgreSQL · MySQL · MongoDB · Elasticsearch · Redis · Kibana</p>
                 </div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div>
             </div>

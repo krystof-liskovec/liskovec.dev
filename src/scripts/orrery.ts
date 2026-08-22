@@ -33,16 +33,22 @@ import { COMPACT_PLANET_GRIDS, drawSolarBody } from './orrery/solar-body-rendere
 import { drawSun } from './orrery/sun-renderer';
 import type { FocusTarget, Vec3 } from './orrery/types';
 
-const canvas = document.querySelector<HTMLCanvasElement>('#solar-canvas');
-const system = document.querySelector<HTMLElement>('#solar-system');
+const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
+const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
 const zoomInput = document.querySelector<HTMLInputElement>('#cosmic-zoom');
 const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-status');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
-const context = canvas?.getContext('2d');
+const canvasContext = canvasElement?.getContext('2d');
 
-if (canvas && system && context) {
+if (canvasElement && systemElement && canvasContext) {
+    // Stable non-null aliases are safe to retain inside animation callbacks.
+    // TypeScript intentionally forgets narrowing for the outer DOM lookups.
+    const canvas = canvasElement;
+    const system = systemElement;
+    const context = canvasContext;
+    system.classList.add('is-canvas-ready');
     const { pointer, camera, galaxyCamera, objectFocus, easterEgg, cosmicZoom, orbitClock } = createRuntimeState();
     let activeFocusCandidate: FocusTarget | null = null;
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');

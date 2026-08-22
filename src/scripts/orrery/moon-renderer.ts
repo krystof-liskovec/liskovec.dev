@@ -80,7 +80,6 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
             const latitude = Math.asin(-latitudeY);
             const mariaDepth = Math.min(...MARIA.map((feature) => featureDistance(longitude, latitude, feature)));
             const craterDepth = Math.min(...CRATERS.map((feature) => featureDistance(longitude, latitude, feature)));
-            const tychoDistance = featureDistance(longitude, latitude, CRATERS[0]);
             const longitudeFromTycho = wrapLongitude(longitude - CRATERS[0].longitude) * Math.cos(latitude);
             const latitudeFromTycho = latitude - CRATERS[0].latitude;
             const rayAngle = Math.atan2(latitudeFromTycho, longitudeFromTycho);

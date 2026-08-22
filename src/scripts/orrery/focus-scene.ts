@@ -7,7 +7,7 @@ import { DEG, J2000, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKep
 import { drawFocusedMoon } from './moon-renderer';
 import { focusedRotation, planetSurfaceGlyph } from './planet-textures';
 import type { CameraState, PointerState } from './runtime-state';
-import type { FocusState, FocusTarget, Planet, ProjectedBody } from './types';
+import type { FocusState, FocusTarget, Planet, ProjectedBody, Vec3 } from './types';
 
 type MoonOrbit = { angle: number; distance: number };
 
