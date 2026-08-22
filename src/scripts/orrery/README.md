@@ -47,5 +47,6 @@ their Galactic longitude, latitude, and heliocentric distance rather than moved
 to visually convenient points. Omega Centauri is a halo cluster and
 deliberately does not belong to a spiral arm.
 
-Primary model source: Reid et al., _Trigonometric Parallaxes of High-mass Star
-Forming Regions: Our View of the Milky Way_ (2019), arXiv:1910.03357.
+The complete dataset provenance, object-distance references, and scale-model
+limitations are documented in the root
+[README](../../../README.md#astronomical-data-and-sources).
