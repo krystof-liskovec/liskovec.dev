@@ -1,10 +1,11 @@
-import { randomUnit } from './math';
+import { randomUnit, smoothstep } from './math';
 
 type FocusedCometOptions = {
     x: number;
     y: number;
     scale: number;
     opacity: number;
+    transitionProgress: number;
     seconds: number;
     longitude: number;
     latitude: number;
@@ -23,7 +24,7 @@ const HALLEY_TAIL_PARTICLES = Array.from({ length: 210 }, (_, index) => {
 });
 
 export const drawFocusedHalley = (context: CanvasRenderingContext2D, options: FocusedCometOptions) => {
-    const { x, y, scale, opacity, seconds, longitude, latitude, reducedMotion, compact } = options;
+    const { x, y, scale, opacity, transitionProgress, seconds, longitude, latitude, reducedMotion, compact } = options;
     const radius = (compact ? 105 : 150) * scale;
     const orientation = longitude * 0.45 - 0.18;
     const tailDepth = 0.72 + Math.cos(latitude) * 0.18;
@@ -31,15 +32,25 @@ export const drawFocusedHalley = (context: CanvasRenderingContext2D, options: Fo
     const cosine = Math.cos(orientation);
     const sine = Math.sin(orientation);
     const pulse = reducedMotion ? 0.8 : 0.78 + Math.sin(seconds * 0.7) * 0.08;
+    const tailReveal = reducedMotion ? 1 : smoothstep((transitionProgress - 0.2) / 0.66);
 
     context.font = `bold ${(compact ? 7 : 9) * scale}px "DM Mono", monospace`;
     for (const particle of HALLEY_TAIL_PARTICLES) {
-        const tailX = -radius * (0.38 + particle.progress * 1.75);
-        const tailY = radius * particle.spread;
-        const drift = reducedMotion ? 0 : Math.sin(seconds * 0.32 + particle.phase) * radius * 0.018;
+        const particleReveal = reducedMotion ? 1 : smoothstep((tailReveal - particle.progress) / 0.14);
+        if (particleReveal <= 0.001) continue;
+        const unfoldedProgress = particle.progress * tailReveal;
+        const flow = reducedMotion ? 0 : ((seconds * 0.055 + particle.phase / (Math.PI * 2)) % 0.09) * tailReveal;
+        const flowingProgress = Math.min(1, unfoldedProgress + flow);
+        const tailX = -radius * flowingProgress * 2.12;
+        const coherentWave = reducedMotion
+            ? 0
+            : Math.sin(seconds * 1.35 - flowingProgress * 8) * radius * (0.008 + flowingProgress * 0.045);
+        const tailY = radius * particle.spread * tailReveal + coherentWave;
+        const drift = reducedMotion ? 0 : Math.sin(seconds * 0.55 + particle.phase) * radius * 0.012;
         const rotatedX = tailX * cosine - (tailY + drift) * sine;
         const rotatedY = (tailX * sine + (tailY + drift) * cosine) * tailDepth;
-        context.globalAlpha = opacity * pulse * (0.12 + (1 - particle.progress) * 0.34);
+        const flowingLight = reducedMotion ? 1 : 0.72 + Math.sin(seconds * 2.1 - flowingProgress * 13) * 0.28;
+        context.globalAlpha = opacity * pulse * particleReveal * flowingLight * (0.12 + (1 - particle.progress) * 0.34);
         context.fillStyle = particle.glyph === '*' ? '#ebdbb2' : particle.glyph === '~' ? '#83a598' : '#458588';
         context.fillText(particle.glyph, x + rotatedX, y + rotatedY);
     }

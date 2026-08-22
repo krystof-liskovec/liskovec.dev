@@ -475,6 +475,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     y: focusCenterY,
                     scale: focusScale,
                     opacity: objectReveal,
+                    transitionProgress: objectFocus.progress,
                     seconds,
                     longitude: objectFocus.longitude,
                     latitude: objectFocus.latitude,
