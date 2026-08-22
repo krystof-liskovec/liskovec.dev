@@ -33,7 +33,7 @@ export const galacticPositionFromSun = (
     longitude: number,
     latitude: number,
     distanceKpc: number,
-    target = { x: 0, y: 0 },
+    target = { x: 0, y: 0, z: 0 },
 ) => {
     const sunRadius = Math.hypot(GALACTIC_SOL.x, GALACTIC_SOL.y);
     const towardCenterX = -GALACTIC_SOL.x / sunRadius;
@@ -48,6 +48,7 @@ export const galacticPositionFromSun = (
     target.y =
         GALACTIC_SOL.y +
         planarDistance * (Math.cos(longitudeRadians) * towardCenterY + Math.sin(longitudeRadians) * longitudeNinetyY);
+    target.z = (distanceKpc * Math.sin(latitude * DEG) * sunRadius) / GALACTIC_SUN_DISTANCE_KPC;
     return target;
 };
 

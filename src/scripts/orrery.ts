@@ -181,13 +181,15 @@ if (canvasElement && systemElement && canvasContext) {
             : 0;
         const plutoReveal = 1 - (1 - revealProgress) ** 3;
         const now = getOrbitDate(frameTime);
+        const moonNow = Date.now();
         const solveMoonOrbit = (moon: MajorMoon, target = { angle: 0, distance: 1 }) => {
             // Start from the moon's current astronomical phase, then advance a
             // modest visual clock. At wall-clock speed even Io moves too little
             // to register, while this still preserves every moon's real period,
-            // eccentricity, inclination, and relative orbital speed.
+            // eccentricity, inclination, and relative orbital speed. Keep this
+            // independent from the accelerated planetary clock enabled by a drag.
             const visualElapsedDays = reducedMotion ? 0 : seconds * 0.005;
-            const elapsedDays = (now - J2000) / 86400000 + visualElapsedDays;
+            const elapsedDays = (moonNow - J2000) / 86400000 + visualElapsedDays;
             const meanAnomaly = (moon.meanAnomaly + (elapsedDays / moon.periodDays) * 360) * DEG;
             solveKeplerOrbit(meanAnomaly, moon.eccentricity, target);
             target.angle += moon.periapsis * DEG;
@@ -324,6 +326,7 @@ if (canvasElement && systemElement && canvasContext) {
             radius: galaxyRadius,
             coreX: galaxyCoreX,
             coreY: galaxyCoreY,
+            verticalProjection: Math.sqrt(Math.max(0, 1 - galacticProjectedTilt ** 2)),
             projectOffset: galacticOffset,
         });
         const hoveredGalacticObject =

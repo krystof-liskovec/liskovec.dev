@@ -15,10 +15,16 @@ export class GalaxyObjectRenderer {
     readonly objects: ProjectedGalacticObject[] = [];
 
     private readonly pool: ProjectedGalacticObject[] = GALACTIC_OBJECTS.map((object) => ({ object, x: 0, y: 0 }));
-    private readonly positionScratch = { x: 0, y: 0 };
+    private readonly positionScratch = { x: 0, y: 0, z: 0 };
 
-    project(options: { radius: number; coreX: number; coreY: number; projectOffset: GalacticOffset }) {
-        const { radius, coreX, coreY, projectOffset } = options;
+    project(options: {
+        radius: number;
+        coreX: number;
+        coreY: number;
+        verticalProjection: number;
+        projectOffset: GalacticOffset;
+    }) {
+        const { radius, coreX, coreY, verticalProjection, projectOffset } = options;
         this.objects.length = 0;
 
         for (let index = 0; index < GALACTIC_OBJECTS.length; index++) {
@@ -32,7 +38,7 @@ export class GalaxyObjectRenderer {
             );
             projectOffset(position.x, position.y, radius, projected);
             projected.x += coreX;
-            projected.y += coreY;
+            projected.y += coreY - position.z * radius * verticalProjection;
             this.objects.push(projected);
         }
     }

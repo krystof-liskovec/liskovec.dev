@@ -13,6 +13,7 @@
 - `solar-system-scene.ts` — orbit, asteroid, moon, Sun, and compact-body painting
 - `background-renderer.ts` — local stars and the projected Milky Way backdrop
 - `galaxy-object-renderer.ts` — pooled galactic-object projection, hit testing, and sprites
+- `galactic-landmark-renderer.ts` — detailed stellar remnants, clusters, and pulsar artwork
 - `scene-ui.ts` — overlap-aware body hit testing, focus candidates, and readouts
 - `solar-body-renderer.ts` — compact planet sprites used by the orrery
 - `focus-scene.ts` — detailed object views and satellite systems

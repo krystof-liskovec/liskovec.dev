@@ -1,6 +1,7 @@
+import { drawAdditionalGalacticObject } from './galactic-landmark-renderer';
 import { randomUnit } from './math';
 
-type GalacticRenderOptions = {
+export type GalacticRenderOptions = {
     name: string;
     x: number;
     y: number;
@@ -454,6 +455,6 @@ export function drawFocusedGalacticObject(context: CanvasRenderingContext2D, opt
     else if (options.name === 'Orion Nebula') drawOrion(context, options, radius, fontSize);
     else if (options.name === 'Cygnus X-1') drawCygnus(context, options, radius, fontSize);
     else if (options.name === 'Crab Nebula') drawCrab(context, options, radius, fontSize);
-    else return false;
+    else return drawAdditionalGalacticObject(context, options, radius, fontSize);
     return true;
 }
