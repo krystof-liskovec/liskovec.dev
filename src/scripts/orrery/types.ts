@@ -20,8 +20,9 @@ export type Planet = {
 export type GalacticObject = {
   name: string;
   kind: string;
-  x: number;
-  y: number;
+  galacticLongitude: number;
+  galacticLatitude: number;
+  heliocentricDistanceKpc: number;
   glyph: string;
   sprite: string[];
   color: string;

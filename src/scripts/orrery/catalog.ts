@@ -13,12 +13,11 @@ export const PLANETS: Planet[] = [
   { name: 'Pluto', a: 39.48168677, e: .24880766, meanLongitude: 238.92881, perihelion: 224.06676, longitudeRate: 145.2, inclination: 17.14175, node: 110.30347, displayRadius: 49, glyph: '.', sprite: ['.'], color: '#d3869b', size: .64, easterEgg: true },
 ];
 
-// These positions are schematic locations on the face-on illustration.
 export const GALACTIC_OBJECTS: GalacticObject[] = [
-  { name: 'Sagittarius A*', kind: 'supermassive black hole', x: 0, y: 0, glyph: '{(@)}', sprite: ['  .-=-.  ', '==<(@)>==', "  '-=-'  "], color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
-  { name: 'Orion Nebula', kind: 'stellar nursery', x: .48, y: -.15, glyph: ':.*.:', sprite: [' .:*:. ', ':.*+*.:', ' .:*:. '], color: '#d3869b', distance: '~1,340 ly', detail: 'Orion molecular cloud' },
-  { name: 'Cygnus X-1', kind: 'stellar black hole', x: .2, y: .25, glyph: '<*O>', sprite: [' .*.    .-. ', '(*O*)~~~>(@)', " '*'    '-' "], color: '#83a598', distance: '~7,200 ly', detail: 'x-ray binary system' },
-  { name: 'Crab Nebula', kind: 'supernova remnant', x: -.25, y: -.22, glyph: '{+}', sprite: [' .:\\|/:. ', '--={+}=--', ' .:/|\\:. '], color: '#b8bb26', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
+  { name: 'Sagittarius A*', kind: 'supermassive black hole', galacticLongitude: 0, galacticLatitude: 0, heliocentricDistanceKpc: 8.2, glyph: '{(@)}', sprite: ['  .-=-.  ', '==<(@)>==', "  '-=-'  "], color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
+  { name: 'Orion Nebula', kind: 'stellar nursery', galacticLongitude: 209.0137, galacticLatitude: -19.3816, heliocentricDistanceKpc: .389, glyph: ':.*.:', sprite: [' .:*:. ', ':.*+*.:', ' .:*:. '], color: '#d3869b', distance: '~1,270 ly', detail: 'Orion molecular cloud' },
+  { name: 'Cygnus X-1', kind: 'stellar black hole', galacticLongitude: 71.335, galacticLatitude: 3.0668, heliocentricDistanceKpc: 2.22, glyph: '<*O>', sprite: [' .*.    .-. ', '(*O*)~~~>(@)', " '*'    '-' "], color: '#83a598', distance: '~7,240 ly', detail: 'x-ray binary system' },
+  { name: 'Crab Nebula', kind: 'supernova remnant', galacticLongitude: 184.5575, galacticLatitude: -5.7844, heliocentricDistanceKpc: 1.99, glyph: '{+}', sprite: [' .:\\|/:. ', '--={+}=--', ' .:/|\\:. '], color: '#fb4934', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
 ];
 
 export const PLANETARY_MOON_SYSTEMS: Record<string, { radii: number[]; speeds: number[]; tilt: number }> = {

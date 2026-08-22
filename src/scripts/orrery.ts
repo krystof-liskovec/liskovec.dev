@@ -6,7 +6,7 @@ import { drawFocusedIss } from './orrery/iss-renderer';
 import { drawFocusedMoon } from './orrery/moon-renderer';
 import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKeplerOrbit, solveOrbit } from './orrery/math';
 import { focusedRotation, planetSurfaceGlyph } from './orrery/planet-textures';
-import { ASTEROID_BELT, GALACTIC_NEBULAE, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
+import { ASTEROID_BELT, GALACTIC_DISK, GALACTIC_DUST_LANES, GALACTIC_NEBULAE, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS, galacticPositionFromSun } from './orrery/scene-data';
 import { drawSun } from './orrery/sun-renderer';
 import type { FocusState, FocusTarget, Planet, Vec3 } from './orrery/types';
 
@@ -361,19 +361,22 @@ if (canvas && system && context) {
         objectFocus.resetting = false;
       }
     }
-    const galacticOffsetAt = (x: number, y: number, radius: number, rotation: number, tilt: number) => {
+    // Cache the camera transform once per frame. Galactic layers contain
+    // thousands of glyphs, so repeating trigonometry for every point is a
+    // substantial and unnecessary cost.
+    const galacticRotationCosine = Math.cos(galaxyCamera.rotation);
+    const galacticRotationSine = Math.sin(galaxyCamera.rotation);
+    const galacticProjectedTilt = .58 * galaxyCamera.tilt;
+    const galacticOffset = (x: number, y: number, radius: number) => {
       // Spin within the galactic plane first, then project that plane toward
-      // the viewer. Flattening first would rotate the projected ellipse itself
-      // and make the galaxy look as though it were tumbling in screen space.
-      const rotatedX = x * Math.cos(rotation) - y * Math.sin(rotation);
-      const rotatedY = x * Math.sin(rotation) + y * Math.cos(rotation);
+      // the viewer. Flattening first would rotate the projected ellipse itself.
+      const rotatedX = x * galacticRotationCosine - y * galacticRotationSine;
+      const rotatedY = x * galacticRotationSine + y * galacticRotationCosine;
       return {
         x: rotatedX * radius,
-        y: rotatedY * .58 * tilt * radius,
+        y: rotatedY * galacticProjectedTilt * radius,
       };
     };
-    const galacticOffset = (x: number, y: number, radius: number) =>
-      galacticOffsetAt(x, y, radius, galaxyCamera.rotation, galaxyCamera.tilt);
     // Follow Sol's live projected coordinate during the zoom. This is the same
     // point used by the Orion Spur marker, so rotation can never separate the
     // local scene from the place it expands into or contracts from.
@@ -438,6 +441,16 @@ if (canvas && system && context) {
     context.globalAlpha = 1;
 
     if (galaxyAlpha > .001) {
+      context.font = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
+      context.fillStyle = '#665c54';
+      for (const particle of GALACTIC_DISK) {
+        const offset = galacticOffset(particle.x, particle.y, galaxyRadius);
+        const particleX = galaxyCoreX + offset.x;
+        const particleY = galaxyCoreY + offset.y;
+        if (particleX < -10 || particleX > width + 10 || particleY < -10 || particleY > height + 10) continue;
+        context.globalAlpha = galaxyAlpha * particle.opacity;
+        context.fillText(particle.glyph, particleX, particleY);
+      }
       context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
       for (const particle of GALACTIC_NEBULAE) {
         const offset = galacticOffset(particle.x, particle.y, galaxyRadius);
@@ -450,15 +463,27 @@ if (canvas && system && context) {
         context.fillText(particle.glyph, particleX, particleY);
       }
       context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
-      for (const star of GALAXY_STARS) {
+      const galaxyStarStride = width < 600 ? 2 : 1;
+      for (let starIndex = 0; starIndex < GALAXY_STARS.length; starIndex += galaxyStarStride) {
+        const star = GALAXY_STARS[starIndex];
         const offset = galacticOffset(star.x, star.y, galaxyRadius);
         const starX = galaxyCoreX + offset.x;
         const starY = galaxyCoreY + offset.y;
         if (starX < -12 || starX > width + 12 || starY < -12 || starY > height + 12) continue;
         const twinkle = reducedMotion ? .7 : .68 + Math.sin(seconds * .9 + star.phase) * .22;
-        context.globalAlpha = galaxyAlpha * twinkle * (.5 + (1 - star.radius) * .42 + star.strength * .16);
+        context.globalAlpha = galaxyAlpha * star.opacity * twinkle * (.5 + (1 - star.radius) * .42 + star.strength * .16);
         context.fillStyle = star.radius < .2 ? '#ebdbb2' : star.glyph === '+' ? '#d3869b' : star.glyph === '*' ? '#b8bb26' : '#928374';
         context.fillText(star.glyph, starX, starY);
+      }
+      context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+      context.fillStyle = '#1d2021';
+      for (const dust of GALACTIC_DUST_LANES) {
+        const offset = galacticOffset(dust.x, dust.y, galaxyRadius);
+        const dustX = galaxyCoreX + offset.x;
+        const dustY = galaxyCoreY + offset.y;
+        if (dustX < -10 || dustX > width + 10 || dustY < -10 || dustY > height + 10) continue;
+        context.globalAlpha = galaxyAlpha * dust.opacity;
+        context.fillText(dust.glyph, dustX, dustY);
       }
       for (const star of ORION_SPUR_STARS) {
         const offset = galacticOffset(star.x, star.y, galaxyRadius);
@@ -545,10 +570,14 @@ if (canvas && system && context) {
         }, null)
       : null;
     const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - .42) / .35);
-    const galacticObjects = GALACTIC_OBJECTS.map((object) => ({
-      object,
-      ...galacticOffset(object.x, object.y, galaxyRadius),
-    })).map((object) => ({
+    const galacticObjects = GALACTIC_OBJECTS.map((object) => {
+      const position = galacticPositionFromSun(
+        object.galacticLongitude,
+        object.galacticLatitude,
+        object.heliocentricDistanceKpc,
+      );
+      return { object, ...galacticOffset(position.x, position.y, galaxyRadius) };
+    }).map((object) => ({
       ...object,
       x: galaxyCoreX + object.x,
       y: galaxyCoreY + object.y,
