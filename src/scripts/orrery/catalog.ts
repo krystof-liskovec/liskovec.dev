@@ -73,8 +73,4 @@ export const MAJOR_MOON_SYSTEMS: Record<string, {
 
 export const FOCUSED_ART: Record<string, string[]> = {
   'International Space Station': ['       |       ', '===[###]===[###]===', '    \\___O___/    ', '       / \\       '],
-  'Sagittarius A*': ['       .   .       ', '   .-==\\|/==-.   ', '--==< ((@)) >==--', "   '-==/|\\==-'   ", '       .   .       '],
-  'Orion Nebula': ['    .  *  .    ', ' .:*::...::*:. ', ':..::*:+:*::..:', ' .::*:...:*::. ', '    .  *  .    '],
-  'Cygnus X-1': ['      \\ | /      ', '  ===(( O ))===  ', '      / | \\      ', '       <*         '],
-  'Crab Nebula': ['   .:*\\|/*:.   ', '.::*--{+}--*::.', '   :*/|\\*:   ', '     /|\\     '],
 };

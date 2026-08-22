@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PostList from '../components/PostList.astro';
+import SiteShell from '../components/SiteShell.astro';
 import { getCollection } from 'astro:content';
 import '../styles/site.css';
 
@@ -10,15 +11,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 ---
 
 <Layout>
-	<div class="site-shell">
-		<header class="site-header">
-			<div class="brand-lockup">
-				<a class="wordmark" href="/" aria-label="Kryštof Liskovec home"><span>/home/</span>krystof-liskovec</a>
-				<p class="eyebrow">devops · software developer</p>
-			</div>
-			<nav aria-label="Primary navigation"><a href="#about">[ about ]</a><a href="/blog">[ blog ]</a><a href="#contact">[ contact ]</a></nav>
-		</header>
-		<main>
+	<SiteShell>
 			<section class="solar-hero">
 				<div class="solar-heading"><h1>somewhere<br /><span class="zoom-location-frame"><span id="zoom-location">in the solar system.</span></span></h1></div>
 				<div class="solar-system" id="solar-system" aria-label="A live, approximate ASCII orrery of the solar system">
@@ -37,61 +30,11 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
 				</div>
 				<div class="hero-footer"><a href="#about">↓ scroll to learn more</a></div>
 			</section>
-			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software development</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software developer from the Czech Republic. my professional background spans roughly three years in backend development and two years focused more heavily on DevOps, infrastructure, and operations.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
+			<section class="content-section" id="about"><div class="section-label"><span>01 / about me</span><span>devops + software development</span></div><div class="about-grid"><h2>i build reliable software and the systems it runs on.</h2><div class="about-copy"><p>hi there, i’m Kryštof Lískovec, a DevOps and software developer from the Czech Republic. my background began in backend development and gradually expanded into DevOps, infrastructure, and automation.</p><p>these days my work sits between both. i still build services and internal tools, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, cleaner systems.</p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p></div></div></section>
 			<section class="content-section skills-section" id="skills"><div class="section-label"><span>02 / toolbox</span><span>tools &amp; tech</span></div><div class="skill-groups"><div><span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p></div><div><span>backend</span><p>Go <3 · NestJS · Symfony</p></div><div><span>data</span><p>PostgreSQL · MySQL · MongoDB · Elasticsearch · Redis · Kibana</p></div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div></div></section>
 			<div class="closing-grid"><section class="content-section" id="blog"><div class="section-label"><span>03 / featured posts</span><span>sometimes with opinions included</span></div><PostList posts={featuredPosts} /><div class="blog-actions"><a class="blog-link" href="/blog">[ visit the blog → ]</a></div></section><section class="content-section compact" id="contact"><div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div class="contact-links"><a href="mailto:krystof@liskovec.dev">email <span>↗</span></a></div></section></div>
-		</main>
-		<footer><span>© 2026 Kryštof Lískovec</span><span>made with curiosity + caffeine</span></footer>
-	</div>
+	</SiteShell>
 </Layout>
-
-<script>
-	const planets = {
-		Mercury: [0.38709927, 0.20563593, 252.2503235, 77.45779628, 149472.67411175], Venus: [0.72333566, 0.00677672, 181.9790995, 131.60246718, 58517.81538729], Earth: [1.00000261, 0.01671123, 100.46457166, 102.93768193, 35999.37244981], Mars: [1.52371034, 0.0933941, -4.55343205, -23.94362959, 19140.30268499], Jupiter: [5.202887, 0.04838624, 34.39644051, 14.72847983, 3034.74612775], Saturn: [9.53667594, 0.05386179, 49.95424423, 92.59887831, 1222.49362201], Uranus: [19.18916464, 0.04725744, 313.23810451, 170.9542763, 428.48202785], Neptune: [30.06992276, 0.00859048, -55.12002969, 44.96476227, 218.45945325]
-	};
-	const start = Date.UTC(2000, 0, 1, 12);
-	const rad = Math.PI / 180;
-	function position(planet, now) {
-		const [a, e, L, peri, rate] = planets[planet];
-		const centuries = (now - start) / 86400000 / 36525;
-		const meanAnomaly = ((L + rate * centuries - peri) % 360) * rad;
-		let eccentricAnomaly = meanAnomaly;
-		for (let i = 0; i < 8; i++) eccentricAnomaly -= (eccentricAnomaly - e * Math.sin(eccentricAnomaly) - meanAnomaly) / (1 - e * Math.cos(eccentricAnomaly));
-		const x = a * (Math.cos(eccentricAnomaly) - e);
-		const y = a * Math.sqrt(1 - e * e) * Math.sin(eccentricAnomaly);
-		return Math.atan2(y, x) / rad;
-	}
-	const system = document.querySelector('#solar-system');
-	const canvas = document.querySelector('#solar-canvas');
-	const time = document.querySelector('#solar-time');
-	const ctx = canvas?.getContext('2d');
-	const glyphs = { Mercury: '·', Venus: 'v', Earth: '⊕', Mars: 'm', Jupiter: 'J', Saturn: 'S', Uranus: 'U', Neptune: 'N' };
-	const colors = { Mercury: '#bdae93', Venus: '#d79921', Earth: '#83a598', Mars: '#fb4934', Jupiter: '#d5c4a1', Saturn: '#fabd2f', Uranus: '#8ec07c', Neptune: '#458588' };
-	const stars = Array.from({ length: 90 }, (_, i) => ({ x: (i * 47) % 97 / 97, y: (i * 23) % 89 / 89, phase: (i * 1.73) % (Math.PI * 2), size: i % 7 === 0 ? '✦' : '·' }));
-	function drawAscii(now) {
-		if (!canvas || !ctx) return;
-		const dpr = window.devicePixelRatio || 1; const width = canvas.clientWidth; const height = canvas.clientHeight;
-		canvas.width = width * dpr; canvas.height = height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		const mobile = width < 600; const cols = mobile ? 58 : 90; const rows = mobile ? 27 : 34; const cellW = width / cols; const cellH = height / rows;
-		ctx.font = `${Math.max(12, Math.min(19, cellH * 1.35))}px "DM Mono", monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-		ctx.font = `${Math.max(12, Math.min(19, cellH * 1.35))}px "DM Mono", monospace`;
-		stars.forEach(star => { const twinkle = (Math.sin(now / 420 + star.phase) + 1) / 2; ctx.globalAlpha = .18 + twinkle * (star.size === '✦' ? .72 : .38); ctx.fillStyle = star.size === '✦' ? '#fabd2f' : '#928374'; ctx.fillText(star.size, star.x * width, star.y * height); }); ctx.globalAlpha = 1;
-		const cx = cols / 2, cy = rows / 2; const orbitX = [7, 10, 14, 18, 24, 30, 36, 42].map(v => v * (mobile ? .82 : 1)); const orbitY = [2, 3, 4, 5, 7, 9, 11, 13].map(v => v * (mobile ? .9 : 1)); const tilts = [.2, .28, .36, .44, .52, .6, .68, .76];
-		const project = (x, y, z) => { const perspective = 1 + z * .028; return { x: cx + (x + z * .22) * perspective, y: cy + (y - z * .58) * perspective, z }; };
-		for (let o = 0; o < orbitX.length; o++) { ctx.fillStyle = o === 2 ? '#7c6f64' : '#504945'; for (let i = 0; i < 220; i++) { const a = i / 220 * Math.PI * 2; if (i % 4 !== 0) continue; const point = project(Math.cos(a) * orbitX[o], Math.sin(a) * orbitY[o], Math.sin(a) * orbitY[o] * tilts[o] + Math.cos(a) * orbitX[o] * tilts[o] * .24); ctx.globalAlpha = point.z > 0 ? .9 : .28; ctx.fillText(i % 8 === 0 ? '-' : '.', point.x * cellW, point.y * cellH); } } ctx.globalAlpha = 1;
-		const bodies = Object.keys(planets).map((name, i) => { const a = position(name, now) * rad; const point = project(Math.cos(a) * orbitX[i], Math.sin(a) * orbitY[i], Math.sin(a) * orbitY[i] * tilts[i] + Math.cos(a) * orbitX[i] * tilts[i] * .24); return { name, point, i }; }).sort((a, b) => a.point.z - b.point.z);
-		const drawBody = ({ name, point }) => { const front = point.z > 0; const scale = Math.max(.72, Math.min(1.7, 1 + point.z * .035)); ctx.fillStyle = colors[name]; ctx.globalAlpha = front ? 1 : .52; ctx.font = `bold ${Math.max(13, cellH * 1.1 * scale)}px "DM Mono", monospace`; ctx.fillText(glyphs[name], point.x * cellW, point.y * cellH); ctx.font = `${Math.max(8, cellH * .62 * scale)}px "DM Mono", monospace`; ctx.fillText(name, point.x * cellW, point.y * cellH + cellH * 1.3 * scale); };
-		bodies.filter(body => body.point.z <= 0).forEach(drawBody);
-		ctx.fillStyle = '#fabd2f'; ctx.shadowColor = '#fe8019'; ctx.shadowBlur = 18; ctx.font = `bold ${Math.max(22, cellH * 2.2)}px "DM Mono", monospace`; ctx.fillText('☼', cx * cellW, cy * cellH); ctx.shadowBlur = 0;
-		bodies.filter(body => body.point.z > 0).forEach(drawBody); ctx.globalAlpha = 1;
-	}
-	function tick() {
-		const now = Date.now();
-		drawAscii(now);
-		if (time) time.textContent = new Date(now).toISOString().replace('T', ' / ').slice(0, 22) + ' UTC';
-	}
-	// Superseded by the perspective renderer below.
-</script>
 
 <script>
 	import '../scripts/orrery.ts';

@@ -1,6 +1,6 @@
 # liskovec.dev
 
-A minimal portfolio with a prompt-driven visual system. Visitors can describe a mood, color, material, or scene and the site blends semantic visual directions into a new presentation.
+Kryštof Lískovec's portfolio and blog, built with Astro. The homepage features an interactive ASCII canvas that moves between detailed planetary views, the solar system, and the Milky Way.
 
 ## Commands
 
@@ -20,4 +20,4 @@ Create these repository secrets in Woodpecker before enabling the workflow:
 - `cloudflare_account_id` — the Cloudflare account ID
 - `cloudflare_api_token` — an API token with the permissions required to deploy to Cloudflare Pages
 
-The workflow expects the Pages project to be named `liskovec-dev`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.
+The workflow expects the Pages project to be named `liskovec`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.

@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import SiteShell from '../../components/SiteShell.astro';
 import '../../styles/site.css';
 
 export async function getStaticPaths() {
@@ -23,15 +24,7 @@ const published = new Intl.DateTimeFormat('en-GB', {
 ---
 
 <Layout title={`${post.data.title} — krystof.liskovec`} description={post.data.description}>
-	<div class="site-shell">
-		<header class="site-header">
-			<div class="brand-lockup">
-				<a class="wordmark" href="/" aria-label="Kryštof Liskovec home"><span>/home/</span>krystof-liskovec</a>
-				<p class="eyebrow"><span class="signal">●</span> devops · software engineer</p>
-			</div>
-			<nav aria-label="Primary navigation"><a href="/#about">[ about ]</a><a href="/blog" aria-current="page">[ blog ]</a><a href="/#contact">[ contact ]</a></nav>
-		</header>
-		<main class="post-page">
+	<SiteShell mainClass="post-page">
 			<article>
 				<a class="post-back" href="/blog">← all posts</a>
 				<header class="post-header">
@@ -41,7 +34,5 @@ const published = new Intl.DateTimeFormat('en-GB', {
 				</header>
 				<div class="post-body"><Content /></div>
 			</article>
-		</main>
-		<footer><span>© 2026 krystof liskovec</span><a href="/blog">← back to blog</a></footer>
-	</div>
+	</SiteShell>
 </Layout>
