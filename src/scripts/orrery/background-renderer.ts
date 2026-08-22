@@ -114,7 +114,7 @@ export const drawGalaxyBackdrop = (
         const y = coreY + offset.y;
         if (x < -12 || x > width + 12 || y < -12 || y > height + 12) continue;
         const twinkle = reducedMotion ? 0.72 : 0.72 + Math.sin(seconds + star.phase) * 0.18;
-        context.globalAlpha = alpha * twinkle * 0.78;
+        context.globalAlpha = alpha * twinkle * 0.92;
         context.fillStyle = star.glyph === '*' ? '#b8bb26' : '#a89984';
         context.fillText(star.glyph, x, y);
     }

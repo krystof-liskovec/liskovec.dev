@@ -1,5 +1,18 @@
-import { GALACTIC_OBJECTS, PLANETS } from './catalog';
+import { PLANETS } from './catalog';
+import {
+    GALACTIC_BAR_BETA,
+    GALACTIC_BAR_HALF_LENGTH_KPC,
+    GALACTIC_SCENE_UNITS_PER_KPC,
+    LOCAL_GALACTIC_ARM,
+    MAJOR_GALACTIC_ARMS,
+    galacticArmPoint,
+    galacticArmRadius,
+    galacticArmWidth,
+    type NamedGalacticArm,
+} from './galaxy-model';
 import { DEG, orbitalPoint, randomUnit } from './math';
+
+export { GALACTIC_SOL, galacticPositionFromSun } from './galaxy-model';
 
 export const STARS = Array.from({ length: 90 }, (_, index) => ({
     x: ((index * 47) % 131) / 131,
@@ -9,110 +22,20 @@ export const STARS = Array.from({ length: 90 }, (_, index) => ({
     glyph: index % 17 === 0 ? '+' : index % 7 === 0 ? '*' : '.',
 }));
 
-const GALACTIC_BAR_ANGLE = 0.24;
-const GALACTIC_SPIRAL_START = 0.16;
-const GALACTIC_SPIRAL_PITCH = 11 * DEG;
-const GALACTIC_SPIRAL_TIGHTNESS = 1 / Math.tan(GALACTIC_SPIRAL_PITCH);
-const galacticSpiralAngle = (arm: number, radius: number, offset = 0) =>
-    GALACTIC_BAR_ANGLE +
-    arm * Math.PI +
-    Math.log(Math.max(radius, GALACTIC_SPIRAL_START) / GALACTIC_SPIRAL_START) * GALACTIC_SPIRAL_TIGHTNESS +
-    offset;
+const GALACTIC_BAR_STARS = 360;
+const GALACTIC_ARM_STARS = 3400;
+const STARS_PER_MAJOR_ARM = GALACTIC_ARM_STARS / MAJOR_GALACTIC_ARMS.length;
 
-const GALACTIC_SOL_RADIUS = 0.58;
-const GALACTIC_SOL_ANGLE = galacticSpiralAngle(1, GALACTIC_SOL_RADIUS, 0.18);
-
-export const GALACTIC_SOL = {
-    x: Math.cos(GALACTIC_SOL_ANGLE) * GALACTIC_SOL_RADIUS,
-    y: Math.sin(GALACTIC_SOL_ANGLE) * GALACTIC_SOL_RADIUS,
-};
-
-const GALACTIC_SUN_DISTANCE_KPC = 8.2;
-
-export const galacticPositionFromSun = (
-    longitude: number,
-    latitude: number,
-    distanceKpc: number,
-    target = { x: 0, y: 0, z: 0 },
-) => {
-    const sunRadius = Math.hypot(GALACTIC_SOL.x, GALACTIC_SOL.y);
-    const towardCenterX = -GALACTIC_SOL.x / sunRadius;
-    const towardCenterY = -GALACTIC_SOL.y / sunRadius;
-    const longitudeNinetyX = -towardCenterY;
-    const longitudeNinetyY = towardCenterX;
-    const longitudeRadians = longitude * DEG;
-    const planarDistance = (distanceKpc * Math.cos(latitude * DEG) * sunRadius) / GALACTIC_SUN_DISTANCE_KPC;
-    target.x =
-        GALACTIC_SOL.x +
-        planarDistance * (Math.cos(longitudeRadians) * towardCenterX + Math.sin(longitudeRadians) * longitudeNinetyX);
-    target.y =
-        GALACTIC_SOL.y +
-        planarDistance * (Math.cos(longitudeRadians) * towardCenterY + Math.sin(longitudeRadians) * longitudeNinetyY);
-    target.z = (distanceKpc * Math.sin(latitude * DEG) * sunRadius) / GALACTIC_SUN_DISTANCE_KPC;
-    return target;
-};
-
-const CRAB_NEBULA = GALACTIC_OBJECTS.find((object) => object.name === 'Crab Nebula');
-const CRAB_GALACTIC_POSITION = CRAB_NEBULA
-    ? galacticPositionFromSun(
-          CRAB_NEBULA.galacticLongitude,
-          CRAB_NEBULA.galacticLatitude,
-          CRAB_NEBULA.heliocentricDistanceKpc,
-      )
-    : { x: 0, y: 0, z: 0 };
-const CRAB_GALACTIC_RADIUS = Math.hypot(CRAB_GALACTIC_POSITION.x, CRAB_GALACTIC_POSITION.y);
-const CRAB_GALACTIC_ANGLE = Math.atan2(CRAB_GALACTIC_POSITION.y, CRAB_GALACTIC_POSITION.x);
-const CASSIOPEIA_A = GALACTIC_OBJECTS.find((object) => object.name === 'Cassiopeia A');
-const CASSIOPEIA_A_POSITION = CASSIOPEIA_A
-    ? galacticPositionFromSun(
-          CASSIOPEIA_A.galacticLongitude,
-          CASSIOPEIA_A.galacticLatitude,
-          CASSIOPEIA_A.heliocentricDistanceKpc,
-      )
-    : CRAB_GALACTIC_POSITION;
-const CASSIOPEIA_A_RADIUS = Math.hypot(CASSIOPEIA_A_POSITION.x, CASSIOPEIA_A_POSITION.y);
-const CASSIOPEIA_A_ANGLE = Math.atan2(CASSIOPEIA_A_POSITION.y, CASSIOPEIA_A_POSITION.x);
-const CRAB_PERSEUS_CORRECTION = CRAB_GALACTIC_ANGLE - galacticSpiralAngle(0, CRAB_GALACTIC_RADIUS, Math.PI / 2);
-const CASSIOPEIA_PERSEUS_CORRECTION = CASSIOPEIA_A_ANGLE - galacticSpiralAngle(0, CASSIOPEIA_A_RADIUS, Math.PI / 2);
-const PERSEUS_ARM_CORRECTION = Math.atan2(
-    Math.sin(CRAB_PERSEUS_CORRECTION) + Math.sin(CASSIOPEIA_PERSEUS_CORRECTION),
-    Math.cos(CRAB_PERSEUS_CORRECTION) + Math.cos(CASSIOPEIA_PERSEUS_CORRECTION),
-);
-const PERSEUS_ANCHOR_RADIUS = (CRAB_GALACTIC_RADIUS + CASSIOPEIA_A_RADIUS) / 2;
-const localizedArmCorrection = (radius: number, targetRadius: number, correction: number) => {
-    const radialDistance = (radius - targetRadius) / 0.22;
-    return correction * Math.exp(-(radialDistance * radialDistance));
-};
-const perseusArmOffset = (radius: number) => {
-    // The broad procedural arm remains intact, but bends between the measured
-    // Crab Nebula and Cassiopeia A positions instead of stranding either remnant.
-    return Math.PI / 2 + localizedArmCorrection(radius, PERSEUS_ANCHOR_RADIUS, PERSEUS_ARM_CORRECTION);
-};
-
-const ETA_CARINAE = GALACTIC_OBJECTS.find((object) => object.name === 'Eta Carinae');
-const ETA_CARINAE_POSITION = ETA_CARINAE
-    ? galacticPositionFromSun(
-          ETA_CARINAE.galacticLongitude,
-          ETA_CARINAE.galacticLatitude,
-          ETA_CARINAE.heliocentricDistanceKpc,
-      )
-    : { x: 0, y: 0, z: 0 };
-const ETA_CARINAE_RADIUS = Math.hypot(ETA_CARINAE_POSITION.x, ETA_CARINAE_POSITION.y);
-const ETA_CARINAE_ANGLE = Math.atan2(ETA_CARINAE_POSITION.y, ETA_CARINAE_POSITION.x);
-const CARINA_BASE_ANGLE = galacticSpiralAngle(1, ETA_CARINAE_RADIUS);
-const CARINA_ETA_CORRECTION = Math.atan2(
-    Math.sin(ETA_CARINAE_ANGLE - CARINA_BASE_ANGLE),
-    Math.cos(ETA_CARINAE_ANGLE - CARINA_BASE_ANGLE),
-);
-const carinaArmOffset = (radius: number) => localizedArmCorrection(radius, ETA_CARINAE_RADIUS, CARINA_ETA_CORRECTION);
-
-export const GALAXY_STARS = Array.from({ length: 2800 }, (_, index) => {
-    const inBar = index < 360;
-    if (inBar) {
-        const alongBar = (randomUnit(index + 1) * 2 - 1) * (0.07 + Math.pow(randomUnit(index + 11), 0.62) * 0.25);
-        const acrossBar = (randomUnit(index + 21) - 0.5) * (0.035 + Math.abs(alongBar) * 0.18);
-        const x = alongBar * Math.cos(GALACTIC_BAR_ANGLE) - acrossBar * Math.sin(GALACTIC_BAR_ANGLE);
-        const y = alongBar * Math.sin(GALACTIC_BAR_ANGLE) + acrossBar * Math.cos(GALACTIC_BAR_ANGLE);
+export const GALAXY_STARS = Array.from({ length: GALACTIC_BAR_STARS + GALACTIC_ARM_STARS }, (_, index) => {
+    if (index < GALACTIC_BAR_STARS) {
+        const alongBarKpc =
+            (randomUnit(index + 1) * 2 - 1) *
+            (1 + Math.pow(randomUnit(index + 11), 0.62) * (GALACTIC_BAR_HALF_LENGTH_KPC - 1));
+        const acrossBarKpc = (randomUnit(index + 21) - 0.5) * (0.6 + Math.abs(alongBarKpc) * 0.2);
+        const directionX = Math.sin(GALACTIC_BAR_BETA);
+        const directionY = Math.cos(GALACTIC_BAR_BETA);
+        const x = (alongBarKpc * directionX - acrossBarKpc * directionY) * GALACTIC_SCENE_UNITS_PER_KPC;
+        const y = (alongBarKpc * directionY + acrossBarKpc * directionX) * GALACTIC_SCENE_UNITS_PER_KPC;
         return {
             x,
             y,
@@ -124,31 +47,23 @@ export const GALAXY_STARS = Array.from({ length: 2800 }, (_, index) => {
         };
     }
 
-    // Four populations feed the primary pair and two feed the secondary pair.
-    // Secondary arms sit between the primary arms instead of hugging their edge.
-    const armSlot = index % 6;
-    const dominantArm = armSlot < 4;
-    const arm = dominantArm ? armSlot % 2 : armSlot - 4;
-    const radius = dominantArm
-        ? 0.16 + Math.pow(randomUnit(index + 1), 0.72) * 0.84
-        : 0.2 + Math.pow(randomUnit(index + 1), 0.78) * 0.75;
-    const armLane = ((index % 3) - 1) * (0.032 + radius * 0.045);
-    const branch = dominantArm
-        ? arm === 1
-            ? carinaArmOffset(radius)
-            : 0
-        : arm === 0
-          ? perseusArmOffset(radius)
-          : Math.PI / 2;
-    const scatter = (randomUnit(index + 11) - 0.5) * (dominantArm ? 0.14 + radius * 0.29 : 0.13 + radius * 0.2);
-    const angle = galacticSpiralAngle(arm, radius, branch) + armLane + scatter;
+    const armIndex = (index - GALACTIC_BAR_STARS) % MAJOR_GALACTIC_ARMS.length;
+    const arm = MAJOR_GALACTIC_ARMS[armIndex];
+    const sampleIndex = Math.floor((index - GALACTIC_BAR_STARS) / MAJOR_GALACTIC_ARMS.length);
+    const progress = (sampleIndex + randomUnit(index + 1)) / STARS_PER_MAJOR_ARM;
+    const beta = arm.betaMin + progress * (arm.betaMax - arm.betaMin);
+    const armRadius = galacticArmRadius(arm, beta);
+    const armWidth = galacticArmWidth(arm, armRadius);
+    const crossArmOffset = (randomUnit(index + 11) + randomUnit(index + 17) - 1) * armWidth * 1.65;
+    const point = galacticArmPoint(arm, beta, crossArmOffset);
+
     return {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-        radius,
+        x: point.x,
+        y: point.y,
+        radius: armRadius * GALACTIC_SCENE_UNITS_PER_KPC,
         phase: randomUnit(index + 31) * Math.PI * 2,
         strength: randomUnit(index + 51),
-        opacity: dominantArm ? 0.82 + randomUnit(index + 71) * 0.18 : 0.62 + randomUnit(index + 71) * 0.24,
+        opacity: 0.72 + randomUnit(index + 71) * 0.28,
         glyph: index % 53 === 0 ? '+' : index % 17 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
     };
 });
@@ -166,43 +81,46 @@ export const GALACTIC_DISK = Array.from({ length: 600 }, (_, index) => {
 });
 
 export const GALACTIC_DUST_LANES = Array.from({ length: 150 }, (_, index) => {
-    const arm = index % 2;
-    const radius = 0.18 + Math.pow(randomUnit(index + 2601), 0.76) * 0.7;
-    const armOffset = -(0.09 + radius * 0.075) + (arm === 1 ? carinaArmOffset(radius) : 0);
-    const angle =
-        galacticSpiralAngle(arm, radius, armOffset) + (randomUnit(index + 2701) - 0.5) * (0.07 + radius * 0.09);
+    const arm = MAJOR_GALACTIC_ARMS[index % MAJOR_GALACTIC_ARMS.length];
+    const progress = (Math.floor(index / MAJOR_GALACTIC_ARMS.length) + randomUnit(index + 2601)) / 38;
+    const beta = arm.betaMin + Math.min(1, progress) * (arm.betaMax - arm.betaMin);
+    const radius = galacticArmRadius(arm, beta);
+    const width = galacticArmWidth(arm, radius);
+    const crossArmOffset = -width * (0.72 + randomUnit(index + 2701) * 0.45);
+    const point = galacticArmPoint(arm, beta, crossArmOffset);
     return {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
+        x: point.x,
+        y: point.y,
         glyph: index % 6 === 0 ? ':' : '.',
         opacity: 0.48 + randomUnit(index + 2801) * 0.34,
     };
 });
 
+const armNamed = (name: NamedGalacticArm['name']) =>
+    name === 'Local' ? LOCAL_GALACTIC_ARM : MAJOR_GALACTIC_ARMS.find((arm) => arm.name === name)!;
+
 const NEBULA_REGIONS = [
-    { arm: 0, radius: 0.28, offset: 0, spread: 0.055, color: '#d3869b' },
-    { arm: 1, radius: 0.36, offset: 0, spread: 0.05, color: '#fe8019' },
-    { arm: 0, radius: 0.43, offset: Math.PI / 2, spread: 0.06, color: '#83a598' },
-    { arm: 1, radius: 0.51, offset: 0.08, spread: 0.055, color: '#d3869b' },
-    { arm: 0, radius: 0.6, offset: 0, spread: 0.065, color: '#b8bb26' },
-    { arm: 0, radius: 0.76, offset: Math.PI / 2, spread: 0.07, color: '#fe8019' },
-    { arm: 1, radius: 0.84, offset: 0, spread: 0.065, color: '#83a598' },
+    { arm: armNamed('Norma–Outer'), beta: 20 * DEG, spread: 0.055, color: '#d3869b' },
+    { arm: armNamed('Norma–Outer'), beta: -300 * DEG, spread: 0.065, color: '#83a598' },
+    { arm: armNamed('Scutum–Centaurus'), beta: 55 * DEG, spread: 0.06, color: '#fe8019' },
+    { arm: armNamed('Sagittarius–Carina'), beta: -18 * DEG, spread: 0.065, color: '#fabd2f' },
+    { arm: armNamed('Sagittarius–Carina'), beta: 70 * DEG, spread: 0.055, color: '#d3869b' },
+    { arm: armNamed('Local'), beta: 10 * DEG, spread: 0.045, color: '#b8bb26' },
+    { arm: armNamed('Perseus'), beta: 0 * DEG, spread: 0.06, color: '#fb4934' },
+    { arm: armNamed('Perseus'), beta: 35 * DEG, spread: 0.065, color: '#d65d0e' },
 ];
 
 export const GALACTIC_NEBULAE = NEBULA_REGIONS.flatMap((region, regionIndex) =>
     Array.from({ length: 24 }, (_, particleIndex) => {
         const seed = regionIndex * 97 + particleIndex;
-        const radialOffset = (randomUnit(seed + 1701) + randomUnit(seed + 1801) - 1) * region.spread * 1.25;
-        const radius = region.radius + radialOffset;
-        const regionOffset =
-            region.arm === 0 && region.offset === Math.PI / 2
-                ? perseusArmOffset(region.radius)
-                : region.offset + (region.arm === 1 ? carinaArmOffset(region.radius) : 0);
-        const armAngle = galacticSpiralAngle(region.arm, region.radius, regionOffset);
-        const angle = armAngle + (randomUnit(seed + 1901) + randomUnit(seed + 2001) - 1) * region.spread * 2.35;
+        const beta = region.beta + (randomUnit(seed + 1701) + randomUnit(seed + 1801) - 1) * region.spread * 2.4;
+        const radius = galacticArmRadius(region.arm, beta);
+        const crossArmOffset =
+            (randomUnit(seed + 1901) + randomUnit(seed + 2001) - 1) * galacticArmWidth(region.arm, radius) * 2;
+        const point = galacticArmPoint(region.arm, beta, crossArmOffset);
         return {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
+            x: point.x,
+            y: point.y,
             color: region.color,
             glyph: particleIndex % 13 === 0 ? '*' : particleIndex % 4 === 0 ? ':' : '.',
             opacity: 0.08 + randomUnit(seed + 2101) * 0.2,
@@ -211,12 +129,16 @@ export const GALACTIC_NEBULAE = NEBULA_REGIONS.flatMap((region, regionIndex) =>
     }),
 );
 
-export const ORION_SPUR_STARS = Array.from({ length: 72 }, (_, index) => {
-    const radius = GALACTIC_SOL_RADIUS + (index / 71 - 0.5) * 0.18;
-    const angle = galacticSpiralAngle(1, radius, 0.18) + (randomUnit(index + 801) - 0.5) * 0.024;
+export const ORION_SPUR_STARS = Array.from({ length: 190 }, (_, index) => {
+    const progress = (index + randomUnit(index + 701)) / 190;
+    const beta = LOCAL_GALACTIC_ARM.betaMin + progress * (LOCAL_GALACTIC_ARM.betaMax - LOCAL_GALACTIC_ARM.betaMin);
+    const radius = galacticArmRadius(LOCAL_GALACTIC_ARM, beta);
+    const width = galacticArmWidth(LOCAL_GALACTIC_ARM, radius);
+    const crossArmOffset = (randomUnit(index + 801) + randomUnit(index + 851) - 1) * width * 1.65;
+    const point = galacticArmPoint(LOCAL_GALACTIC_ARM, beta, crossArmOffset);
     return {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
+        x: point.x,
+        y: point.y,
         phase: randomUnit(index + 901) * Math.PI * 2,
         glyph: index % 13 === 0 ? '*' : index % 5 === 0 ? ':' : '.',
     };
