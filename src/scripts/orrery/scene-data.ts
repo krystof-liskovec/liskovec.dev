@@ -129,7 +129,9 @@ export const GALACTIC_NEBULAE = NEBULA_REGIONS.flatMap((region, regionIndex) =>
     }),
 );
 
-export const ORION_SPUR_STARS = Array.from({ length: 190 }, (_, index) => {
+// Reid et al.'s measured -8°..34° Local (Orion) Arm fit spans about
+// 6.1 kpc / 19,900 ly along its logarithmic centreline.
+export const LOCAL_ARM_STARS = Array.from({ length: 190 }, (_, index) => {
     const progress = (index + randomUnit(index + 701)) / 190;
     const beta = LOCAL_GALACTIC_ARM.betaMin + progress * (LOCAL_GALACTIC_ARM.betaMax - LOCAL_GALACTIC_ARM.betaMin);
     const radius = galacticArmRadius(LOCAL_GALACTIC_ARM, beta);

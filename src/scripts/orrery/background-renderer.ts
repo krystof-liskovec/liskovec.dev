@@ -3,7 +3,7 @@ import {
     GALACTIC_DUST_LANES,
     GALACTIC_NEBULAE,
     GALAXY_STARS,
-    ORION_SPUR_STARS,
+    LOCAL_ARM_STARS,
     STARS,
 } from './scene-data';
 
@@ -108,7 +108,7 @@ export const drawGalaxyBackdrop = (
         context.fillText(dust.glyph, x, y);
     }
 
-    for (const star of ORION_SPUR_STARS) {
+    for (const star of LOCAL_ARM_STARS) {
         const offset = projectOffset(star.x, star.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
