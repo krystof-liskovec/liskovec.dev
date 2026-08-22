@@ -1,5 +1,6 @@
 import { drawReadout } from './canvas-ui';
 import type { ProjectedGalacticObject } from './galaxy-object-renderer';
+import type { ProjectedComet } from './solar-system-scene';
 import { COMPACT_PLANET_GRIDS } from './solar-body-renderer';
 import type { FocusTarget, ProjectedBody } from './types';
 
@@ -51,14 +52,18 @@ export const findHoveredBody = (options: {
     return frontmost;
 };
 
+export const findHoveredComet = (comet: ProjectedComet, pointerX: number, pointerY: number): ProjectedComet | null =>
+    Math.hypot(comet.x - pointerX, comet.y - pointerY) <= 22 ? comet : null;
+
 export const createFocusCandidate = (options: {
     hoveredBody: ProjectedBody | null;
+    hoveredComet: ProjectedComet | null;
     hoveredSun: boolean;
     hoveredGalacticObject: ProjectedGalacticObject | null;
     sunX: number;
     sunY: number;
 }): FocusTarget | null => {
-    const { hoveredBody, hoveredSun, hoveredGalacticObject, sunX, sunY } = options;
+    const { hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject, sunX, sunY } = options;
     if (hoveredBody) {
         return {
             id: `planet:${hoveredBody.planet.name}`,
@@ -70,6 +75,19 @@ export const createFocusCandidate = (options: {
             fact: hoveredBody.planet.fact,
             originX: hoveredBody.x,
             originY: hoveredBody.y,
+        };
+    }
+    if (hoveredComet) {
+        return {
+            id: 'comet:1P-Halley',
+            name: "Halley's Comet",
+            kind: 'comet',
+            color: '#83a598',
+            subtitle: 'periodic comet / 1P',
+            detail: 'q 0.586 AU / retrograde orbit',
+            fact: 'next perihelion: 2061',
+            originX: hoveredComet.x,
+            originY: hoveredComet.y,
         };
     }
     if (hoveredSun) {
@@ -105,13 +123,14 @@ export const drawHoverReadouts = (
         width: number;
         height: number;
         hoveredBody: ProjectedBody | null;
+        hoveredComet: ProjectedComet | null;
         hoveredSun: boolean;
         hoveredGalacticObject: ProjectedGalacticObject | null;
         sunX: number;
         sunY: number;
     },
 ) => {
-    const { width, height, hoveredBody, hoveredSun, hoveredGalacticObject, sunX, sunY } = options;
+    const { width, height, hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject, sunX, sunY } = options;
     if (hoveredBody) {
         drawReadout(context, {
             lines: [
@@ -130,6 +149,24 @@ export const drawHoverReadouts = (
             viewportHeight: height,
             titleColor: hoveredBody.planet.color,
             width: 260,
+        });
+    }
+    if (hoveredComet) {
+        drawReadout(context, {
+            lines: [
+                "[ HALLEY'S COMET ]",
+                'periodic comet / 1P',
+                `r    ${hoveredComet.distanceAu.toFixed(2).padStart(6)} au`,
+                'retrograde orbit / ~75.3-year period',
+                'next perihelion: 2061',
+                '[ click to zoom ]',
+            ],
+            anchorX: hoveredComet.x,
+            anchorY: hoveredComet.y,
+            viewportWidth: width,
+            viewportHeight: height,
+            titleColor: '#83a598',
+            width: 270,
         });
     }
     if (hoveredSun) {

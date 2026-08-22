@@ -8,7 +8,7 @@ import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-rend
 import { bindOrreryInteractions } from './orrery/interactions';
 import { DEG, J2000, smoothstep, solveKeplerOrbit } from './orrery/math';
 import { createRuntimeState, getOrbitDate as resolveOrbitDate } from './orrery/runtime-state';
-import { createFocusCandidate, drawHoverReadouts, findHoveredBody } from './orrery/scene-ui';
+import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
 import { GALACTIC_SOL } from './orrery/scene-data';
 import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
@@ -306,6 +306,7 @@ if (canvasElement && systemElement && canvasContext) {
             plutoUnlocked: easterEgg.unlocked,
             plutoReveal,
         });
+        const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
 
         const canvasBounds = canvas.getBoundingClientRect();
         const localPointerX = pointer.clientX - canvasBounds.left;
@@ -321,6 +322,10 @@ if (canvasElement && systemElement && canvasContext) {
                       viewportGlyphScale,
                   })
                 : null;
+        const cometHoverCandidate =
+            pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > 0.45
+                ? findHoveredComet(projectedHalley, localPointerX, localPointerY)
+                : null;
         const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - 0.42) / 0.35);
         galaxyObjectRenderer.project({
             radius: galaxyRadius,
@@ -333,11 +338,18 @@ if (canvasElement && systemElement && canvasContext) {
             pointer.active && !camera.dragging && !objectFocus.target && galaxyObjectOpacity > 0.35
                 ? galaxyObjectRenderer.findHovered(localPointerX, localPointerY)
                 : null;
-        // Galactic objects are painted last, followed by the nearest planet. The
-        // Sun is the background layer and is hoverable only where nothing covers it.
-        const hoveredBody = hoveredGalacticObject ? null : bodyHoverCandidate;
+        // Galactic objects are painted last. Within the local scene, the comet
+        // and planets compete by depth; the Sun only wins uncovered pixels.
+        const hoveredComet =
+            !hoveredGalacticObject &&
+            cometHoverCandidate &&
+            (!bodyHoverCandidate || projectedHalley.z >= bodyHoverCandidate.z)
+                ? cometHoverCandidate
+                : null;
+        const hoveredBody = hoveredGalacticObject || hoveredComet ? null : bodyHoverCandidate;
         const hoveredSun =
             !hoveredGalacticObject &&
+            !hoveredComet &&
             !hoveredBody &&
             pointer.active &&
             !camera.dragging &&
@@ -348,6 +360,7 @@ if (canvasElement && systemElement && canvasContext) {
 
         activeFocusCandidate = createFocusCandidate({
             hoveredBody,
+            hoveredComet,
             hoveredSun,
             hoveredGalacticObject,
             sunX: centerX,
@@ -365,11 +378,13 @@ if (canvasElement && systemElement && canvasContext) {
             focusedSunDetailReveal,
             focusedSunBridgeScale,
             hoveredBody,
+            hoveredComet,
             hoveredSun,
             showHoverVisuals,
             centerX,
             centerY,
             renderedSunScale,
+            now,
             seconds,
             reducedMotion,
             solarSystemScale,
@@ -400,6 +415,7 @@ if (canvasElement && systemElement && canvasContext) {
                 width,
                 height,
                 hoveredBody,
+                hoveredComet,
                 hoveredSun,
                 hoveredGalacticObject,
                 sunX: centerX,

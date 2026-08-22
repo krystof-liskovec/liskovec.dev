@@ -1,6 +1,7 @@
 import { FOCUSED_ART, MAJOR_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { drawReadout } from './canvas-ui';
+import { drawFocusedHalley } from './comet-renderer';
 import { drawFocusedGalacticObject } from './galactic-renderer';
 import { drawFocusedIss } from './iss-renderer';
 import { DEG, J2000, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKeplerOrbit } from './math';
@@ -467,7 +468,20 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     reducedMotion,
                     compact: width < 600,
                 });
-            if (!renderedGalacticObject) {
+            const renderedComet =
+                target.kind === 'comet' &&
+                drawFocusedHalley(context, {
+                    x: focusCenterX,
+                    y: focusCenterY,
+                    scale: focusScale,
+                    opacity: objectReveal,
+                    seconds,
+                    longitude: objectFocus.longitude,
+                    latitude: objectFocus.latitude,
+                    reducedMotion,
+                    compact: width < 600,
+                });
+            if (!renderedGalacticObject && !renderedComet) {
                 const lines = FOCUSED_ART[target.name] ?? [target.name];
                 const artFontSize = (width < 600 ? 14 : 22) * focusScale;
                 context.font = `bold ${artFontSize}px "DM Mono", monospace`;

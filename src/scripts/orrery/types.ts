@@ -37,7 +37,7 @@ export type GalacticObject = {
 export type FocusTarget = {
     id: string;
     name: string;
-    kind: 'star' | 'planet' | 'moon' | 'station' | 'galactic';
+    kind: 'star' | 'planet' | 'moon' | 'station' | 'comet' | 'galactic';
     color: string;
     subtitle: string;
     detail: string;

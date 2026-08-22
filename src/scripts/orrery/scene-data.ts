@@ -184,6 +184,25 @@ export const KUIPER_BELT: SolarParticle[] = Array.from({ length: 560 }, (_, inde
     glyph: index % 31 === 0 ? ':' : index % 11 === 0 ? "'" : '.',
 }));
 
+export type TrojanParticle = {
+    angleOffset: number;
+    radius: number;
+    z: number;
+    phase: number;
+    glyph: '.' | ':';
+};
+
+export const JUPITER_TROJANS: TrojanParticle[] = Array.from({ length: 150 }, (_, index) => {
+    const side = index % 2 === 0 ? 1 : -1;
+    return {
+        angleOffset: side * 60 * DEG + (randomUnit(index + 4001) + randomUnit(index + 4101) - 1) * 13 * DEG,
+        radius: 24 + (randomUnit(index + 4201) + randomUnit(index + 4301) - 1) * 1.25,
+        z: (randomUnit(index + 4401) + randomUnit(index + 4501) - 1) * 0.65,
+        phase: randomUnit(index + 4601),
+        glyph: index % 17 === 0 ? ':' : '.',
+    };
+});
+
 export const ORBIT_SAMPLES = 112;
 export const ORBIT_POINTS = PLANETS.map((planet) =>
     Array.from({ length: ORBIT_SAMPLES }, (_, sample) => {
