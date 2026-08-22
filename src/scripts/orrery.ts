@@ -6,7 +6,7 @@ import { drawFocusedIss } from './orrery/iss-renderer';
 import { drawFocusedMoon } from './orrery/moon-renderer';
 import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKeplerOrbit, solveOrbit } from './orrery/math';
 import { focusedRotation, planetSurfaceGlyph } from './orrery/planet-textures';
-import { ASTEROID_BELT, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
+import { ASTEROID_BELT, GALACTIC_NEBULAE, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
 import { drawSun } from './orrery/sun-renderer';
 import type { FocusState, FocusTarget, Planet, Vec3 } from './orrery/types';
 
@@ -289,6 +289,7 @@ if (canvas && system && context) {
     const focusedSunDetailReveal = focusedSun ? smoothstep((planetSceneFocus - .06) / .3) : 0;
     const focusedSunBridgeScale = focusedSun ? (.24 + localSphereGrowth * .76) / .24 : 1;
     const galaxyProgress = smoothstep((outwardZoom - .24) / .76);
+    const galaxyVisibility = smoothstep((outwardZoom - .46) / .42);
     const localDetailOpacity = 1 - smoothstep((outwardZoom - .2) / .26);
     const solarSystemScale = Math.pow(.055, Math.min(1, outwardZoom / .7));
     const renderedSunScale = solarSystemScale * viewportSunScale ** 2;
@@ -360,15 +361,22 @@ if (canvas && system && context) {
         objectFocus.resetting = false;
       }
     }
-    const galacticOffset = (x: number, y: number, radius: number) => {
-      const tiltedY = y * galaxyCamera.tilt;
+    const galacticOffsetAt = (x: number, y: number, radius: number, rotation: number, tilt: number) => {
+      // Spin within the galactic plane first, then project that plane toward
+      // the viewer. Flattening first would rotate the projected ellipse itself
+      // and make the galaxy look as though it were tumbling in screen space.
+      const rotatedX = x * Math.cos(rotation) - y * Math.sin(rotation);
+      const rotatedY = x * Math.sin(rotation) + y * Math.cos(rotation);
       return {
-        x: (x * Math.cos(galaxyCamera.rotation) - tiltedY * Math.sin(galaxyCamera.rotation)) * radius,
-        y: (x * Math.sin(galaxyCamera.rotation) + tiltedY * Math.cos(galaxyCamera.rotation)) * radius,
+        x: rotatedX * radius,
+        y: rotatedY * .58 * tilt * radius,
       };
     };
-    // Move Sol along a stable screen-space path while the galactic centre arrives behind it.
-    // Coupling this movement to the enormous intermediate radius creates an empty visual jump.
+    const galacticOffset = (x: number, y: number, radius: number) =>
+      galacticOffsetAt(x, y, radius, galaxyCamera.rotation, galaxyCamera.tilt);
+    // Follow Sol's live projected coordinate during the zoom. This is the same
+    // point used by the Orion Spur marker, so rotation can never separate the
+    // local scene from the place it expands into or contracts from.
     const finalSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, finalGalaxyRadius);
     const currentSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, galaxyRadius);
     let centerX = viewportCenterX + finalSolOffset.x * galaxyProgress;
@@ -381,7 +389,7 @@ if (canvas && system && context) {
     const backgroundSceneOpacity = objectFocus.target?.kind === 'galactic'
       ? 1 - smoothstep((objectFocus.progress - .04) / .42)
       : 1;
-    const galaxyAlpha = smoothstep((cosmicZoom.current - .28) / .34) * backgroundSceneOpacity;
+    const galaxyAlpha = galaxyVisibility * backgroundSceneOpacity;
     const localSkyOpacity = (1 - smoothstep((cosmicZoom.current - .06) / .24)) * backgroundSceneOpacity;
     // Leave enough room for Neptune even at the nearest point in the projection.
     const baseWorldScale = width < 600
@@ -430,6 +438,17 @@ if (canvas && system && context) {
     context.globalAlpha = 1;
 
     if (galaxyAlpha > .001) {
+      context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+      for (const particle of GALACTIC_NEBULAE) {
+        const offset = galacticOffset(particle.x, particle.y, galaxyRadius);
+        const particleX = galaxyCoreX + offset.x;
+        const particleY = galaxyCoreY + offset.y;
+        if (particleX < -12 || particleX > width + 12 || particleY < -12 || particleY > height + 12) continue;
+        const pulse = reducedMotion ? .82 : .8 + Math.sin(seconds * .34 + particle.phase) * .12;
+        context.globalAlpha = galaxyAlpha * particle.opacity * pulse;
+        context.fillStyle = particle.color;
+        context.fillText(particle.glyph, particleX, particleY);
+      }
       context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
       for (const star of GALAXY_STARS) {
         const offset = galacticOffset(star.x, star.y, galaxyRadius);
