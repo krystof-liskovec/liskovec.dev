@@ -13,13 +13,16 @@ type GalacticRenderOptions = {
   compact: boolean;
 };
 
-type GlyphPoint = { x: number; y: number; glyph: string; color: string; alpha: number; size?: number };
+type GlyphPoint = { x: number; y: number; glyph: string; color: string; alpha: number };
 
 const paintPoints = (context: CanvasRenderingContext2D, points: GlyphPoint[], baseSize: number, opacity: number) => {
+  // Font parsing is considerably more expensive than changing colour/alpha.
+  // Keep particle fields on one font state instead of rebuilding it hundreds
+  // of times per frame; variation still comes from glyph, colour and opacity.
+  context.font = `bold ${baseSize}px "DM Mono", monospace`;
   for (const point of points) {
     context.globalAlpha = opacity * point.alpha;
     context.fillStyle = point.color;
-    context.font = `bold ${point.size ?? baseSize}px "DM Mono", monospace`;
     context.fillText(point.glyph, point.x, point.y);
   }
 };
@@ -28,6 +31,28 @@ const radialGlyph = (angle: number) => Math.abs(Math.cos(angle)) > .82
   ? '-'
   : Math.abs(Math.sin(angle)) > .82 ? '|' : Math.sin(angle) * Math.cos(angle) > 0 ? '\\' : '/';
 
+// These structures do not change between frames. Precomputing their seeded
+// noise avoids thousands of Math.sin calls while a detailed object is open.
+const SAGITTARIUS_PARTICLES = Array.from({ length: 280 }, (_, index) => {
+  const lane = index % 4;
+  return {
+    angle: index / 280 * Math.PI * 2,
+    radius: .43 + lane * .145 + randomUnit(index + 91) * .075,
+    glyph: lane === 1 ? '=' : lane === 2 ? '~' : randomUnit(index + 8) > .55 ? '-' : '.',
+    color: lane === 0 ? '#d79921' : lane === 1 ? '#fe8019' : lane === 2 ? '#fabd2f' : '#bdae93',
+    alpha: .3 + randomUnit(index + 17) * .55,
+  };
+});
+
+const ORION_PARTICLES = Array.from({ length: 260 }, (_, index) => ({
+  angle: randomUnit(index + 120) * Math.PI * 2,
+  distance: Math.sqrt(randomUnit(index + 420)),
+  energy: randomUnit(index + 31),
+  phase: index * 2.3,
+}));
+
+const CRAB_PARTICLE_ALPHA = Array.from({ length: 7 * 46 }, (_, index) => .24 + randomUnit(index * 1.37 + 53) * .55);
+
 function drawSagittarius(context: CanvasRenderingContext2D, options: GalacticRenderOptions, radius: number, fontSize: number) {
   const { x, y, opacity, seconds, longitude, latitude, reducedMotion } = options;
   const spin = longitude * .32 + (reducedMotion ? 0 : seconds * .035);
@@ -35,17 +60,15 @@ function drawSagittarius(context: CanvasRenderingContext2D, options: GalacticRen
   const far: GlyphPoint[] = [];
   const near: GlyphPoint[] = [];
 
-  for (let index = 0; index < 280; index++) {
-    const angle = index / 280 * Math.PI * 2 + spin;
-    const lane = index % 4;
-    const localRadius = radius * (.43 + lane * .145 + randomUnit(index + 91) * .075);
+  for (const particle of SAGITTARIUS_PARTICLES) {
+    const angle = particle.angle + spin;
+    const localRadius = radius * particle.radius;
     const point = {
       x: x + Math.cos(angle) * localRadius,
       y: y + Math.sin(angle) * localRadius * tilt,
-      glyph: lane === 1 ? '=' : lane === 2 ? '~' : randomUnit(index + 8) > .55 ? '-' : '.',
-      color: lane === 0 ? '#d79921' : lane === 1 ? '#fe8019' : lane === 2 ? '#fabd2f' : '#bdae93',
-      alpha: .3 + randomUnit(index + 17) * .55,
-      size: fontSize * (.78 + randomUnit(index + 23) * .26),
+      glyph: particle.glyph,
+      color: particle.color,
+      alpha: particle.alpha,
     };
     (Math.sin(angle) < 0 ? far : near).push(point);
   }
@@ -54,11 +77,11 @@ function drawSagittarius(context: CanvasRenderingContext2D, options: GalacticRen
 
   // The inner photon ring remains continuous while the accretion flow passes
   // behind and in front of the shadow.
+  context.font = `bold ${fontSize * .72}px "DM Mono", monospace`;
   for (let sample = 0; sample < 96; sample++) {
     const angle = sample / 96 * Math.PI * 2 + spin * .35;
     context.globalAlpha = opacity * (.48 + sample % 5 * .08);
     context.fillStyle = sample % 6 === 0 ? '#ebdbb2' : sample % 2 ? '#fabd2f' : '#fe8019';
-    context.font = `bold ${fontSize * .72}px "DM Mono", monospace`;
     context.fillText(radialGlyph(angle + Math.PI / 2), x + Math.cos(angle) * radius * .36, y + Math.sin(angle) * radius * .1);
   }
 
@@ -76,12 +99,12 @@ function drawSagittarius(context: CanvasRenderingContext2D, options: GalacticRen
   context.fillText('@', x, y);
   paintPoints(context, near, fontSize, opacity);
 
+  context.font = `${fontSize * .68}px "DM Mono", monospace`;
   for (let side = -1; side <= 1; side += 2) {
     for (let arc = 0; arc < 46; arc++) {
       const angle = Math.PI + arc / 45 * Math.PI;
       context.globalAlpha = opacity * (.15 + Math.sin(arc * .9) * .045);
       context.fillStyle = side < 0 ? '#bdae93' : '#665c54';
-      context.font = `${fontSize * .68}px "DM Mono", monospace`;
       context.fillText(radialGlyph(angle + Math.PI / 2), x + Math.cos(angle) * radius * .43, y + side * radius * .235 + Math.sin(angle) * radius * .105 * side);
     }
   }
@@ -98,23 +121,23 @@ function drawOrion(context: CanvasRenderingContext2D, options: GalacticRenderOpt
   const { x, y, opacity, seconds, longitude, latitude, reducedMotion } = options;
   const points: GlyphPoint[] = [];
   const rotation = longitude * .12;
-  for (let index = 0; index < 260; index++) {
-    const angle = randomUnit(index + 120) * Math.PI * 2 + rotation;
-    const distance = Math.sqrt(randomUnit(index + 420));
+  for (let index = 0; index < ORION_PARTICLES.length; index++) {
+    const particle = ORION_PARTICLES[index];
+    const angle = particle.angle + rotation;
+    const distance = particle.distance;
     const lobe = 1 + Math.cos(angle * 2 - .7) * .28 + Math.sin(angle * 3.1) * .12;
     const localX = Math.cos(angle) * radius * distance * lobe;
     const localY = Math.sin(angle) * radius * distance * (.48 + Math.cos(latitude) * .12);
     const dustLane = Math.abs(localY + localX * .18) < radius * .055 && localX > -radius * .5;
     if (dustLane && index % 4 !== 0) continue;
-    const energy = randomUnit(index + 31);
-    const shimmer = reducedMotion ? 0 : Math.sin(seconds * .65 + index * 2.3) * .08;
+    const energy = particle.energy;
+    const shimmer = reducedMotion ? 0 : Math.sin(seconds * .65 + particle.phase) * .08;
     points.push({
       x: x + localX,
       y: y + localY,
       glyph: energy > .91 ? '*' : energy > .7 ? ':' : energy > .42 ? '.' : '~',
       color: energy > .82 ? '#fabd2f' : energy > .56 ? '#d3869b' : energy > .28 ? '#83a598' : '#928374',
       alpha: .14 + (1 - distance) * .48 + shimmer,
-      size: fontSize * (.65 + energy * .48),
     });
   }
   paintPoints(context, points, fontSize, opacity);
@@ -135,6 +158,7 @@ function drawCygnus(context: CanvasRenderingContext2D, options: GalacticRenderOp
   const starX = x - radius * .48;
   const holeX = x + radius * .45;
   const starRows = [5, 9, 11, 11, 11, 9, 5];
+  context.font = `bold ${fontSize * .86}px "DM Mono", monospace`;
   starRows.forEach((rowWidth, row) => {
     const first = (11 - rowWidth) / 2;
     for (let cell = 0; cell < rowWidth; cell++) {
@@ -143,28 +167,27 @@ function drawCygnus(context: CanvasRenderingContext2D, options: GalacticRenderOp
       const contour = cell === 0 || cell === rowWidth - 1 || row === 0 || row === starRows.length - 1;
       context.globalAlpha = opacity * (contour ? .9 : .62 + Math.abs(surface) * .25);
       context.fillStyle = contour ? '#83a598' : surface > .4 ? '#8ec07c' : surface < -.45 ? '#458588' : '#83a598';
-      context.font = `bold ${fontSize * .86}px "DM Mono", monospace`;
       context.fillText(contour ? (row === 0 ? '-' : row === starRows.length - 1 ? "'" : cell === 0 ? '(' : ')') : surface > .55 ? '*' : 'o', starX + (column - 5) * fontSize * .5, y + (row - 3) * fontSize * .68);
     }
   });
 
+  context.font = `${fontSize * .7}px "DM Mono", monospace`;
   for (let sample = 0; sample < 74; sample++) {
     const progress = sample / 73;
     const streamX = starX + radius * .16 + progress * (holeX - starX - radius * .24);
     const streamY = y - Math.sin(progress * Math.PI) * radius * (.25 + Math.sin(latitude) * .06);
     context.globalAlpha = opacity * (.24 + progress * .55);
     context.fillStyle = progress > .7 ? '#fe8019' : '#83a598';
-    context.font = `${fontSize * .7}px "DM Mono", monospace`;
     context.fillText(sample % 5 === 0 ? ':' : '.', streamX, streamY);
   }
 
   const diskSpin = longitude * .35 + (reducedMotion ? 0 : seconds * .08);
+  context.font = `bold ${fontSize * .72}px "DM Mono", monospace`;
   for (let sample = 0; sample < 96; sample++) {
     const angle = sample / 96 * Math.PI * 2 + diskSpin;
     const diskRadius = radius * (.2 + (sample % 3) * .065);
     context.globalAlpha = opacity * (.35 + (sample % 4) * .13);
     context.fillStyle = sample % 3 === 0 ? '#fabd2f' : '#fe8019';
-    context.font = `bold ${fontSize * .72}px "DM Mono", monospace`;
     context.fillText(radialGlyph(angle + Math.PI / 2), holeX + Math.cos(angle) * diskRadius, y + Math.sin(angle) * diskRadius * .22);
   }
   context.globalAlpha = opacity;
@@ -191,18 +214,17 @@ function drawCrab(context: CanvasRenderingContext2D, options: GalacticRenderOpti
         y: y + Math.sin(angle) * localRadius * (.62 + Math.cos(latitude) * .08),
         glyph: radialGlyph(angle + Math.PI / 2),
         color: filament % 3 === 0 ? '#fb4934' : filament % 3 === 1 ? '#d3869b' : '#fe8019',
-        alpha: .24 + randomUnit(sample + filament * 53) * .55,
-        size: fontSize * (.62 + randomUnit(sample + filament * 17) * .35),
+        alpha: CRAB_PARTICLE_ALPHA[filament * 46 + sample],
       });
     }
   }
   paintPoints(context, points, fontSize, opacity);
 
+  context.font = `${fontSize * .62}px "DM Mono", monospace`;
   for (let wisp = 0; wisp < 42; wisp++) {
     const angle = wisp / 42 * Math.PI * 2 + (reducedMotion ? 0 : seconds * .025);
     context.globalAlpha = opacity * (.18 + wisp % 4 * .07);
     context.fillStyle = '#83a598';
-    context.font = `${fontSize * .62}px "DM Mono", monospace`;
     context.fillText(wisp % 3 ? '.' : ':', x + Math.cos(angle) * radius * .28, y + Math.sin(angle) * radius * .17);
   }
   context.globalAlpha = opacity;

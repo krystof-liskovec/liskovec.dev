@@ -233,7 +233,8 @@ if (canvas && system && context) {
     lastFrameAt = frameTime;
     if (objectFocus.target) {
       const focusTarget = objectFocus.exiting ? 0 : 1;
-      objectFocus.progress += (focusTarget - objectFocus.progress) * (reducedMotion ? 1 : Math.min(.11, frameDelta * .0034));
+      const focusResponse = objectFocus.target.kind === 'galactic' && !objectFocus.exiting ? .0044 : .0034;
+      objectFocus.progress += (focusTarget - objectFocus.progress) * (reducedMotion ? 1 : Math.min(.11, frameDelta * focusResponse));
       // Finish once the eased focus layer is visually gone; waiting for the
       // asymptotic tail makes the restored scene feel like it is still loading.
       if (objectFocus.exiting && objectFocus.progress < .06) {
@@ -366,8 +367,14 @@ if (canvas && system && context) {
     let centerY = viewportCenterY + finalSolOffset.y * galaxyProgress;
     const galaxyCoreX = centerX - currentSolOffset.x;
     const galaxyCoreY = centerY - currentSolOffset.y;
-    const galaxyAlpha = smoothstep((cosmicZoom.current - .28) / .34);
-    const localSkyOpacity = 1 - smoothstep((cosmicZoom.current - .06) / .24);
+    // Once a galactic close-up covers the scene, stop painting the hundreds of
+    // Milky Way glyphs underneath it. The fade completes early enough that the
+    // transition remains continuous while avoiding two full scenes per frame.
+    const backgroundSceneOpacity = objectFocus.target?.kind === 'galactic'
+      ? 1 - smoothstep((objectFocus.progress - .04) / .42)
+      : 1;
+    const galaxyAlpha = smoothstep((cosmicZoom.current - .28) / .34) * backgroundSceneOpacity;
+    const localSkyOpacity = (1 - smoothstep((cosmicZoom.current - .06) / .24)) * backgroundSceneOpacity;
     // Leave enough room for Neptune even at the nearest point in the projection.
     const baseWorldScale = width < 600
       ? Math.min(width / 116, height / 54)
