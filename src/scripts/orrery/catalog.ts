@@ -15,10 +15,10 @@ export const PLANETS: Planet[] = [
 
 // These positions are schematic locations on the face-on illustration.
 export const GALACTIC_OBJECTS: GalacticObject[] = [
-  { name: 'Sagittarius A*', kind: 'supermassive black hole', x: 0, y: 0, glyph: '{(@)}', color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
-  { name: 'Orion Nebula', kind: 'stellar nursery', x: .48, y: -.15, glyph: ':.*.:', color: '#d3869b', distance: '~1,340 ly', detail: 'Orion molecular cloud' },
-  { name: 'Cygnus X-1', kind: 'stellar black hole', x: .2, y: .25, glyph: '<*O>', color: '#83a598', distance: '~7,200 ly', detail: 'x-ray binary system' },
-  { name: 'Crab Nebula', kind: 'supernova remnant', x: -.25, y: -.22, glyph: '{+}', color: '#b8bb26', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
+  { name: 'Sagittarius A*', kind: 'supermassive black hole', x: 0, y: 0, glyph: '{(@)}', sprite: ['  .-=-.  ', '==<(@)>==', "  '-=-'  "], color: '#fe8019', distance: '~26,700 ly', detail: 'galactic centre' },
+  { name: 'Orion Nebula', kind: 'stellar nursery', x: .48, y: -.15, glyph: ':.*.:', sprite: [' .:*:. ', ':.*+*.:', ' .:*:. '], color: '#d3869b', distance: '~1,340 ly', detail: 'Orion molecular cloud' },
+  { name: 'Cygnus X-1', kind: 'stellar black hole', x: .2, y: .25, glyph: '<*O>', sprite: [' .*.    .-. ', '(*O*)~~~>(@)', " '*'    '-' "], color: '#83a598', distance: '~7,200 ly', detail: 'x-ray binary system' },
+  { name: 'Crab Nebula', kind: 'supernova remnant', x: -.25, y: -.22, glyph: '{+}', sprite: [' .:\\|/:. ', '--={+}=--', ' .:/|\\:. '], color: '#b8bb26', distance: '~6,500 ly', detail: 'pulsar wind nebula' },
 ];
 
 export const PLANETARY_MOON_SYSTEMS: Record<string, { radii: number[]; speeds: number[]; tilt: number }> = {

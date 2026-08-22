@@ -23,6 +23,7 @@ export type GalacticObject = {
   x: number;
   y: number;
   glyph: string;
+  sprite: string[];
   color: string;
   distance: string;
   detail: string;

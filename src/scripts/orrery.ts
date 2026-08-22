@@ -1,5 +1,6 @@
 import { FOCUSED_ART, GALACTIC_OBJECTS, MAJOR_MOON_SYSTEMS, PLANETARY_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
 import { drawReadout } from './orrery/canvas-ui';
+import { drawFocusedGalacticObject } from './orrery/galactic-renderer';
 import { drawFocusedIss } from './orrery/iss-renderer';
 import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveOrbit } from './orrery/math';
 import { focusedRotation, planetSurfaceGlyph } from './orrery/planet-textures';
@@ -522,7 +523,7 @@ if (canvas && system && context) {
       ? galacticObjects.reduce<typeof galacticObjects[number] | null>((closest, object) => {
           const distance = Math.hypot(object.x - localPointerX, object.y - localPointerY);
           const closestDistance = closest ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY) : Infinity;
-          return distance < 30 && distance < closestDistance ? object : closest;
+          return distance < 36 && distance < closestDistance ? object : closest;
         }, null)
       : null;
     // Galactic objects are painted last, followed by the nearest planet. The
@@ -758,12 +759,36 @@ if (canvas && system && context) {
         if (galacticObject.x < -30 || galacticObject.x > width + 30 || galacticObject.y < -30 || galacticObject.y > height + 30) continue;
         const isHovered = galacticObject === hoveredGalacticObject && showHoverVisuals;
         const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.4 + galacticObject.x) * .08;
-        context.globalAlpha = galaxyObjectOpacity;
+        const spriteReveal = smoothstep((galaxyProgress - .58) / .28);
+        const spriteFontSize = (isHovered ? 8.8 : 7.8) * pulse;
         context.fillStyle = galacticObject.object.color;
+        context.globalAlpha = galaxyObjectOpacity * (1 - spriteReveal);
         context.font = `bold ${Math.round((isHovered ? 13 : 11) * pulse)}px "DM Mono", monospace`;
         context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
+        context.globalAlpha = galaxyObjectOpacity * spriteReveal;
+        context.font = `bold ${spriteFontSize}px "DM Mono", monospace`;
+        context.strokeStyle = '#1d2021';
+        context.lineWidth = Math.max(1.25, spriteFontSize * .16);
+        galacticObject.object.sprite.forEach((line, row) => {
+          const lineY = galacticObject.y + (row - (galacticObject.object.sprite.length - 1) / 2) * spriteFontSize * .76;
+          context.strokeText(line, galacticObject.x, lineY);
+          context.fillText(line, galacticObject.x, lineY);
+          if (galacticObject.object.name === 'Cygnus X-1' && row === 1) {
+            const lineWidth = context.measureText(line).width;
+            const characterWidth = context.measureText('M').width;
+            context.fillStyle = '#8ec07c';
+            context.strokeText('O', galacticObject.x - lineWidth / 2 + characterWidth * 2.5, lineY);
+            context.fillText('O', galacticObject.x - lineWidth / 2 + characterWidth * 2.5, lineY);
+            const blackHole = '(@)';
+            const blackHoleWidth = context.measureText(blackHole).width;
+            context.fillStyle = '#fe8019';
+            context.strokeText(blackHole, galacticObject.x + lineWidth / 2 - blackHoleWidth / 2, lineY);
+            context.fillText(blackHole, galacticObject.x + lineWidth / 2 - blackHoleWidth / 2, lineY);
+            context.fillStyle = galacticObject.object.color;
+          }
+        });
         if (isHovered) {
-          const glyphWidth = context.measureText(galacticObject.object.glyph).width;
+          const glyphWidth = Math.max(...galacticObject.object.sprite.map((line) => context.measureText(line).width));
           context.fillStyle = '#ebdbb2';
           context.font = 'bold 11px "DM Mono", monospace';
           context.fillText('[', galacticObject.x - glyphWidth / 2 - 8, galacticObject.y);
@@ -1107,16 +1132,30 @@ if (canvas && system && context) {
         if (target.name === 'Earth') drawFocusedEarthSatellites(true);
         drawFocusedMajorMoons(true);
       } else {
-        drawFocusField(width < 600 ? 145 : 235, target.kind === 'galactic' ? 116 : 62, target.kind === 'galactic' ? ['.', ':', '*', '+'] : ['.', '-']);
-        const lines = FOCUSED_ART[target.name] ?? [target.name];
-        const artFontSize = (width < 600 ? 14 : 22) * focusScale;
-        context.font = `bold ${artFontSize}px "DM Mono", monospace`;
-        context.fillStyle = target.color;
-        context.globalAlpha = objectReveal;
-        lines.forEach((line, index) => {
-          const parallax = Math.sin(objectFocus.longitude + index * .7) * artFontSize * .55;
-          context.fillText(line, focusCenterX + parallax, focusCenterY + (index - (lines.length - 1) / 2) * artFontSize * .9);
+        drawFocusField(width < 600 ? 145 : 235, target.kind === 'galactic' ? 32 : 62, target.kind === 'galactic' ? ['.', ':', '*'] : ['.', '-']);
+        const renderedGalacticObject = target.kind === 'galactic' && drawFocusedGalacticObject(context, {
+          name: target.name,
+          x: focusCenterX,
+          y: focusCenterY,
+          scale: focusScale,
+          opacity: objectReveal,
+          seconds,
+          longitude: objectFocus.longitude,
+          latitude: objectFocus.latitude,
+          reducedMotion,
+          compact: width < 600,
         });
+        if (!renderedGalacticObject) {
+          const lines = FOCUSED_ART[target.name] ?? [target.name];
+          const artFontSize = (width < 600 ? 14 : 22) * focusScale;
+          context.font = `bold ${artFontSize}px "DM Mono", monospace`;
+          context.fillStyle = target.color;
+          context.globalAlpha = objectReveal;
+          lines.forEach((line, index) => {
+            const parallax = Math.sin(objectFocus.longitude + index * .7) * artFontSize * .55;
+            context.fillText(line, focusCenterX + parallax, focusCenterY + (index - (lines.length - 1) / 2) * artFontSize * .9);
+          });
+        }
       }
 
       if (showHoverVisuals && hoveredMajorMoon && majorMoonSystem) {
