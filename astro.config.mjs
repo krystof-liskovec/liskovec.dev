@@ -2,7 +2,7 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
-const siteUrl = process.env.SITE_URL ?? 'https://liskovec.dev';
+const siteUrl = process.env.SITE_URL ?? 'https://liskovec.pages.dev';
 
 // https://astro.build/config
 export default defineConfig({

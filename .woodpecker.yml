@@ -10,8 +10,7 @@ steps:
               from_secret: cloudflare_api_token
           CLOUDFLARE_ACCOUNT_ID:
               from_secret: cloudflare_account_id
-          SITE_URL:
-              from_secret: site_url
+          SITE_URL: https://liskovec.pages.dev
           CLOUDFLARE_PAGES_PROJECT: liskovec
       commands:
           - npm ci
