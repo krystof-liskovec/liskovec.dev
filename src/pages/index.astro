@@ -10,7 +10,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
     .slice(0, 3);
 ---
 
-<Layout>
+<Layout resetScrollOnReload>
     <SiteShell>
         <section class="solar-hero">
             <div class="solar-heading">

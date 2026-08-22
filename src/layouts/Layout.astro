@@ -2,18 +2,20 @@
 interface Props {
     title?: string;
     description?: string;
+    resetScrollOnReload?: boolean;
 }
 
 const {
     title = 'liskovec.dev | devops & software development',
     description = 'Kryštof Liskovec — DevOps and software developer building reliable systems and useful tools.',
+    resetScrollOnReload = false,
 } = Astro.props;
 
 const rssUrl = new URL('/rss.xml', Astro.site ?? Astro.url);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-reset-scroll-on-reload={resetScrollOnReload ? '' : undefined}>
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
@@ -23,6 +25,27 @@ const rssUrl = new URL('/rss.xml', Astro.site ?? Astro.url);
         <meta name="generator" content={Astro.generator} />
         <meta name="description" content={description} />
         <title>{title}</title>
+        <script is:inline>
+            const resetHomepageReload = document.documentElement.hasAttribute('data-reset-scroll-on-reload');
+            const navigation = performance.getEntriesByType('navigation')[0];
+            if (resetHomepageReload && navigation?.type === 'reload') {
+                history.scrollRestoration = 'manual';
+                history.replaceState(history.state, '', location.pathname + location.search);
+                const resetReloadScroll = () => window.scrollTo(0, 0);
+                resetReloadScroll();
+                window.addEventListener(
+                    'pageshow',
+                    () => {
+                        resetReloadScroll();
+                        requestAnimationFrame(() => {
+                            resetReloadScroll();
+                            history.scrollRestoration = 'auto';
+                        });
+                    },
+                    { once: true },
+                );
+            }
+        </script>
         <script is:inline>
             document.documentElement.classList.add('is-hydrating');
             window.setTimeout(() => document.documentElement.classList.remove('is-hydrating'), 2000);
