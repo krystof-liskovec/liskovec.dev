@@ -1,4 +1,4 @@
-import { PLANETS } from './catalog';
+import { GALACTIC_OBJECTS, PLANETS } from './catalog';
 import { DEG, orbitalPoint, randomUnit } from './math';
 
 export const STARS = Array.from({ length: 90 }, (_, index) => ({
@@ -52,6 +52,60 @@ export const galacticPositionFromSun = (
     return target;
 };
 
+const CRAB_NEBULA = GALACTIC_OBJECTS.find((object) => object.name === 'Crab Nebula');
+const CRAB_GALACTIC_POSITION = CRAB_NEBULA
+    ? galacticPositionFromSun(
+          CRAB_NEBULA.galacticLongitude,
+          CRAB_NEBULA.galacticLatitude,
+          CRAB_NEBULA.heliocentricDistanceKpc,
+      )
+    : { x: 0, y: 0, z: 0 };
+const CRAB_GALACTIC_RADIUS = Math.hypot(CRAB_GALACTIC_POSITION.x, CRAB_GALACTIC_POSITION.y);
+const CRAB_GALACTIC_ANGLE = Math.atan2(CRAB_GALACTIC_POSITION.y, CRAB_GALACTIC_POSITION.x);
+const CASSIOPEIA_A = GALACTIC_OBJECTS.find((object) => object.name === 'Cassiopeia A');
+const CASSIOPEIA_A_POSITION = CASSIOPEIA_A
+    ? galacticPositionFromSun(
+          CASSIOPEIA_A.galacticLongitude,
+          CASSIOPEIA_A.galacticLatitude,
+          CASSIOPEIA_A.heliocentricDistanceKpc,
+      )
+    : CRAB_GALACTIC_POSITION;
+const CASSIOPEIA_A_RADIUS = Math.hypot(CASSIOPEIA_A_POSITION.x, CASSIOPEIA_A_POSITION.y);
+const CASSIOPEIA_A_ANGLE = Math.atan2(CASSIOPEIA_A_POSITION.y, CASSIOPEIA_A_POSITION.x);
+const CRAB_PERSEUS_CORRECTION = CRAB_GALACTIC_ANGLE - galacticSpiralAngle(0, CRAB_GALACTIC_RADIUS, Math.PI / 2);
+const CASSIOPEIA_PERSEUS_CORRECTION = CASSIOPEIA_A_ANGLE - galacticSpiralAngle(0, CASSIOPEIA_A_RADIUS, Math.PI / 2);
+const PERSEUS_ARM_CORRECTION = Math.atan2(
+    Math.sin(CRAB_PERSEUS_CORRECTION) + Math.sin(CASSIOPEIA_PERSEUS_CORRECTION),
+    Math.cos(CRAB_PERSEUS_CORRECTION) + Math.cos(CASSIOPEIA_PERSEUS_CORRECTION),
+);
+const PERSEUS_ANCHOR_RADIUS = (CRAB_GALACTIC_RADIUS + CASSIOPEIA_A_RADIUS) / 2;
+const localizedArmCorrection = (radius: number, targetRadius: number, correction: number) => {
+    const radialDistance = (radius - targetRadius) / 0.22;
+    return correction * Math.exp(-(radialDistance * radialDistance));
+};
+const perseusArmOffset = (radius: number) => {
+    // The broad procedural arm remains intact, but bends between the measured
+    // Crab Nebula and Cassiopeia A positions instead of stranding either remnant.
+    return Math.PI / 2 + localizedArmCorrection(radius, PERSEUS_ANCHOR_RADIUS, PERSEUS_ARM_CORRECTION);
+};
+
+const ETA_CARINAE = GALACTIC_OBJECTS.find((object) => object.name === 'Eta Carinae');
+const ETA_CARINAE_POSITION = ETA_CARINAE
+    ? galacticPositionFromSun(
+          ETA_CARINAE.galacticLongitude,
+          ETA_CARINAE.galacticLatitude,
+          ETA_CARINAE.heliocentricDistanceKpc,
+      )
+    : { x: 0, y: 0, z: 0 };
+const ETA_CARINAE_RADIUS = Math.hypot(ETA_CARINAE_POSITION.x, ETA_CARINAE_POSITION.y);
+const ETA_CARINAE_ANGLE = Math.atan2(ETA_CARINAE_POSITION.y, ETA_CARINAE_POSITION.x);
+const CARINA_BASE_ANGLE = galacticSpiralAngle(1, ETA_CARINAE_RADIUS);
+const CARINA_ETA_CORRECTION = Math.atan2(
+    Math.sin(ETA_CARINAE_ANGLE - CARINA_BASE_ANGLE),
+    Math.cos(ETA_CARINAE_ANGLE - CARINA_BASE_ANGLE),
+);
+const carinaArmOffset = (radius: number) => localizedArmCorrection(radius, ETA_CARINAE_RADIUS, CARINA_ETA_CORRECTION);
+
 export const GALAXY_STARS = Array.from({ length: 2800 }, (_, index) => {
     const inBar = index < 360;
     if (inBar) {
@@ -79,7 +133,13 @@ export const GALAXY_STARS = Array.from({ length: 2800 }, (_, index) => {
         ? 0.16 + Math.pow(randomUnit(index + 1), 0.72) * 0.84
         : 0.2 + Math.pow(randomUnit(index + 1), 0.78) * 0.75;
     const armLane = ((index % 3) - 1) * (0.032 + radius * 0.045);
-    const branch = dominantArm ? 0 : Math.PI / 2;
+    const branch = dominantArm
+        ? arm === 1
+            ? carinaArmOffset(radius)
+            : 0
+        : arm === 0
+          ? perseusArmOffset(radius)
+          : Math.PI / 2;
     const scatter = (randomUnit(index + 11) - 0.5) * (dominantArm ? 0.14 + radius * 0.29 : 0.13 + radius * 0.2);
     const angle = galacticSpiralAngle(arm, radius, branch) + armLane + scatter;
     return {
@@ -108,9 +168,9 @@ export const GALACTIC_DISK = Array.from({ length: 600 }, (_, index) => {
 export const GALACTIC_DUST_LANES = Array.from({ length: 150 }, (_, index) => {
     const arm = index % 2;
     const radius = 0.18 + Math.pow(randomUnit(index + 2601), 0.76) * 0.7;
+    const armOffset = -(0.09 + radius * 0.075) + (arm === 1 ? carinaArmOffset(radius) : 0);
     const angle =
-        galacticSpiralAngle(arm, radius, -(0.09 + radius * 0.075)) +
-        (randomUnit(index + 2701) - 0.5) * (0.07 + radius * 0.09);
+        galacticSpiralAngle(arm, radius, armOffset) + (randomUnit(index + 2701) - 0.5) * (0.07 + radius * 0.09);
     return {
         x: Math.cos(angle) * radius,
         y: Math.sin(angle) * radius,
@@ -125,7 +185,6 @@ const NEBULA_REGIONS = [
     { arm: 0, radius: 0.43, offset: Math.PI / 2, spread: 0.06, color: '#83a598' },
     { arm: 1, radius: 0.51, offset: 0.08, spread: 0.055, color: '#d3869b' },
     { arm: 0, radius: 0.6, offset: 0, spread: 0.065, color: '#b8bb26' },
-    { arm: 1, radius: 0.68, offset: -0.1, spread: 0.06, color: '#d3869b' },
     { arm: 0, radius: 0.76, offset: Math.PI / 2, spread: 0.07, color: '#fe8019' },
     { arm: 1, radius: 0.84, offset: 0, spread: 0.065, color: '#83a598' },
 ];
@@ -135,7 +194,11 @@ export const GALACTIC_NEBULAE = NEBULA_REGIONS.flatMap((region, regionIndex) =>
         const seed = regionIndex * 97 + particleIndex;
         const radialOffset = (randomUnit(seed + 1701) + randomUnit(seed + 1801) - 1) * region.spread * 1.25;
         const radius = region.radius + radialOffset;
-        const armAngle = galacticSpiralAngle(region.arm, region.radius, region.offset);
+        const regionOffset =
+            region.arm === 0 && region.offset === Math.PI / 2
+                ? perseusArmOffset(region.radius)
+                : region.offset + (region.arm === 1 ? carinaArmOffset(region.radius) : 0);
+        const armAngle = galacticSpiralAngle(region.arm, region.radius, regionOffset);
         const angle = armAngle + (randomUnit(seed + 1901) + randomUnit(seed + 2001) - 1) * region.spread * 2.35;
         return {
             x: Math.cos(angle) * radius,
