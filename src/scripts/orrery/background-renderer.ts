@@ -23,9 +23,25 @@ export const drawLocalStarfield = (
         seconds: number;
         reducedMotion: boolean;
         opacity: number;
+        renderLeft: number;
+        renderTop: number;
+        renderRight: number;
+        renderBottom: number;
     },
 ) => {
-    const { width, height, pointerX, pointerY, seconds, reducedMotion, opacity } = options;
+    const {
+        width,
+        height,
+        pointerX,
+        pointerY,
+        seconds,
+        reducedMotion,
+        opacity,
+        renderLeft,
+        renderTop,
+        renderRight,
+        renderBottom,
+    } = options;
     const parallaxX = pointerX * 8;
     const parallaxY = pointerY * 5;
 
@@ -36,7 +52,17 @@ export const drawLocalStarfield = (
             if (star.glyph !== glyph) continue;
             const pulse = reducedMotion ? 0.45 : 0.5 + 0.5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
             context.globalAlpha = (0.16 + pulse * (glyph === '+' ? 0.82 : 0.46)) * opacity;
-            context.fillText(glyph, star.x * width + parallaxX, star.y * height + parallaxY);
+            const baseX = star.x * width + parallaxX;
+            const baseY = star.y * height + parallaxY;
+            for (let tileY = -1; tileY <= 1; tileY++) {
+                const y = baseY + tileY * height;
+                if (y < renderTop - 12 || y > renderBottom + 12) continue;
+                for (let tileX = -1; tileX <= 1; tileX++) {
+                    const x = baseX + tileX * width;
+                    if (x < renderLeft - 12 || x > renderRight + 12) continue;
+                    context.fillText(glyph, x, y);
+                }
+            }
         }
     }
     context.globalAlpha = 1;
@@ -54,9 +80,26 @@ export const drawGalaxyBackdrop = (
         coreX: number;
         coreY: number;
         projectOffset: GalacticOffset;
+        renderLeft: number;
+        renderTop: number;
+        renderRight: number;
+        renderBottom: number;
     },
 ) => {
-    const { width, height, seconds, reducedMotion, alpha, radius, coreX, coreY, projectOffset } = options;
+    const {
+        width,
+        seconds,
+        reducedMotion,
+        alpha,
+        radius,
+        coreX,
+        coreY,
+        projectOffset,
+        renderLeft,
+        renderTop,
+        renderRight,
+        renderBottom,
+    } = options;
     if (alpha <= 0.001) return;
 
     context.font = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
@@ -65,7 +108,7 @@ export const drawGalaxyBackdrop = (
         const offset = projectOffset(particle.x, particle.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
-        if (x < -10 || x > width + 10 || y < -10 || y > height + 10) continue;
+        if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
         context.globalAlpha = alpha * particle.opacity;
         context.fillText(particle.glyph, x, y);
     }
@@ -75,7 +118,7 @@ export const drawGalaxyBackdrop = (
         const offset = projectOffset(particle.x, particle.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
-        if (x < -12 || x > width + 12 || y < -12 || y > height + 12) continue;
+        if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const pulse = reducedMotion ? 0.82 : 0.8 + Math.sin(seconds * 0.34 + particle.phase) * 0.12;
         context.globalAlpha = alpha * particle.opacity * pulse;
         context.fillStyle = particle.color;
@@ -90,7 +133,7 @@ export const drawGalaxyBackdrop = (
         const offset = projectOffset(star.x, star.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
-        if (x < -12 || x > width + 12 || y < -12 || y > height + 12) continue;
+        if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const twinkle = reducedMotion ? 0.7 : 0.68 + Math.sin(seconds * 0.9 + star.phase) * 0.22;
         context.globalAlpha = alpha * star.opacity * twinkle * (0.5 + (1 - star.radius) * 0.42 + star.strength * 0.16);
         context.fillStyle =
@@ -104,7 +147,7 @@ export const drawGalaxyBackdrop = (
         const offset = projectOffset(dust.x, dust.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
-        if (x < -10 || x > width + 10 || y < -10 || y > height + 10) continue;
+        if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
         context.globalAlpha = alpha * dust.opacity;
         context.fillText(dust.glyph, x, y);
     }
@@ -113,7 +156,7 @@ export const drawGalaxyBackdrop = (
         const offset = projectOffset(star.x, star.y, radius, offsetScratch);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
-        if (x < -12 || x > width + 12 || y < -12 || y > height + 12) continue;
+        if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const twinkle = reducedMotion ? 0.72 : 0.72 + Math.sin(seconds + star.phase) * 0.18;
         context.globalAlpha = alpha * twinkle * 0.92;
         context.fillStyle = star.glyph === '*' ? '#b8bb26' : '#a89984';

@@ -132,8 +132,20 @@ if (canvasElement && systemElement && canvasContext) {
             scheduleRender();
             return;
         }
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
+        // The bitmap has an overflow-safe bleed around the hero, while all
+        // projection and scale math remains tied to the original system box.
+        const width = system.clientWidth;
+        const height = system.clientHeight;
+        const canvasBounds = canvas.getBoundingClientRect();
+        const systemBounds = system.getBoundingClientRect();
+        const renderWidth = canvas.clientWidth;
+        const renderHeight = canvas.clientHeight;
+        const canvasOriginX = systemBounds.left - canvasBounds.left;
+        const canvasOriginY = systemBounds.top - canvasBounds.top;
+        const renderLeft = -canvasOriginX;
+        const renderTop = -canvasOriginY;
+        const renderRight = renderWidth - canvasOriginX;
+        const renderBottom = renderHeight - canvasOriginY;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene.
@@ -141,8 +153,8 @@ if (canvasElement && systemElement && canvasContext) {
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
         const viewportSunScale = 0.58 + mobileSunProgress * 0.42;
         const dpr = Math.max(1, window.devicePixelRatio || 1);
-        const pixelWidth = Math.max(1, Math.round(width * dpr));
-        const pixelHeight = Math.max(1, Math.round(height * dpr));
+        const pixelWidth = Math.max(1, Math.round(renderWidth * dpr));
+        const pixelHeight = Math.max(1, Math.round(renderHeight * dpr));
         if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
             canvas.width = pixelWidth;
             canvas.height = pixelHeight;
@@ -150,8 +162,9 @@ if (canvasElement && systemElement && canvasContext) {
         // Use the canvas's real backing-store ratio. CSS grid sizing can produce
         // fractional dimensions, and a nominal DPR transform leaves that bitmap
         // fractionally stretched by the browser, softening small ASCII glyphs.
-        context.setTransform(pixelWidth / width, 0, 0, pixelHeight / height, 0, 0);
-        context.clearRect(0, 0, width, height);
+        context.setTransform(pixelWidth / renderWidth, 0, 0, pixelHeight / renderHeight, 0, 0);
+        context.clearRect(0, 0, renderWidth, renderHeight);
+        context.translate(canvasOriginX, canvasOriginY);
         context.textAlign = 'center';
         context.textBaseline = 'middle';
 
@@ -293,6 +306,10 @@ if (canvasElement && systemElement && canvasContext) {
             seconds,
             reducedMotion,
             opacity: localSkyOpacity * intro.stars,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
         });
         drawGalaxyBackdrop(context, {
             width,
@@ -304,6 +321,10 @@ if (canvasElement && systemElement && canvasContext) {
             coreX: galaxyCoreX,
             coreY: galaxyCoreY,
             projectOffset: galacticOffset,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
         });
 
         solarSystemModel.projectOrbits({
@@ -323,9 +344,8 @@ if (canvasElement && systemElement && canvasContext) {
         });
         const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
 
-        const canvasBounds = canvas.getBoundingClientRect();
-        const localPointerX = pointer.clientX - canvasBounds.left;
-        const localPointerY = pointer.clientY - canvasBounds.top;
+        const localPointerX = pointer.clientX - systemBounds.left;
+        const localPointerY = pointer.clientY - systemBounds.top;
         const showHoverVisuals = pointer.showsHover;
         const bodyHoverCandidate =
             pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > 0.45
@@ -423,6 +443,10 @@ if (canvasElement && systemElement && canvasContext) {
             galaxyProgress,
             hovered: hoveredGalacticObject,
             showHoverVisuals,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
         });
         drawSolMarker(context, {
             alpha: galaxyAlpha,

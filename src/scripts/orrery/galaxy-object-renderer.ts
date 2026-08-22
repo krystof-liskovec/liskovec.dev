@@ -67,9 +67,25 @@ export class GalaxyObjectRenderer {
             galaxyProgress: number;
             hovered: ProjectedGalacticObject | null;
             showHoverVisuals: boolean;
+            renderLeft: number;
+            renderTop: number;
+            renderRight: number;
+            renderBottom: number;
         },
     ) {
-        const { width, height, seconds, reducedMotion, opacity, galaxyProgress, hovered, showHoverVisuals } = options;
+        const {
+            width,
+            seconds,
+            reducedMotion,
+            opacity,
+            galaxyProgress,
+            hovered,
+            showHoverVisuals,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
+        } = options;
         if (opacity <= 0.001) return;
         // The galaxy contracts substantially on phones while the canvas glyphs
         // would otherwise retain their desktop pixel size. Scale landmarks with
@@ -79,10 +95,10 @@ export class GalaxyObjectRenderer {
         for (let index = 0; index < this.objects.length; index++) {
             const galacticObject = this.objects[index];
             if (
-                galacticObject.x < -30 ||
-                galacticObject.x > width + 30 ||
-                galacticObject.y < -30 ||
-                galacticObject.y > height + 30
+                galacticObject.x < renderLeft - 30 ||
+                galacticObject.x > renderRight + 30 ||
+                galacticObject.y < renderTop - 30 ||
+                galacticObject.y > renderBottom + 30
             )
                 continue;
 

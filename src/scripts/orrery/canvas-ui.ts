@@ -23,7 +23,19 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     } = options;
     const width = Math.min(options.width ?? 224, viewportWidth - 16);
     const height = lines.length * 16 + 18;
-    const preferredX = openAwayFromCenter && anchorX < viewportWidth / 2 ? anchorX - width - 25 : anchorX + 25;
+    const rightX = anchorX + 25;
+    const leftX = anchorX - width - 25;
+    const preferredX = openAwayFromCenter
+        ? anchorX < viewportWidth / 2
+            ? leftX >= 8
+                ? leftX
+                : rightX
+            : rightX + width <= viewportWidth - 8
+              ? rightX
+              : leftX
+        : rightX + width <= viewportWidth - 8
+          ? rightX
+          : leftX;
     const x = Math.min(viewportWidth - width - 8, Math.max(8, preferredX));
     const y = Math.min(viewportHeight - height - 8, Math.max(8, anchorY - height / 2));
 
