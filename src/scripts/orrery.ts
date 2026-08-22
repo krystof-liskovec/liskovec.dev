@@ -1,8 +1,10 @@
 import { FOCUSED_ART, GALACTIC_OBJECTS, MAJOR_MOON_SYSTEMS, PLANETARY_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
+import type { MajorMoon } from './orrery/catalog';
 import { drawReadout } from './orrery/canvas-ui';
 import { drawFocusedGalacticObject } from './orrery/galactic-renderer';
 import { drawFocusedIss } from './orrery/iss-renderer';
-import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveOrbit } from './orrery/math';
+import { drawFocusedMoon } from './orrery/moon-renderer';
+import { DEG, J2000, heliocentricPosition, orbitalPoint, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKeplerOrbit, solveOrbit } from './orrery/math';
 import { focusedRotation, planetSurfaceGlyph } from './orrery/planet-textures';
 import { ASTEROID_BELT, GALACTIC_SOL, GALAXY_STARS, ORBIT_POINTS, ORBIT_SAMPLES, ORION_SPUR_STARS, STARS } from './orrery/scene-data';
 import { drawSun } from './orrery/sun-renderer';
@@ -320,6 +322,12 @@ if (canvas && system && context) {
     camera.renderedYaw = cameraYaw;
     camera.renderedRoll = cameraRoll;
     const now = getOrbitDate(frameTime);
+    const solveMoonOrbit = (moon: MajorMoon) => {
+      const elapsedDays = (now - J2000) / 86400000;
+      const meanAnomaly = (moon.meanAnomaly + elapsedDays / moon.periodDays * 360) * DEG;
+      const orbit = solveKeplerOrbit(meanAnomaly, moon.eccentricity);
+      return { angle: orbit.angle + moon.periapsis * DEG, distance: orbit.distance };
+    };
     const viewportCenterX = width * .52;
     const viewportCenterY = height * .38;
     const finalGalaxyRadius = Math.min(width * .48, height * .62);
@@ -697,13 +705,21 @@ if (canvas && system && context) {
       const isJupiter = body.planet.name === 'Jupiter';
       const isSaturn = body.planet.name === 'Saturn';
       const hasMajorMoons = isJupiter || isSaturn;
+      const majorMoonSystem = MAJOR_MOON_SYSTEMS[body.planet.name];
       const systemGlyphSize = Math.max(hasMajorMoons ? 7 : 5.5, (hasMajorMoons ? 8.5 : 7) * Math.sqrt(solarSystemScale));
       context.font = `${systemGlyphSize * viewportGlyphScale}px "DM Mono", monospace`;
       context.fillStyle = body.planet.name === 'Earth' ? '#bdae93' : '#928374';
       system.radii.forEach((radius, moonIndex) => {
         context.fillStyle = isJupiter ? '#665c54' : body.planet.name === 'Earth' ? '#bdae93' : '#928374';
-        const moonAngle = seconds * system.speeds[moonIndex] + moonIndex * 1.73 + body.planet.displayRadius;
-        let moonOffset: Vec3 = { x: Math.cos(moonAngle) * radius, y: Math.sin(moonAngle) * radius, z: 0 };
+        const majorMoon = majorMoonSystem?.moons[moonIndex];
+        const solvedMoon = majorMoon ? solveMoonOrbit(majorMoon) : null;
+        const moonAngle = solvedMoon?.angle ?? seconds * system.speeds[moonIndex] + moonIndex * 1.73 + body.planet.displayRadius;
+        const moonRadius = radius * (solvedMoon?.distance ?? 1);
+        let moonOffset: Vec3 = { x: Math.cos(moonAngle) * moonRadius, y: Math.sin(moonAngle) * moonRadius, z: 0 };
+        if (majorMoon) {
+          moonOffset = rotateX(moonOffset, majorMoon.inclination);
+          moonOffset = rotateZ(moonOffset, majorMoon.node);
+        }
         moonOffset = rotateX(moonOffset, system.tilt);
         const moon = cameraTransform({ x: body.world.x + moonOffset.x, y: body.world.y + moonOffset.y, z: body.world.z + moonOffset.z });
         if ((moon.z >= body.z) !== foreground) return;
@@ -1076,9 +1092,19 @@ if (canvas && system && context) {
       const majorMoonSystem = MAJOR_MOON_SYSTEMS[target.name];
       const majorMoonReveal = majorMoonSystem ? smoothstep((planetSceneFocus - .26) / .48) : 0;
       const focusedParentRadius = focusedSphereRows * focusedSphereFontSize * .82 / 2;
+      const focusedMajorMoonOffset = (moon: MajorMoon, angle: number, radius: number) => {
+        if (!majorMoonSystem) return { x: 0, y: 0, z: 0 };
+        let point: Vec3 = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
+        point = rotateX(point, moon.inclination);
+        point = rotateZ(point, moon.node);
+        point = rotateX(point, majorMoonSystem.inclination);
+        point = rotateZ(point, majorMoonSystem.node);
+        point = rotateY(point, -objectFocus.longitude);
+        return rotateX(point, objectFocus.latitude);
+      };
       const majorMoons = (majorMoonSystem?.moons ?? []).map((moon) => {
-        const angle = moon.phase + (reducedMotion ? 0 : seconds * moon.speed);
-        const offset = focusedOrbitOffset(angle, focusedParentRadius * moon.radius, majorMoonSystem.inclination, majorMoonSystem.node);
+        const orbit = solveMoonOrbit(moon);
+        const offset = focusedMajorMoonOffset(moon, orbit.angle, focusedParentRadius * moon.radius * orbit.distance);
         return { ...moon, offset, x: focusCenterX + offset.x, y: focusCenterY + offset.y };
       });
       const hoveredMajorMoon = majorMoonReveal > .35 && pointer.active && !camera.dragging && !objectFocus.child
@@ -1105,12 +1131,21 @@ if (canvas && system && context) {
         if (!majorMoonSystem || majorMoonReveal <= .001) return;
         for (const moon of majorMoons) {
           context.font = `${Math.max(5, (width < 600 ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
-          for (let sample = 0; sample < 84; sample += 3) {
-            const offset = focusedOrbitOffset(sample / 84 * Math.PI * 2, focusedParentRadius * moon.radius, majorMoonSystem.inclination, majorMoonSystem.node);
+          context.fillStyle = '#665c54';
+          for (let sample = 0; sample < 96; sample += 2) {
+            const sampledOrbit = solveKeplerOrbit(sample / 96 * Math.PI * 2, moon.eccentricity);
+            const sampledAngle = sampledOrbit.angle + moon.periapsis * DEG;
+            const offset = focusedMajorMoonOffset(moon, sampledAngle, focusedParentRadius * moon.radius * sampledOrbit.distance);
             if ((offset.z >= 0) !== foreground) continue;
-            context.globalAlpha = majorMoonReveal * .3;
-            context.fillStyle = '#665c54';
-            context.fillText('.', focusCenterX + offset.x, focusCenterY + offset.y);
+            const nextOrbit = solveKeplerOrbit((sample + 1) / 96 * Math.PI * 2, moon.eccentricity);
+            const nextAngle = nextOrbit.angle + moon.periapsis * DEG;
+            const next = focusedMajorMoonOffset(moon, nextAngle, focusedParentRadius * moon.radius * nextOrbit.distance);
+            const dx = next.x - offset.x;
+            const dy = next.y - offset.y;
+            const slope = Math.abs(dy / (dx || .001));
+            const glyph = slope > 2.2 ? '|' : slope > .6 ? (dx * dy > 0 ? '\\' : '/') : '-';
+            context.globalAlpha = majorMoonReveal * .5;
+            context.fillText(glyph, focusCenterX + offset.x, focusCenterY + offset.y);
           }
           if ((moon.offset.z >= 0) !== foreground) continue;
           context.globalAlpha = majorMoonReveal;
@@ -1239,27 +1274,41 @@ if (canvas && system && context) {
         }
 
         if (child.kind === 'moon') {
-          const columns = width < 600 ? 37 : 49;
-          const rows = width < 600 ? 19 : 25;
-          const fontSize = (width < 600 ? 10 : 12.5) * childScale;
-          context.font = `bold ${fontSize}px "DM Mono", monospace`;
-          const characterWidth = context.measureText('M').width * .76;
-          const lineHeight = fontSize * .82;
-          const spin = focusedRotation(child.name, seconds, reducedMotion) + objectFocus.childLongitude;
-          for (let row = 0; row < rows; row++) {
-            const normalizedY = (row + .5 - rows / 2) / (rows / 2);
-            const lineY = childCenterY + (row - (rows - 1) / 2) * lineHeight;
-            for (let column = 0; column < columns; column++) {
-              const normalizedX = (column + .5 - columns / 2) / (columns / 2);
-              if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
-              const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
-              const latitudeY = normalizedY * Math.cos(objectFocus.childLatitude) + sphereZ * Math.sin(objectFocus.childLatitude);
-              const latitudeZ = -normalizedY * Math.sin(objectFocus.childLatitude) + sphereZ * Math.cos(objectFocus.childLatitude);
-              const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
-              const latitude = Math.asin(-latitudeY);
-              context.globalAlpha = childReveal * (.6 + sphereZ * .4);
-              context.fillStyle = child.color;
-              context.fillText(planetSurfaceGlyph(child.name, longitude, latitude), childCenterX + (column + .5 - columns / 2) * characterWidth, lineY);
+          if (child.name === 'Moon') {
+            drawFocusedMoon(context, {
+              centerX: childCenterX,
+              centerY: childCenterY,
+              scale: childScale,
+              reveal: childReveal,
+              longitude: objectFocus.childLongitude,
+              latitude: objectFocus.childLatitude,
+              seconds,
+              reducedMotion,
+              compact: width < 600,
+            });
+          } else {
+            const columns = width < 600 ? 37 : 49;
+            const rows = width < 600 ? 19 : 25;
+            const fontSize = (width < 600 ? 10 : 12.5) * childScale;
+            context.font = `bold ${fontSize}px "DM Mono", monospace`;
+            const characterWidth = context.measureText('M').width * .76;
+            const lineHeight = fontSize * .82;
+            const spin = focusedRotation(child.name, seconds, reducedMotion) + objectFocus.childLongitude;
+            for (let row = 0; row < rows; row++) {
+              const normalizedY = (row + .5 - rows / 2) / (rows / 2);
+              const lineY = childCenterY + (row - (rows - 1) / 2) * lineHeight;
+              for (let column = 0; column < columns; column++) {
+                const normalizedX = (column + .5 - columns / 2) / (columns / 2);
+                if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
+                const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
+                const latitudeY = normalizedY * Math.cos(objectFocus.childLatitude) + sphereZ * Math.sin(objectFocus.childLatitude);
+                const latitudeZ = -normalizedY * Math.sin(objectFocus.childLatitude) + sphereZ * Math.cos(objectFocus.childLatitude);
+                const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
+                const latitude = Math.asin(-latitudeY);
+                context.globalAlpha = childReveal * (.6 + sphereZ * .4);
+                context.fillStyle = child.color;
+                context.fillText(planetSurfaceGlyph(child.name, longitude, latitude), childCenterX + (column + .5 - columns / 2) * characterWidth, lineY);
+              }
             }
           }
         } else {

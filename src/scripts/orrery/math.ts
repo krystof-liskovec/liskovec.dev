@@ -31,17 +31,27 @@ export const rotateZ = (point: Vec3, angle: number): Vec3 => ({
   z: point.z,
 });
 
+export function solveKeplerOrbit(meanAnomaly: number, eccentricity: number) {
+  const fullTurn = Math.PI * 2;
+  const normalizedMeanAnomaly = ((meanAnomaly + Math.PI) % fullTurn + fullTurn) % fullTurn - Math.PI;
+  let eccentricAnomaly = normalizedMeanAnomaly;
+  for (let iteration = 0; iteration < 8; iteration++) {
+    eccentricAnomaly -= (eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - normalizedMeanAnomaly)
+      / (1 - eccentricity * Math.cos(eccentricAnomaly));
+  }
+  return {
+    angle: Math.atan2(
+      Math.sqrt(1 - eccentricity ** 2) * Math.sin(eccentricAnomaly),
+      Math.cos(eccentricAnomaly) - eccentricity,
+    ),
+    distance: 1 - eccentricity * Math.cos(eccentricAnomaly),
+  };
+}
+
 export function solveOrbit(planet: Planet, date: number) {
   const centuries = (date - J2000) / 86400000 / 36525;
   const meanAnomaly = (planet.meanLongitude + planet.longitudeRate * centuries - planet.perihelion) * DEG;
-  let eccentricAnomaly = meanAnomaly;
-  for (let iteration = 0; iteration < 8; iteration++) {
-    eccentricAnomaly -= (eccentricAnomaly - planet.e * Math.sin(eccentricAnomaly) - meanAnomaly) / (1 - planet.e * Math.cos(eccentricAnomaly));
-  }
-  return {
-    angle: Math.atan2(Math.sqrt(1 - planet.e ** 2) * Math.sin(eccentricAnomaly), Math.cos(eccentricAnomaly) - planet.e),
-    distance: (planet.a * (1 - planet.e * Math.cos(eccentricAnomaly))) / planet.a,
-  };
+  return solveKeplerOrbit(meanAnomaly, planet.e);
 }
 
 export function orbitalPoint(planet: Planet, angle: number, distance = 1): Vec3 {

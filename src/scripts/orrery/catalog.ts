@@ -30,11 +30,15 @@ export const PLANETARY_MOON_SYSTEMS: Record<string, { radii: number[]; speeds: n
   Neptune: { radii: [1.62], speeds: [-.13], tilt: 18 * DEG },
 };
 
-type MajorMoon = {
+export type MajorMoon = {
   name: string;
   radius: number;
-  speed: number;
-  phase: number;
+  eccentricity: number;
+  periapsis: number;
+  meanAnomaly: number;
+  periodDays: number;
+  inclination: number;
+  node: number;
   glyph: string;
   color: string;
   distance: string;
@@ -47,15 +51,18 @@ export const MAJOR_MOON_SYSTEMS: Record<string, {
   node: number;
   moons: MajorMoon[];
 }> = {
+  // Source: https://ssd.jpl.nasa.gov/sats/elem/
+  // JPL satellite mean elements at epoch 2000-01-01.5 TDB (JUP365/SAT441).
+  // Display radii remain compressed so every moon fits in the focused scene.
   Jupiter: {
     subtitle: 'Galilean moon',
     inclination: 5 * DEG,
     node: -8 * DEG,
     moons: [
-      { name: 'Io', radius: 1.28, speed: .092, phase: .4, glyph: 'o', color: '#fe8019', distance: '421,700 km', period: '1.77 days' },
-      { name: 'Europa', radius: 1.55, speed: .061, phase: 2.1, glyph: '·', color: '#d5c4a1', distance: '671,100 km', period: '3.55 days' },
-      { name: 'Ganymede', radius: 1.88, speed: .037, phase: 3.7, glyph: 'O', color: '#bdae93', distance: '1,070,400 km', period: '7.15 days' },
-      { name: 'Callisto', radius: 2.22, speed: .016, phase: 5.2, glyph: 'o', color: '#928374', distance: '1,882,700 km', period: '16.69 days' },
+      { name: 'Io', radius: 1.28, eccentricity: .004, periapsis: 49.1, meanAnomaly: 330.9, periodDays: 1.762732, inclination: 0, node: 0, glyph: 'o', color: '#fe8019', distance: '421,800 km', period: '1.76 days' },
+      { name: 'Europa', radius: 1.55, eccentricity: .009, periapsis: 45, meanAnomaly: 345.4, periodDays: 3.525463, inclination: .5 * DEG, node: 184 * DEG, glyph: '·', color: '#d5c4a1', distance: '671,100 km', period: '3.53 days' },
+      { name: 'Ganymede', radius: 1.88, eccentricity: .001, periapsis: 198.3, meanAnomaly: 324.8, periodDays: 7.155588, inclination: .2 * DEG, node: 58.5 * DEG, glyph: 'O', color: '#bdae93', distance: '1,070,400 km', period: '7.16 days' },
+      { name: 'Callisto', radius: 2.22, eccentricity: .007, periapsis: 43.8, meanAnomaly: 87.4, periodDays: 16.69044, inclination: .3 * DEG, node: 309.1 * DEG, glyph: 'o', color: '#928374', distance: '1,882,700 km', period: '16.69 days' },
     ],
   },
   Saturn: {
@@ -63,10 +70,10 @@ export const MAJOR_MOON_SYSTEMS: Record<string, {
     inclination: 7 * DEG,
     node: -12 * DEG,
     moons: [
-      { name: 'Enceladus', radius: 1.9, speed: .104, phase: .8, glyph: '·', color: '#ebdbb2', distance: '238,000 km', period: '1.37 days' },
-      { name: 'Rhea', radius: 2.35, speed: .064, phase: 2.35, glyph: 'o', color: '#bdae93', distance: '527,100 km', period: '4.52 days' },
-      { name: 'Titan', radius: 2.9, speed: .032, phase: 4.1, glyph: 'O', color: '#d79921', distance: '1,221,900 km', period: '15.95 days' },
-      { name: 'Iapetus', radius: 3.6, speed: .014, phase: 5.55, glyph: 'o', color: '#928374', distance: '3,560,800 km', period: '79.32 days' },
+      { name: 'Enceladus', radius: 1.9, eccentricity: .005, periapsis: 119.5, meanAnomaly: 57, periodDays: 1.370218, inclination: 0, node: 0, glyph: '·', color: '#ebdbb2', distance: '238,400 km', period: '1.37 days' },
+      { name: 'Rhea', radius: 2.35, eccentricity: .001, periapsis: 44.3, meanAnomaly: 31.5, periodDays: 4.517503, inclination: .3 * DEG, node: 133.7 * DEG, glyph: 'o', color: '#bdae93', distance: '527,200 km', period: '4.52 days' },
+      { name: 'Titan', radius: 2.9, eccentricity: .029, periapsis: 78.3, meanAnomaly: 11.7, periodDays: 15.945448, inclination: .3 * DEG, node: 78.6 * DEG, glyph: 'O', color: '#d79921', distance: '1,221,900 km', period: '15.95 days' },
+      { name: 'Iapetus', radius: 3.6, eccentricity: .028, periapsis: 254.5, meanAnomaly: 74.8, periodDays: 79.331002, inclination: 7.6 * DEG, node: 86.5 * DEG, glyph: 'o', color: '#928374', distance: '3,561,700 km', period: '79.33 days' },
     ],
   },
 };
