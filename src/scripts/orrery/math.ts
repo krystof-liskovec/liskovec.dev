@@ -8,6 +8,9 @@ export const smoothstep = (value: number) => {
     return clamped * clamped * (3 - 2 * clamped);
 };
 
+export const visualTransitionProgress = (progress: number, exiting: boolean, completionThreshold = 0.06) =>
+    exiting ? Math.max(0, (progress - completionThreshold) / (1 - completionThreshold)) : progress;
+
 export const randomUnit = (seed: number) => {
     const value = Math.sin(seed * 91.733) * 43758.5453;
     return value - Math.floor(value);

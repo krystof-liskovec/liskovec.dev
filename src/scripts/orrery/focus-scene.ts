@@ -4,7 +4,17 @@ import { drawReadout } from './canvas-ui';
 import { drawFocusedHalley } from './comet-renderer';
 import { drawFocusedGalacticObject } from './galactic-renderer';
 import { drawFocusedIss } from './iss-renderer';
-import { DEG, J2000, randomUnit, rotateX, rotateY, rotateZ, smoothstep, solveKeplerOrbit } from './math';
+import {
+    DEG,
+    J2000,
+    randomUnit,
+    rotateX,
+    rotateY,
+    rotateZ,
+    smoothstep,
+    solveKeplerOrbit,
+    visualTransitionProgress,
+} from './math';
 import { drawFocusedMoon } from './moon-renderer';
 import { focusedRotation, planetSurfaceGlyph } from './planet-textures';
 import type { CameraState, PointerState } from './runtime-state';
@@ -66,7 +76,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
     let activeFocusCandidate: FocusTarget | null = null;
     if (objectFocus.target && objectFocus.progress > 0.001) {
         const target = objectFocus.target;
-        const focusEase = smoothstep(objectFocus.progress);
+        const focusProgress = visualTransitionProgress(objectFocus.progress, objectFocus.exiting);
+        const focusEase = smoothstep(focusProgress);
         const focusedPlanetBody = focusedPlanet ? bodies.find((body) => body.planet === focusedPlanet) : null;
         const isLocalDestination = (target.kind === 'planet' && !!focusedPlanetBody) || target.kind === 'star';
         const focusCenterX = focusedPlanetBody?.x ?? target.originX + (viewportCenterX - target.originX) * focusEase;
@@ -76,7 +87,10 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
             : 0.18 + focusEase * 0.82;
         const objectReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.06) / 0.3) : focusEase;
-        if (!isLocalDestination) {
+        // Galactic close-ups can use the page's identical #1d2021 background
+        // directly. Painting another full-canvas layer is unnecessary and can
+        // produce a one-frame compositing flash as that layer disappears.
+        if (!isLocalDestination && target.kind !== 'galactic') {
             context.globalAlpha = focusEase;
             context.fillStyle = '#1d2021';
             context.fillRect(0, 0, width, height);
@@ -554,9 +568,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
         if (objectFocus.child && objectFocus.childProgress > 0.001) {
             const child = objectFocus.child;
-            const childVisualProgress = objectFocus.childExiting
-                ? Math.max(0, (objectFocus.childProgress - 0.06) / 0.94)
-                : objectFocus.childProgress;
+            const childVisualProgress = visualTransitionProgress(objectFocus.childProgress, objectFocus.childExiting);
             const childEase = smoothstep(childVisualProgress);
             const childGrowth = smoothstep((childEase - 0.08) / 0.92) ** 1.45;
             const childScale = 0.1 + childGrowth * 0.9;

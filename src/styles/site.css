@@ -597,6 +597,7 @@ footer a:hover {
 #zoom-location {
     display: inline-block;
     transform-origin: left center;
+    will-change: opacity, transform;
 }
 #zoom-location.is-changing {
     animation: zoom-location-swap 0.48s cubic-bezier(0.65, 0, 0.2, 1);
@@ -605,22 +606,18 @@ footer a:hover {
     0% {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
     38% {
         opacity: 0;
         transform: translateY(-0.28em);
-        filter: blur(3px);
     }
     39% {
         opacity: 0;
         transform: translateY(0.28em);
-        filter: blur(3px);
     }
     100% {
         opacity: 1;
         transform: translateY(0);
-        filter: blur(0);
     }
 }
 .solar-system {

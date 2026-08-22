@@ -7,7 +7,7 @@ import { updateFocusRotation, updateGalaxyCamera, updateSolarCamera } from './or
 import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-renderer';
 import { bindOrreryInteractions } from './orrery/interactions';
 import { OrreryIntroController } from './orrery/intro-controller';
-import { DEG, J2000, smoothstep, solveKeplerOrbit } from './orrery/math';
+import { DEG, J2000, smoothstep, solveKeplerOrbit, visualTransitionProgress } from './orrery/math';
 import { createRuntimeState, getOrbitDate as resolveOrbitDate } from './orrery/runtime-state';
 import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
 import { GALACTIC_SOL } from './orrery/scene-data';
@@ -188,10 +188,10 @@ if (canvasElement && systemElement && canvasContext) {
                 : null;
         const focusedSun = objectFocus.target?.kind === 'star';
         // Exit completes at 6%, so map that outgoing tail to an exact zero. This
-        // keeps the final world scale and centering continuous when focus clears.
-        const localFocusProgress = objectFocus.exiting
-            ? Math.max(0, (objectFocus.progress - 0.06) / 0.94)
-            : objectFocus.progress;
+        // keeps the final world scale, centering, and scene opacity continuous
+        // when focus clears.
+        const visualFocusProgress = visualTransitionProgress(objectFocus.progress, objectFocus.exiting);
+        const localFocusProgress = visualFocusProgress;
         const planetSceneFocus = focusedPlanet || focusedSun ? smoothstep(localFocusProgress) : 0;
         const localSphereGrowth = smoothstep((planetSceneFocus - 0.08) / 0.92) ** 1.45;
         const focusedSunDetailReveal = focusedSun ? smoothstep((planetSceneFocus - 0.06) / 0.3) : 0;
@@ -256,7 +256,7 @@ if (canvasElement && systemElement && canvasContext) {
         // Milky Way glyphs underneath it. The fade completes early enough that the
         // transition remains continuous while avoiding two full scenes per frame.
         const backgroundSceneOpacity =
-            objectFocus.target?.kind === 'galactic' ? 1 - smoothstep((objectFocus.progress - 0.04) / 0.42) : 1;
+            objectFocus.target?.kind === 'galactic' ? 1 - smoothstep((visualFocusProgress - 0.04) / 0.42) : 1;
         const galaxyAlpha = galaxyVisibility * backgroundSceneOpacity;
         const localSkyOpacity = (1 - smoothstep((cosmicZoom.current - 0.06) / 0.24)) * backgroundSceneOpacity;
         // Leave enough room for Neptune even at the nearest point in the projection.
