@@ -13,25 +13,41 @@ export const randomUnit = (seed: number) => {
     return value - Math.floor(value);
 };
 
-export const rotateX = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x,
-    y: point.y * Math.cos(angle) - point.z * Math.sin(angle),
-    z: point.y * Math.sin(angle) + point.z * Math.cos(angle),
-});
+export const rotateX = (point: Vec3, angle: number, target: Vec3 = { x: 0, y: 0, z: 0 }): Vec3 => {
+    const { x, y, z } = point;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    target.x = x;
+    target.y = y * cosine - z * sine;
+    target.z = y * sine + z * cosine;
+    return target;
+};
 
-export const rotateY = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x * Math.cos(angle) + point.z * Math.sin(angle),
-    y: point.y,
-    z: -point.x * Math.sin(angle) + point.z * Math.cos(angle),
-});
+export const rotateY = (point: Vec3, angle: number, target: Vec3 = { x: 0, y: 0, z: 0 }): Vec3 => {
+    const { x, y, z } = point;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    target.x = x * cosine + z * sine;
+    target.y = y;
+    target.z = -x * sine + z * cosine;
+    return target;
+};
 
-export const rotateZ = (point: Vec3, angle: number): Vec3 => ({
-    x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
-    y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
-    z: point.z,
-});
+export const rotateZ = (point: Vec3, angle: number, target: Vec3 = { x: 0, y: 0, z: 0 }): Vec3 => {
+    const { x, y, z } = point;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    target.x = x * cosine - y * sine;
+    target.y = x * sine + y * cosine;
+    target.z = z;
+    return target;
+};
 
-export function solveKeplerOrbit(meanAnomaly: number, eccentricity: number) {
+export function solveKeplerOrbit(
+    meanAnomaly: number,
+    eccentricity: number,
+    target: { angle: number; distance: number } = { angle: 0, distance: 1 },
+) {
     const fullTurn = Math.PI * 2;
     const normalizedMeanAnomaly = ((((meanAnomaly + Math.PI) % fullTurn) + fullTurn) % fullTurn) - Math.PI;
     let eccentricAnomaly = normalizedMeanAnomaly;
@@ -40,46 +56,52 @@ export function solveKeplerOrbit(meanAnomaly: number, eccentricity: number) {
             (eccentricAnomaly - eccentricity * Math.sin(eccentricAnomaly) - normalizedMeanAnomaly) /
             (1 - eccentricity * Math.cos(eccentricAnomaly));
     }
-    return {
-        angle: Math.atan2(
-            Math.sqrt(1 - eccentricity ** 2) * Math.sin(eccentricAnomaly),
-            Math.cos(eccentricAnomaly) - eccentricity,
-        ),
-        distance: 1 - eccentricity * Math.cos(eccentricAnomaly),
-    };
+    target.angle = Math.atan2(
+        Math.sqrt(1 - eccentricity ** 2) * Math.sin(eccentricAnomaly),
+        Math.cos(eccentricAnomaly) - eccentricity,
+    );
+    target.distance = 1 - eccentricity * Math.cos(eccentricAnomaly);
+    return target;
 }
 
-export function solveOrbit(planet: Planet, date: number) {
+export function solveOrbit(
+    planet: Planet,
+    date: number,
+    target: { angle: number; distance: number } = { angle: 0, distance: 1 },
+) {
     const centuries = (date - J2000) / 86400000 / 36525;
     const meanAnomaly = (planet.meanLongitude + planet.longitudeRate * centuries - planet.perihelion) * DEG;
-    return solveKeplerOrbit(meanAnomaly, planet.e);
+    return solveKeplerOrbit(meanAnomaly, planet.e, target);
 }
 
-export function orbitalPoint(planet: Planet, angle: number, distance = 1): Vec3 {
+export function orbitalPoint(planet: Planet, angle: number, distance = 1, target: Vec3 = { x: 0, y: 0, z: 0 }): Vec3 {
     const radius = planet.displayRadius * distance;
     const argumentOfPerihelion = (planet.perihelion - planet.node) * DEG;
-    let point: Vec3 = {
-        x: Math.cos(angle + argumentOfPerihelion) * radius,
-        y: Math.sin(angle + argumentOfPerihelion) * radius,
-        z: 0,
-    };
-    point = rotateX(point, planet.inclination * DEG * 2.4);
-    return rotateZ(point, planet.node * DEG);
+    target.x = Math.cos(angle + argumentOfPerihelion) * radius;
+    target.y = Math.sin(angle + argumentOfPerihelion) * radius;
+    target.z = 0;
+    rotateX(target, planet.inclination * DEG * 2.4, target);
+    return rotateZ(target, planet.node * DEG, target);
 }
 
-export function heliocentricPosition(planet: Planet, angle: number, normalizedDistance: number) {
+export function heliocentricPosition(
+    planet: Planet,
+    angle: number,
+    normalizedDistance: number,
+    target: { longitude: number; latitude: number; distance: number } = { longitude: 0, latitude: 0, distance: 0 },
+) {
     const radius = planet.a * normalizedDistance;
     const argumentOfPerihelion = (planet.perihelion - planet.node) * DEG;
-    let point: Vec3 = {
-        x: Math.cos(angle + argumentOfPerihelion) * radius,
-        y: Math.sin(angle + argumentOfPerihelion) * radius,
-        z: 0,
-    };
-    point = rotateX(point, planet.inclination * DEG);
-    point = rotateZ(point, planet.node * DEG);
-    return {
-        longitude: (Math.atan2(point.y, point.x) / DEG + 360) % 360,
-        latitude: Math.atan2(point.z, Math.hypot(point.x, point.y)) / DEG,
-        distance: radius,
-    };
+    const x = Math.cos(angle + argumentOfPerihelion) * radius;
+    const y = Math.sin(angle + argumentOfPerihelion) * radius;
+    const inclination = planet.inclination * DEG;
+    const inclinedY = y * Math.cos(inclination);
+    const z = y * Math.sin(inclination);
+    const node = planet.node * DEG;
+    const rotatedX = x * Math.cos(node) - inclinedY * Math.sin(node);
+    const rotatedY = x * Math.sin(node) + inclinedY * Math.cos(node);
+    target.longitude = (Math.atan2(rotatedY, rotatedX) / DEG + 360) % 360;
+    target.latitude = Math.atan2(z, Math.hypot(rotatedX, rotatedY)) / DEG;
+    target.distance = radius;
+    return target;
 }

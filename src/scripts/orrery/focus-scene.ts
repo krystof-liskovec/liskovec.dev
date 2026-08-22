@@ -11,6 +11,16 @@ import type { FocusState, FocusTarget, Planet, ProjectedBody, Vec3 } from './typ
 
 type MoonOrbit = { angle: number; distance: number };
 
+const focusedMoonOffsetScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const focusedIssOffsetScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const focusedOrbitOffsetScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const focusedOrbitNextScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const majorOrbitOffsetScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const majorOrbitNextScratch: Vec3 = { x: 0, y: 0, z: 0 };
+const sampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
+const nextSampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
+const liveMoonOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
+
 type FocusSceneOptions = {
     width: number;
     height: number;
@@ -28,7 +38,7 @@ type FocusSceneOptions = {
     localPointerX: number;
     localPointerY: number;
     showHoverVisuals: boolean;
-    solveMoonOrbit: (moon: MajorMoon) => MoonOrbit;
+    solveMoonOrbit: (moon: MajorMoon, target?: MoonOrbit) => MoonOrbit;
 };
 
 export const drawFocusScene = (context: CanvasRenderingContext2D, options: FocusSceneOptions): FocusTarget | null => {
@@ -174,12 +184,14 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
         const earthSatelliteReveal = target.name === 'Earth' ? smoothstep((planetSceneFocus - 0.28) / 0.45) : 0;
         const focusedEarthRadius = (focusedSphereRows * focusedSphereFontSize * 0.82) / 2;
-        const focusedOrbitOffset = (angle: number, radius: number, inclination: number, node: number) => {
-            let point: Vec3 = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
-            point = rotateX(point, inclination);
-            point = rotateZ(point, node);
-            point = rotateY(point, -objectFocus.longitude);
-            return rotateX(point, objectFocus.latitude);
+        const focusedOrbitOffset = (angle: number, radius: number, inclination: number, node: number, target: Vec3) => {
+            target.x = Math.cos(angle) * radius;
+            target.y = Math.sin(angle) * radius;
+            target.z = 0;
+            rotateX(target, inclination, target);
+            rotateZ(target, node, target);
+            rotateY(target, -objectFocus.longitude, target);
+            return rotateX(target, objectFocus.latitude, target);
         };
         const focusedMoonRadius =
             width < 600
@@ -187,10 +199,22 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 : Math.min(focusedEarthRadius * 1.65, height * 0.38);
         const focusedMoonAngle =
             ((Date.now() - J2000) / 86400000 / 27.321661) * Math.PI * 2 + (reducedMotion ? 0 : seconds * 0.014);
-        const focusedMoonOffset = focusedOrbitOffset(focusedMoonAngle, focusedMoonRadius, 50 * DEG, -18 * DEG);
+        const focusedMoonOffset = focusedOrbitOffset(
+            focusedMoonAngle,
+            focusedMoonRadius,
+            50 * DEG,
+            -18 * DEG,
+            focusedMoonOffsetScratch,
+        );
         const focusedIssRadius = focusedEarthRadius * 1.13;
         const focusedIssAngle = 1.2 + (reducedMotion ? 0 : seconds * ((Math.PI * 2) / 70));
-        const focusedIssOffset = focusedOrbitOffset(focusedIssAngle, focusedIssRadius, 44 * DEG, 24 * DEG);
+        const focusedIssOffset = focusedOrbitOffset(
+            focusedIssAngle,
+            focusedIssRadius,
+            44 * DEG,
+            24 * DEG,
+            focusedIssOffsetScratch,
+        );
         const focusedMoonPosition = { x: focusCenterX + focusedMoonOffset.x, y: focusCenterY + focusedMoonOffset.y };
         const focusedIssPosition = { x: focusCenterX + focusedIssOffset.x, y: focusCenterY + focusedIssOffset.y };
         const hoveredFocusedEarthObject =
@@ -233,9 +257,21 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 context.font = `${Math.max(5, (width < 600 ? 7 : 8) * focusScale)}px "DM Mono", monospace`;
                 context.fillStyle = color;
                 for (let sample = 0; sample < samples; sample += 2) {
-                    const offset = focusedOrbitOffset((sample / samples) * Math.PI * 2, radius, inclination, node);
+                    const offset = focusedOrbitOffset(
+                        (sample / samples) * Math.PI * 2,
+                        radius,
+                        inclination,
+                        node,
+                        focusedOrbitOffsetScratch,
+                    );
                     if (offset.z >= 0 !== foreground) continue;
-                    const next = focusedOrbitOffset(((sample + 1) / samples) * Math.PI * 2, radius, inclination, node);
+                    const next = focusedOrbitOffset(
+                        ((sample + 1) / samples) * Math.PI * 2,
+                        radius,
+                        inclination,
+                        node,
+                        focusedOrbitNextScratch,
+                    );
                     const dx = next.x - offset.x;
                     const dy = next.y - offset.y;
                     const slope = Math.abs(dy / (dx || 0.001));
@@ -286,22 +322,25 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[target.name];
         const majorMoonReveal = majorMoonSystem ? smoothstep((planetSceneFocus - 0.26) / 0.48) : 0;
         const focusedParentRadius = (focusedSphereRows * focusedSphereFontSize * 0.82) / 2;
-        const focusedMajorMoonOffset = (moon: MajorMoon, angle: number, radius: number) => {
-            if (!majorMoonSystem) return { x: 0, y: 0, z: 0 };
-            let point: Vec3 = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, z: 0 };
-            point = rotateX(point, moon.inclination);
-            point = rotateZ(point, moon.node);
-            point = rotateX(point, majorMoonSystem.inclination);
-            point = rotateZ(point, majorMoonSystem.node);
-            point = rotateY(point, -objectFocus.longitude);
-            return rotateX(point, objectFocus.latitude);
+        const focusedMajorMoonOffset = (moon: MajorMoon, angle: number, radius: number, target: Vec3) => {
+            target.x = Math.cos(angle) * radius;
+            target.y = Math.sin(angle) * radius;
+            target.z = 0;
+            if (!majorMoonSystem) return target;
+            rotateX(target, moon.inclination, target);
+            rotateZ(target, moon.node, target);
+            rotateX(target, majorMoonSystem.inclination, target);
+            rotateZ(target, majorMoonSystem.node, target);
+            rotateY(target, -objectFocus.longitude, target);
+            return rotateX(target, objectFocus.latitude, target);
         };
         const majorMoons = (majorMoonSystem?.moons ?? []).map((moon) => {
-            const orbit = solveMoonOrbit(moon);
+            const orbit = solveMoonOrbit(moon, liveMoonOrbitScratch);
             const offset = focusedMajorMoonOffset(
                 moon,
                 orbit.angle,
                 focusedParentRadius * moon.radius * orbit.distance,
+                { x: 0, y: 0, z: 0 },
             );
             return { ...moon, offset, x: focusCenterX + offset.x, y: focusCenterY + offset.y };
         });
@@ -334,20 +373,30 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 context.font = `${Math.max(5, (width < 600 ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
                 context.fillStyle = '#665c54';
                 for (let sample = 0; sample < 96; sample += 2) {
-                    const sampledOrbit = solveKeplerOrbit((sample / 96) * Math.PI * 2, moon.eccentricity);
+                    const sampledOrbit = solveKeplerOrbit(
+                        (sample / 96) * Math.PI * 2,
+                        moon.eccentricity,
+                        sampledOrbitScratch,
+                    );
                     const sampledAngle = sampledOrbit.angle + moon.periapsis * DEG;
                     const offset = focusedMajorMoonOffset(
                         moon,
                         sampledAngle,
                         focusedParentRadius * moon.radius * sampledOrbit.distance,
+                        majorOrbitOffsetScratch,
                     );
                     if (offset.z >= 0 !== foreground) continue;
-                    const nextOrbit = solveKeplerOrbit(((sample + 1) / 96) * Math.PI * 2, moon.eccentricity);
+                    const nextOrbit = solveKeplerOrbit(
+                        ((sample + 1) / 96) * Math.PI * 2,
+                        moon.eccentricity,
+                        nextSampledOrbitScratch,
+                    );
                     const nextAngle = nextOrbit.angle + moon.periapsis * DEG;
                     const next = focusedMajorMoonOffset(
                         moon,
                         nextAngle,
                         focusedParentRadius * moon.radius * nextOrbit.distance,
+                        majorOrbitNextScratch,
                     );
                     const dx = next.x - offset.x;
                     const dy = next.y - offset.y;

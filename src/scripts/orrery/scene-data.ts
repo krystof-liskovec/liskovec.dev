@@ -29,22 +29,26 @@ export const GALACTIC_SOL = {
 
 const GALACTIC_SUN_DISTANCE_KPC = 8.2;
 
-export const galacticPositionFromSun = (longitude: number, latitude: number, distanceKpc: number) => {
+export const galacticPositionFromSun = (
+    longitude: number,
+    latitude: number,
+    distanceKpc: number,
+    target = { x: 0, y: 0 },
+) => {
     const sunRadius = Math.hypot(GALACTIC_SOL.x, GALACTIC_SOL.y);
-    const towardCenter = { x: -GALACTIC_SOL.x / sunRadius, y: -GALACTIC_SOL.y / sunRadius };
-    const longitudeNinety = { x: -towardCenter.y, y: towardCenter.x };
+    const towardCenterX = -GALACTIC_SOL.x / sunRadius;
+    const towardCenterY = -GALACTIC_SOL.y / sunRadius;
+    const longitudeNinetyX = -towardCenterY;
+    const longitudeNinetyY = towardCenterX;
     const longitudeRadians = longitude * DEG;
     const planarDistance = (distanceKpc * Math.cos(latitude * DEG) * sunRadius) / GALACTIC_SUN_DISTANCE_KPC;
-    return {
-        x:
-            GALACTIC_SOL.x +
-            planarDistance *
-                (Math.cos(longitudeRadians) * towardCenter.x + Math.sin(longitudeRadians) * longitudeNinety.x),
-        y:
-            GALACTIC_SOL.y +
-            planarDistance *
-                (Math.cos(longitudeRadians) * towardCenter.y + Math.sin(longitudeRadians) * longitudeNinety.y),
-    };
+    target.x =
+        GALACTIC_SOL.x +
+        planarDistance * (Math.cos(longitudeRadians) * towardCenterX + Math.sin(longitudeRadians) * longitudeNinetyX);
+    target.y =
+        GALACTIC_SOL.y +
+        planarDistance * (Math.cos(longitudeRadians) * towardCenterY + Math.sin(longitudeRadians) * longitudeNinetyY);
+    return target;
 };
 
 export const GALAXY_STARS = Array.from({ length: 2800 }, (_, index) => {

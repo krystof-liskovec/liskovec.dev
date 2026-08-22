@@ -168,7 +168,7 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
             if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
             context.fillText(line, body.x, lineY);
         });
-        spriteWidth = Math.max(...lines.map((line) => context.measureText(line).width));
+        for (const line of lines) spriteWidth = Math.max(spriteWidth, context.measureText(line).width);
     }
     if (isHovered) {
         context.fillStyle = '#ebdbb2';

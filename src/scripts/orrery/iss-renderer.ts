@@ -1,4 +1,3 @@
-import { rotateX, rotateY } from './math';
 import type { Vec3 } from './types';
 
 type Segment = {
@@ -74,32 +73,59 @@ for (const x of [-2.8, 2.8]) {
     addSegment({ x, y: 0.65, z: -1.6 }, { x, y: 0.65, z: 1.6 }, '#928374', '|');
 }
 
+type ProjectedPoint = Vec3 & { scale: number };
+type ProjectedSegment = Segment & { from: ProjectedPoint; to: ProjectedPoint; depth: number };
+type ProjectedModule = Module & ProjectedPoint;
+
+const projectedSegments: ProjectedSegment[] = segments.map((segment) => ({
+    ...segment,
+    from: { x: 0, y: 0, z: 0, scale: 1 },
+    to: { x: 0, y: 0, z: 0, scale: 1 },
+    depth: 0,
+}));
+const projectedModules: ProjectedModule[] = modules.map((module) => ({
+    ...module,
+    x: 0,
+    y: 0,
+    z: 0,
+    scale: 1,
+}));
+
 export function drawFocusedIss(context: CanvasRenderingContext2D, options: RenderIssOptions) {
     const { centerX, centerY, scale, reveal, longitude, latitude, compact } = options;
     const unit = (compact ? 9.5 : 18) * scale;
     const yaw = -0.58 + longitude;
     const pitch = 0.26 + latitude;
     const cameraDistance = 30;
+    const yawCosine = Math.cos(yaw);
+    const yawSine = Math.sin(yaw);
+    const pitchCosine = Math.cos(pitch);
+    const pitchSine = Math.sin(pitch);
 
-    const project = (point: Vec3) => {
-        let rotated = rotateY(point, yaw);
-        rotated = rotateX(rotated, pitch);
-        const perspective = cameraDistance / (cameraDistance - rotated.z);
-        return {
-            x: centerX + rotated.x * unit * perspective,
-            y: centerY + rotated.y * unit * perspective,
-            z: rotated.z,
-            scale: perspective,
-        };
+    const project = (point: Vec3, target: ProjectedPoint) => {
+        const yawedX = point.x * yawCosine + point.z * yawSine;
+        const yawedZ = -point.x * yawSine + point.z * yawCosine;
+        const pitchedY = point.y * pitchCosine - yawedZ * pitchSine;
+        const pitchedZ = point.y * pitchSine + yawedZ * pitchCosine;
+        const perspective = cameraDistance / (cameraDistance - pitchedZ);
+        target.x = centerX + yawedX * unit * perspective;
+        target.y = centerY + pitchedY * unit * perspective;
+        target.z = pitchedZ;
+        target.scale = perspective;
+        return target;
     };
 
-    const projectedSegments = segments
-        .map((segment) => {
-            const from = project(segment.from);
-            const to = project(segment.to);
-            return { ...segment, from, to, depth: (from.z + to.z) / 2 };
-        })
-        .sort((first, second) => first.depth - second.depth);
+    for (let index = 0; index < segments.length; index++) {
+        const segment = segments[index];
+        const projectedSegment = projectedSegments[index];
+        projectedSegment.color = segment.color;
+        projectedSegment.glyph = segment.glyph;
+        projectedSegment.alpha = segment.alpha;
+        project(segment.from, projectedSegment.from);
+        project(segment.to, projectedSegment.to);
+        projectedSegment.depth = (projectedSegment.from.z + projectedSegment.to.z) / 2;
+    }
+    projectedSegments.sort((first, second) => first.depth - second.depth);
 
     context.save();
     context.textAlign = 'center';
@@ -121,9 +147,14 @@ export function drawFocusedIss(context: CanvasRenderingContext2D, options: Rende
         }
     }
 
-    const projectedModules = modules
-        .map((module) => ({ ...module, ...project(module.point) }))
-        .sort((first, second) => first.z - second.z);
+    for (let index = 0; index < modules.length; index++) {
+        const module = modules[index];
+        const projectedModule = projectedModules[index];
+        projectedModule.label = module.label;
+        projectedModule.color = module.color;
+        project(module.point, projectedModule);
+    }
+    projectedModules.sort((first, second) => first.z - second.z);
     for (const module of projectedModules) {
         const fontSize = Math.max(5, (compact ? 6.2 : 8.5) * scale * module.scale);
         context.font = `bold ${fontSize}px "DM Mono", monospace`;

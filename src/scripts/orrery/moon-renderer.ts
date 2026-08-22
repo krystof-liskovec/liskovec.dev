@@ -43,6 +43,12 @@ const featureDistance = (longitude: number, latitude: number, feature: SurfaceFe
     return Math.hypot(longitudeDistance / feature.width, (latitude - feature.latitude) / feature.height);
 };
 
+const minimumFeatureDistance = (longitude: number, latitude: number, features: SurfaceFeature[]) => {
+    let minimum = Infinity;
+    for (const feature of features) minimum = Math.min(minimum, featureDistance(longitude, latitude, feature));
+    return minimum;
+};
+
 export function drawFocusedMoon(context: CanvasRenderingContext2D, options: MoonRenderOptions) {
     const {
         centerX,
@@ -78,8 +84,8 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
             const latitudeZ = -normalizedY * latitudeSine + sphereZ * latitudeCosine;
             const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
             const latitude = Math.asin(-latitudeY);
-            const mariaDepth = Math.min(...MARIA.map((feature) => featureDistance(longitude, latitude, feature)));
-            const craterDepth = Math.min(...CRATERS.map((feature) => featureDistance(longitude, latitude, feature)));
+            const mariaDepth = minimumFeatureDistance(longitude, latitude, MARIA);
+            const craterDepth = minimumFeatureDistance(longitude, latitude, CRATERS);
             const longitudeFromTycho = wrapLongitude(longitude - CRATERS[0].longitude) * Math.cos(latitude);
             const latitudeFromTycho = latitude - CRATERS[0].latitude;
             const rayAngle = Math.atan2(latitudeFromTycho, longitudeFromTycho);
