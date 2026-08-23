@@ -1,6 +1,6 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
-import { DEG, rotateX, rotateZ, solveKeplerOrbit } from './math';
+import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
@@ -16,31 +16,41 @@ type ParticleFieldStyle = {
     color: string;
     baseAlpha: number;
     alphaVariation: number;
-    baseSpeed: number;
-    speedVariation: number;
+    innerRadius: number;
+    outerRadius: number;
+    innerPeriodDays: number;
+    outerPeriodDays: number;
 };
 
 const ZODIACAL_DUST_STYLE: ParticleFieldStyle = {
     color: '#d79921',
     baseAlpha: 0.065,
     alphaVariation: 0.1,
-    baseSpeed: 0.007,
-    speedVariation: 0.005,
+    innerRadius: 3.2,
+    outerRadius: 18,
+    innerPeriodDays: 21.2,
+    outerPeriodDays: 687,
 };
 const ASTEROID_BELT_STYLE: ParticleFieldStyle = {
     color: '#a89984',
     baseAlpha: 0.2,
     alphaVariation: 0.32,
-    baseSpeed: 0.0045,
-    speedVariation: 0.0015,
+    innerRadius: 20.05,
+    outerRadius: 22.45,
+    innerPeriodDays: 1192,
+    outerPeriodDays: 2085,
 };
 const KUIPER_BELT_STYLE: ParticleFieldStyle = {
     color: '#83a598',
     baseAlpha: 0.3,
     alphaVariation: 0.3,
-    baseSpeed: 0.0012,
-    speedVariation: 0.0005,
+    innerRadius: 43,
+    outerRadius: 52.5,
+    innerPeriodDays: 59860,
+    outerPeriodDays: 129100,
 };
+
+const JUPITER_TROJAN_LIBRATION_PERIOD_DAYS = 150 * 365.256;
 
 // JPL J863/77 osculating elements for 1P/Halley, referred to the J2000
 // ecliptic. The two-body propagation is sufficient for this compressed scene;
@@ -143,7 +153,7 @@ export class SolarSystemSceneRenderer {
     private drawSmallBodyFields(
         context: CanvasRenderingContext2D,
         options: {
-            seconds: number;
+            now: number;
             reducedMotion: boolean;
             solarSystemScale: number;
             localDetailOpacity: number;
@@ -152,8 +162,8 @@ export class SolarSystemSceneRenderer {
             introDetailOpacity: number;
         },
     ) {
-        const { seconds, reducedMotion, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform } =
-            options;
+        const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform } = options;
+        const elapsedDays = (now - J2000) / 86400000;
         const opacity = localDetailOpacity * (1 - planetSceneFocus) * options.introDetailOpacity;
         const scaleRoot = Math.sqrt(solarSystemScale);
 
@@ -161,8 +171,7 @@ export class SolarSystemSceneRenderer {
             context,
             ZODIACAL_DUST,
             cameraTransform,
-            seconds,
-            reducedMotion,
+            elapsedDays,
             opacity,
             Math.max(5, 6.5 * scaleRoot),
             ZODIACAL_DUST_STYLE,
@@ -171,8 +180,7 @@ export class SolarSystemSceneRenderer {
             context,
             ASTEROID_BELT,
             cameraTransform,
-            seconds,
-            reducedMotion,
+            elapsedDays,
             opacity,
             Math.max(5.5, 7.5 * scaleRoot),
             ASTEROID_BELT_STYLE,
@@ -181,8 +189,7 @@ export class SolarSystemSceneRenderer {
             context,
             KUIPER_BELT,
             cameraTransform,
-            seconds,
-            reducedMotion,
+            elapsedDays,
             opacity,
             Math.max(6.5, 8.35 * scaleRoot),
             KUIPER_BELT_STYLE,
@@ -194,8 +201,7 @@ export class SolarSystemSceneRenderer {
         context: CanvasRenderingContext2D,
         particles: SolarParticle[],
         cameraTransform: CameraTransform,
-        seconds: number,
-        reducedMotion: boolean,
+        elapsedDays: number,
         opacity: number,
         fontSize: number,
         style: ParticleFieldStyle,
@@ -203,9 +209,13 @@ export class SolarSystemSceneRenderer {
         context.font = `${fontSize}px "DM Mono", monospace`;
         context.fillStyle = style.color;
         for (const particle of particles) {
-            const angle =
-                particle.angle +
-                (reducedMotion ? 0 : seconds * (style.baseSpeed + particle.phase * style.speedVariation));
+            const radialProgress = Math.max(
+                0,
+                Math.min(1, (particle.radius - style.innerRadius) / (style.outerRadius - style.innerRadius)),
+            );
+            const orbitalPeriodDays =
+                style.innerPeriodDays + (style.outerPeriodDays - style.innerPeriodDays) * radialProgress;
+            const angle = particle.angle + (elapsedDays / orbitalPeriodDays) * Math.PI * 2;
             this.asteroidPoint.x = Math.cos(angle) * particle.radius;
             this.asteroidPoint.y = Math.sin(angle) * particle.radius;
             this.asteroidPoint.z = 0;
@@ -222,7 +232,7 @@ export class SolarSystemSceneRenderer {
         options: {
             bodies: ProjectedBody[];
             cameraTransform: CameraTransform;
-            seconds: number;
+            now: number;
             reducedMotion: boolean;
             solarSystemScale: number;
             localDetailOpacity: number;
@@ -243,10 +253,12 @@ export class SolarSystemSceneRenderer {
         const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
         context.fillStyle = '#d79921';
         context.font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
+        const elapsedDays = (options.now - J2000) / 86400000;
         for (const trojan of JUPITER_TROJANS) {
             const libration = options.reducedMotion
                 ? 0
-                : Math.sin(options.seconds * 0.16 + trojan.phase * 6.28) * 0.025;
+                : Math.sin((elapsedDays / JUPITER_TROJAN_LIBRATION_PERIOD_DAYS) * Math.PI * 2 + trojan.phase * 6.28) *
+                  0.025;
             const angle = baseAngle + trojan.angleOffset + libration;
             this.asteroidPoint.x = Math.cos(angle) * trojan.radius;
             this.asteroidPoint.y = Math.sin(angle) * trojan.radius;
