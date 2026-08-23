@@ -813,8 +813,10 @@ footer a:hover {
     color: var(--orange);
 }
 @media (max-width: 700px) {
+    html,
     body {
-        overflow-x: clip;
+        max-width: 100%;
+        overflow-x: hidden;
     }
     .solar-hero {
         min-height: calc(100svh - 72px);
