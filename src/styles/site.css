@@ -479,7 +479,8 @@ footer a:hover {
 }
 @media (max-width: 700px) {
     .site-shell {
-        width: min(100% - 32px, 1160px);
+        width: calc(100% - 32px);
+        max-width: 1160px;
     }
     nav {
         gap: 10px;
@@ -831,15 +832,17 @@ footer a:hover {
         font-size: clamp(36px, 11vw, 48px);
     }
     .solar-system {
-        --canvas-bleed-x: 32px;
+        /* Keep the layout box inside the shell. The absolutely positioned
+           canvas provides wider artwork without widening iOS's page area. */
+        --canvas-bleed-x: 64px;
         --canvas-bleed-y: 90px;
-        width: calc(100% + 64px);
+        width: 100%;
         height: 100%;
         min-height: 480px;
-        margin: 0 0 0 -32px;
+        margin: 0;
     }
     .object-focus-return {
-        left: 32px;
+        left: 0;
     }
     .cosmic-zoom-control {
         top: auto;
@@ -865,8 +868,8 @@ footer a:hover {
         width: auto;
     }
     .solar-caption {
-        right: 32px;
-        left: 32px;
+        right: 0;
+        left: 0;
         font-size: 8px;
     }
     .solar-caption span:last-child {
