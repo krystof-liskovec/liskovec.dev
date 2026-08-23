@@ -117,17 +117,17 @@ if (canvasElement && systemElement && canvasContext) {
         if (objectFocus.target && objectFocus.progress > 0.5) {
             const pitch = objectFocus.child ? objectFocus.childLatitude : objectFocus.latitude;
             const yaw = objectFocus.child ? objectFocus.childLongitude : objectFocus.longitude;
-            cameraStats.textContent = `CAM · PITCH ${signedDegrees(pitch)} · YAW ${signedDegrees(yaw)} · ROLL +0.0°`;
+            cameraStats.textContent = `PITCH ${signedDegrees(pitch)} · YAW ${signedDegrees(yaw)} · ROLL +0.0°`;
             return;
         }
 
         if (cosmicZoom.current > 0.5) {
             const projectedTilt = Math.max(-1, Math.min(1, 0.58 * galaxyCamera.tilt));
-            cameraStats.textContent = `CAM · PITCH ${signedDegrees(Math.asin(projectedTilt))} · YAW +0.0° · ROLL ${signedDegrees(galaxyCamera.rotation)}`;
+            cameraStats.textContent = `PITCH ${signedDegrees(Math.asin(projectedTilt))} · YAW +0.0° · ROLL ${signedDegrees(galaxyCamera.rotation)}`;
             return;
         }
 
-        cameraStats.textContent = `CAM · PITCH ${signedDegrees(camera.renderedPitch)} · YAW ${signedDegrees(camera.renderedYaw)} · ROLL ${signedDegrees(camera.renderedRoll)}`;
+        cameraStats.textContent = `PITCH ${signedDegrees(camera.renderedPitch)} · YAW ${signedDegrees(camera.renderedYaw)} · ROLL ${signedDegrees(camera.renderedRoll)}`;
     };
 
     const focusController = new FocusController(
