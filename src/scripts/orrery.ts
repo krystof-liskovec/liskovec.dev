@@ -222,7 +222,7 @@ if (canvasElement && systemElement && canvasContext) {
         // crowded into the smaller scene.
         const viewportGlyphScale = Math.min(1, Math.max(0.61, width / 700));
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
-        const viewportSunScale = 0.58 + mobileSunProgress * 0.42;
+        const viewportSunScale = 0.52 + mobileSunProgress * 0.48;
         const dpr = Math.max(1, window.devicePixelRatio || 1);
         const pixelWidth = Math.max(1, Math.round(renderWidth * dpr));
         const pixelHeight = Math.max(1, Math.round(renderHeight * dpr));
