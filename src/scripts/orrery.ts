@@ -220,7 +220,7 @@ if (canvasElement && systemElement && canvasContext) {
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene.
-        const viewportGlyphScale = Math.min(1, Math.max(0.68, width / 700));
+        const viewportGlyphScale = Math.min(1, Math.max(0.61, width / 700));
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
         const viewportSunScale = 0.58 + mobileSunProgress * 0.42;
         const dpr = Math.max(1, window.devicePixelRatio || 1);
