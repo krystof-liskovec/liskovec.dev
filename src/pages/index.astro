@@ -89,53 +89,52 @@ const profileStructuredData = {
                         <span aria-hidden="true">MILKY WAY</span>
                         <input id="cosmic-zoom" type="range" min="0" max="100" value="0" step="1" />
                         <span aria-hidden="true">SOL</span>
+                        <output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
+                        <div class="simulation-speed-control">
+                            <span class="sr-only" id="simulation-speed-label">Simulation speed</span>
+                            <select
+                                class="simulation-speed"
+                                id="solar-simulation-speed"
+                                aria-labelledby="simulation-speed-label"
+                            >
+                                <option value="0">1×</option>
+                                <option value="1" selected>1h/s</option>
+                                <option value="2">12h/s</option>
+                                <option value="3">7d/s</option>
+                                <option value="4">30d/s</option>
+                                <option value="5">1y/s</option>
+                            </select>
+                            <select
+                                class="simulation-speed"
+                                id="galactic-simulation-speed"
+                                aria-labelledby="simulation-speed-label"
+                                hidden
+                            >
+                                <option value="0">1×</option>
+                                <option value="1" selected>1My/s</option>
+                                <option value="2">5My/s</option>
+                                <option value="3">10My/s</option>
+                            </select>
+                            <select
+                                class="simulation-speed"
+                                id="rotation-simulation-speed"
+                                aria-labelledby="simulation-speed-label"
+                                hidden
+                            >
+                                <option value="0">1×</option>
+                                <option value="1" selected>1h/s</option>
+                                <option value="2">6h/s</option>
+                                <option value="3">12h/s</option>
+                                <option value="4">1d/s</option>
+                            </select>
+                        </div>
                     </div>
-                    <output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
                 </div>
                 <div class="solar-caption">
                     <div class="solar-caption-primary">
                         <span id="camera-stats">CAM · PITCH +58.0° · YAW +0.0° · ROLL −12.0°</span>
                         <div class="solar-time-controls">
                             <span id="solar-time">UTC / BROWSER TIME</span>
-                            <div class="simulation-speed-control">
-                                <span aria-hidden="true">time:</span>
-                                <span class="sr-only" id="simulation-speed-label">Simulation speed</span>
-                                <select
-                                    class="simulation-speed"
-                                    id="solar-simulation-speed"
-                                    aria-labelledby="simulation-speed-label"
-                                >
-                                    <option value="0">1×</option>
-                                    <option value="1" selected>1h/s</option>
-                                    <option value="2">12h/s</option>
-                                    <option value="3">7d/s</option>
-                                    <option value="4">30d/s</option>
-                                    <option value="5">1y/s</option>
-                                </select>
-                                <select
-                                    class="simulation-speed"
-                                    id="galactic-simulation-speed"
-                                    aria-labelledby="simulation-speed-label"
-                                    hidden
-                                >
-                                    <option value="0">1×</option>
-                                    <option value="1" selected>1My/s</option>
-                                    <option value="2">5My/s</option>
-                                    <option value="3">10My/s</option>
-                                </select>
-                                <select
-                                    class="simulation-speed"
-                                    id="rotation-simulation-speed"
-                                    aria-labelledby="simulation-speed-label"
-                                    hidden
-                                >
-                                    <option value="0">1×</option>
-                                    <option value="1" selected>1h/s</option>
-                                    <option value="2">6h/s</option>
-                                    <option value="3">12h/s</option>
-                                    <option value="4">1d/s</option>
-                                </select>
-                            </div>
                         </div>
                     </div>
                     <span>drag to explore · double-click to reset</span>

@@ -758,7 +758,9 @@ footer a:hover {
 .mobile-rotation-grip {
     display: none;
 }
-.solar-system.is-object-focus .cosmic-zoom-control {
+.solar-system.is-object-focus .cosmic-zoom-scale > span:not(.sr-only),
+.solar-system.is-object-focus .cosmic-zoom-scale > input,
+.solar-system.is-object-focus .cosmic-zoom-scale > output {
     opacity: 0;
     pointer-events: none;
 }
@@ -784,6 +786,11 @@ footer a:hover {
     justify-items: center;
     gap: 9px;
 }
+.cosmic-zoom-scale > span:not(.sr-only),
+.cosmic-zoom-scale > input,
+.cosmic-zoom-scale > output {
+    transition: opacity 0.3s;
+}
 .cosmic-zoom-control input {
     width: 18px;
     height: 220px;
@@ -797,6 +804,7 @@ footer a:hover {
     width: 78px;
     color: var(--yellow);
     text-align: center;
+    transition: opacity 0.3s;
 }
 .solar-caption {
     position: absolute;
@@ -821,26 +829,27 @@ footer a:hover {
     white-space: nowrap;
 }
 .solar-time-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    width: 370px;
+    width: auto;
+    max-width: 100%;
 }
 #solar-time {
+    min-width: 0;
     overflow: hidden;
+    flex: 0 1 auto;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 .simulation-speed-control {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 4px;
+    width: 74px;
     color: var(--yellow);
     text-transform: uppercase;
 }
 .simulation-speed {
-    min-width: 48px;
+    width: 74px;
     padding: 1px 14px 1px 4px;
     border: 0;
     border-bottom: 1px solid #665c54;
@@ -954,9 +963,13 @@ footer a:hover {
     }
     .cosmic-zoom-scale {
         width: 100%;
-        grid-template: 18px / auto 1fr auto;
+        grid-template: 18px auto auto / auto 1fr auto;
         align-items: center;
         gap: 10px;
+    }
+    .cosmic-zoom-scale > output,
+    .cosmic-zoom-scale > .simulation-speed-control {
+        grid-column: 2;
     }
     .cosmic-zoom-control input {
         width: 100%;
@@ -977,7 +990,7 @@ footer a:hover {
     .solar-time-controls {
         width: 100%;
     }
-    .solar-caption span:last-child {
+    .solar-caption > span:last-child {
         display: none;
     }
     .hero-footer {
