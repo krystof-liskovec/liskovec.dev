@@ -35,6 +35,7 @@ const galacticSimulationSpeed = document.querySelector<HTMLSelectElement>('#gala
 const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rotation-simulation-speed');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
+const mobileRotationGrip = document.querySelector<HTMLButtonElement>('#mobile-rotation-grip');
 const canvasContext = canvasElement?.getContext('2d');
 
 if (canvasElement && systemElement && canvasContext) {
@@ -221,6 +222,7 @@ if (canvasElement && systemElement && canvasContext) {
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene.
         const viewportGlyphScale = Math.min(1, Math.max(0.61, width / 700));
+        const innerPlanetScale = width < 600 ? 0.84 : 1;
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
         const viewportSunScale = 0.52 + mobileSunProgress * 0.48;
         const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -437,6 +439,7 @@ if (canvasElement && systemElement && canvasContext) {
                       pointerY: localPointerY,
                       solarSystemScale,
                       viewportGlyphScale,
+                      innerPlanetScale,
                   })
                 : null;
         const bodyHoverCandidate =
@@ -523,6 +526,7 @@ if (canvasElement && systemElement && canvasContext) {
             reducedMotion,
             solarSystemScale,
             viewportGlyphScale,
+            innerPlanetScale,
             localDetailOpacity,
             planetSceneFocus,
             introSunOpacity: intro.sun,
@@ -608,6 +612,7 @@ if (canvasElement && systemElement && canvasContext) {
         canvas,
         system,
         focusReturn,
+        mobileRotationGrip,
         zoomInput,
         zoomStatus,
         solarSimulationSpeed,

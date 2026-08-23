@@ -2,7 +2,7 @@ import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { DEG, rotateX, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
-import { drawSolarBody } from './solar-body-renderer';
+import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
 import type { Planet, ProjectedBody, Vec3 } from './types';
 
@@ -115,6 +115,7 @@ export class SolarSystemSceneRenderer {
             reducedMotion: boolean;
             solarSystemScale: number;
             viewportGlyphScale: number;
+            innerPlanetScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
             introSunOpacity: number;
@@ -348,6 +349,7 @@ export class SolarSystemSceneRenderer {
             reducedMotion: boolean;
             solarSystemScale: number;
             viewportGlyphScale: number;
+            innerPlanetScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
             introSunOpacity: number;
@@ -383,6 +385,7 @@ export class SolarSystemSceneRenderer {
                 reducedMotion,
                 solarSystemScale,
                 viewportGlyphScale,
+                innerPlanetScale: options.innerPlanetScale,
                 localDetailOpacity,
                 planetSceneFocus,
                 isHovered: body === hoveredBody && showHoverVisuals,
@@ -424,12 +427,15 @@ export class SolarSystemSceneRenderer {
         options: {
             solarSystemScale: number;
             viewportGlyphScale: number;
+            innerPlanetScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
         },
     ) {
         if (body.planet.easterEgg) return;
-        const glyphScale = Math.max(0.3, Math.sqrt(options.solarSystemScale)) * options.viewportGlyphScale;
+        const glyphScale =
+            Math.max(0.3, Math.sqrt(options.solarSystemScale)) *
+            solarBodyViewportScale(body.planet.name, options.viewportGlyphScale, options.innerPlanetScale);
         const isGiant =
             body.planet.name === 'Jupiter' || body.planet.name === 'Saturn' || body.planet.name === 'Uranus';
         const radiusX = (isGiant ? 16 : 11) * glyphScale;

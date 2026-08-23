@@ -23,6 +23,7 @@ type InteractionOptions = {
     canvas: HTMLCanvasElement;
     system: HTMLElement;
     focusReturn: HTMLButtonElement | null;
+    mobileRotationGrip: HTMLButtonElement | null;
     zoomInput: HTMLInputElement | null;
     zoomStatus: HTMLOutputElement | null;
     solarSimulationSpeed: HTMLSelectElement | null;
@@ -52,6 +53,7 @@ export const bindOrreryInteractions = ({
     canvas,
     system,
     focusReturn,
+    mobileRotationGrip,
     zoomInput,
     zoomStatus,
     solarSimulationSpeed,
@@ -78,6 +80,8 @@ export const bindOrreryInteractions = ({
 }: InteractionOptions) => {
     let pressedFocusCandidate: FocusTarget | null = null;
     const touchGesture = { pending: false, pointerId: -1, startX: 0, startY: 0 };
+    let dragCaptureTarget: HTMLElement = canvas;
+    let draggingFromGrip = false;
     let simulationControlMode: 'solar' | 'galactic' | 'rotation' = 'solar';
     let solarPresetIndex = DEFAULT_ORBIT_SPEED_PRESET;
     let galacticPresetIndex = DEFAULT_GALACTIC_SPEED_PRESET;
@@ -159,7 +163,12 @@ export const bindOrreryInteractions = ({
         if (simulationControlMode === 'rotation') updateSimulationSpeedControl(presetIndex);
     };
 
-    const startCameraDrag = (event: PointerEvent, startX = event.clientX, startY = event.clientY) => {
+    const startCameraDrag = (
+        event: PointerEvent,
+        startX = event.clientX,
+        startY = event.clientY,
+        captureTarget: HTMLElement = canvas,
+    ) => {
         if (camera.dragMode === 'solar') {
             camera.manual = true;
             camera.resetting = false;
@@ -179,9 +188,27 @@ export const bindOrreryInteractions = ({
         camera.dragDistance = 0;
         camera.pointerId = event.pointerId;
         system.classList.add('is-dragging');
-        canvas.setPointerCapture(event.pointerId);
+        dragCaptureTarget = captureTarget;
+        dragCaptureTarget.setPointerCapture(event.pointerId);
         if (event.pointerType !== 'touch') event.preventDefault();
     };
+
+    mobileRotationGrip?.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onInteract();
+        touchGesture.pending = false;
+        pressedFocusCandidate = null;
+        draggingFromGrip = true;
+        pointer.clientX = event.clientX;
+        pointer.clientY = event.clientY;
+        pointer.active = true;
+        pointer.showsHover = false;
+        camera.dragMode = objectFocus.target ? 'focus' : cosmicZoom.current > 0.55 ? 'galaxy' : 'solar';
+        mobileRotationGrip.classList.add('is-active');
+        startCameraDrag(event, event.clientX, event.clientY, mobileRotationGrip);
+    });
 
     window.addEventListener('pointermove', (event) => {
         pointer.clientX = event.clientX;
@@ -321,11 +348,15 @@ export const bindOrreryInteractions = ({
             return;
         }
         if (!camera.dragging || event.pointerId !== camera.pointerId) return;
+        const completedGripDrag = draggingFromGrip;
         camera.dragging = false;
+        draggingFromGrip = false;
         system.classList.remove('is-dragging');
-        completeInteraction(event, camera.dragDistance, 3);
+        mobileRotationGrip?.classList.remove('is-active');
+        if (!completedGripDrag) completeInteraction(event, camera.dragDistance, 3);
         pressedFocusCandidate = null;
-        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        if (dragCaptureTarget.hasPointerCapture(event.pointerId))
+            dragCaptureTarget.releasePointerCapture(event.pointerId);
     };
     window.addEventListener('pointerup', finishDrag);
     window.addEventListener('pointercancel', finishDrag);

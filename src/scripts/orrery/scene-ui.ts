@@ -1,7 +1,7 @@
 import { drawReadout } from './canvas-ui';
 import type { ProjectedGalacticObject } from './galaxy-object-renderer';
 import type { ProjectedComet } from './solar-system-scene';
-import { COMPACT_PLANET_GRIDS } from './solar-body-renderer';
+import { COMPACT_PLANET_GRIDS, solarBodyViewportScale } from './solar-body-renderer';
 import type { FocusTarget, ProjectedBody } from './types';
 
 export const findHoveredBody = (options: {
@@ -10,15 +10,18 @@ export const findHoveredBody = (options: {
     pointerY: number;
     solarSystemScale: number;
     viewportGlyphScale: number;
+    innerPlanetScale: number;
 }): ProjectedBody | null => {
-    const { bodies, pointerX, pointerY, solarSystemScale, viewportGlyphScale } = options;
+    const { bodies, pointerX, pointerY, solarSystemScale, viewportGlyphScale, innerPlanetScale } = options;
     let frontmost: ProjectedBody | null = null;
 
     for (const body of bodies) {
         if (body.reveal <= 0.35) continue;
         const perspectiveScale = Math.max(0.68, Math.min(1.55, body.scale));
         const depthScale = 0.75 + perspectiveScale * 0.25;
-        const glyphScale = Math.max(0.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
+        const glyphScale =
+            Math.max(0.3, Math.sqrt(solarSystemScale)) *
+            solarBodyViewportScale(body.planet.name, viewportGlyphScale, innerPlanetScale);
         const fontSize =
             (body.planet.easterEgg ? 16 : Math.max(6.2, 12.5 * body.planet.size * depthScale)) * glyphScale;
         const usesSingleGlyph = Boolean(body.planet.easterEgg || (fontSize < 9 && solarSystemScale < 0.45));

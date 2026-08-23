@@ -16,6 +16,11 @@ export const COMPACT_PLANET_GRIDS: Record<
     Neptune: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: 0.86 },
 };
 
+const INNER_PLANETS = new Set(['Mercury', 'Venus', 'Earth', 'Mars']);
+
+export const solarBodyViewportScale = (planetName: string, viewportGlyphScale: number, innerPlanetScale: number) =>
+    viewportGlyphScale * (INNER_PLANETS.has(planetName) ? innerPlanetScale : 1);
+
 const compactSurfaceColor = (planet: Planet, glyph: string) => {
     if (planet.name === 'Earth') {
         return glyph === '#' ? '#b8bb26' : glyph === '%' ? '#d79921' : glyph === '*' ? '#ebdbb2' : '#83a598';
@@ -34,6 +39,7 @@ type SolarBodyOptions = {
     reducedMotion: boolean;
     solarSystemScale: number;
     viewportGlyphScale: number;
+    innerPlanetScale: number;
     localDetailOpacity: number;
     planetSceneFocus: number;
     isHovered: boolean;
@@ -46,6 +52,7 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         reducedMotion,
         solarSystemScale,
         viewportGlyphScale,
+        innerPlanetScale,
         localDetailOpacity,
         planetSceneFocus,
     } = options;
@@ -54,7 +61,9 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
     const perspectiveScale = Math.max(0.68, Math.min(1.55, body.scale));
     const depthScale = 0.75 + perspectiveScale * 0.25;
     const isHovered = options.isHovered;
-    const cosmicGlyphScale = Math.max(0.3, Math.sqrt(solarSystemScale)) * viewportGlyphScale;
+    const cosmicGlyphScale =
+        Math.max(0.3, Math.sqrt(solarSystemScale)) *
+        solarBodyViewportScale(planet.name, viewportGlyphScale, innerPlanetScale);
     const fontSize =
         (planet.easterEgg ? 16 : Math.max(6.2, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) *
         cosmicGlyphScale;
