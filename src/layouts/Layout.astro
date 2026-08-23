@@ -2,16 +2,38 @@
 interface Props {
     title?: string;
     description?: string;
+    image?: string;
+    imageAlt?: string;
+    type?: 'website' | 'article';
+    canonical?: string | false;
+    noindex?: boolean;
+    publishedTime?: string;
+    modifiedTime?: string;
+    tags?: string[];
+    structuredData?: Record<string, unknown> | Record<string, unknown>[];
     resetScrollOnReload?: boolean;
 }
 
 const {
-    title = 'liskovec.dev | devops & software development',
-    description = 'Kryštof Liskovec — DevOps and software developer building reliable systems and useful tools.',
+    title = 'Kryštof Lískovec — DevOps & Software Developer',
+    description = 'Kryštof Lískovec is a software developer working across DevOps, reliable systems, internal tools, and useful software.',
+    image = '/og-default.png',
+    imageAlt = 'A Gruvbox-inspired ASCII solar system orrery',
+    type = 'website',
+    canonical = Astro.url.pathname,
+    noindex = false,
+    publishedTime,
+    modifiedTime,
+    tags = [],
+    structuredData,
     resetScrollOnReload = false,
 } = Astro.props;
 
-const rssUrl = new URL('/rss.xml', Astro.site ?? Astro.url);
+const siteUrl = Astro.site ?? Astro.url;
+const rssUrl = new URL('/rss.xml', siteUrl);
+const canonicalUrl = canonical === false ? null : new URL(canonical, siteUrl);
+const socialImageUrl = new URL(image, siteUrl);
+const serializedStructuredData = structuredData ? JSON.stringify(structuredData).replaceAll('<', '\\u003c') : null;
 ---
 
 <!doctype html>
@@ -20,11 +42,36 @@ const rssUrl = new URL('/rss.xml', Astro.site ?? Astro.url);
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.ico" />Lískovec
         <link rel="alternate" type="application/rss+xml" title="Kryštof Liskovec’s blog" href={rssUrl} />
+        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
         <meta name="generator" content={Astro.generator} />
         <meta name="description" content={description} />
+        {noindex && <meta name="robots" content="noindex, follow" />}
+        <meta property="og:type" content={type} />Lískovec
+        <meta property="og:site_name" content="Kryštof Liskovec" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+        <meta property="og:image" content={socialImageUrl} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={imageAlt} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={socialImageUrl} />
+        <meta name="twitter:image:alt" content={imageAlt} />
+        {type === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+        {type === 'article' && modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+        {type === 'article' && tags.map((tag) => <meta property="article:tag" content={tag} />)}
         <title>{title}</title>
+        {
+            serializedStructuredData && (
+                <script is:inline type="application/ld+json" set:html={serializedStructuredData} />
+            )
+        }
         <script is:inline>
             const resetHomepageReload = document.documentElement.hasAttribute('data-reset-scroll-on-reload');
             const navigation = performance.getEntriesByType('navigation')[0];

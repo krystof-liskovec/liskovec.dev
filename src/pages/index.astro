@@ -8,9 +8,39 @@ import '../styles/site.css';
 const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && data.featured))
     .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf())
     .slice(0, 3);
+const homeUrl = new URL('/', Astro.site ?? Astro.url).href;
+const personId = `${homeUrl}#person`;
+const profileStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${homeUrl}#profile`,
+    url: homeUrl,
+    name: 'Kryštof Lískovec — DevOps & Software Developer',
+    mainEntity: {
+        '@type': 'Person',
+        '@id': personId,
+        name: 'Kryštof Lískovec',
+        givenName: 'Kryštof',
+        familyName: 'Lískovec',
+        url: homeUrl,
+        jobTitle: 'Software Developer',
+        description:
+            'Software developer from the Czech Republic working across DevOps, reliable systems, services, internal tools, and deployment automation.',
+        homeLocation: {
+            '@type': 'Country',
+            name: 'Czech Republic',
+        },
+        knowsAbout: ['DevOps', 'Software development', 'Linux', 'Containers', 'CI/CD', 'Infrastructure automation'],
+    },
+};
 ---
 
-<Layout resetScrollOnReload>
+<Layout
+    title="Kryštof Lískovec — DevOps & Software Developer"
+    description="Software developer working across DevOps, reliable systems, services, internal tools, and deployment automation."
+    structuredData={profileStructuredData}
+    resetScrollOnReload
+>
     <SiteShell>
         <section class="solar-hero">
             <div class="solar-heading">
@@ -38,7 +68,7 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
                         '---'</pre>
                 </div>
                 <p class="sr-only">
-                    An interactive ASCII visualization of the Solar System and Milky Way introduces Kryštof Liskovec’s
+                    An interactive ASCII visualization of the Solar System and Milky Way introduces Kryštof Lískovec’s
                     portfolio. The portfolio content continues below with information about his DevOps and software
                     development work, technical skills, blog posts, and contact details.
                 </p>
@@ -113,9 +143,9 @@ const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && 
             >
                 <h2>i build reliable software and the systems it runs on.</h2><div class="about-copy">
                     <p>
-                        hi there, i’m Kryštof Lískovec, a DevOps and software developer from the Czech Republic. my
-                        background began in backend development and gradually expanded into DevOps, infrastructure, and
-                        automation.
+                        hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic working across
+                        DevOps, infrastructure, and application development. my background began in backend development
+                        and gradually expanded into DevOps, infrastructure, and automation.
                     </p><p>
                         these days my work sits between both. i still build services and internal tools, while also
                         working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake

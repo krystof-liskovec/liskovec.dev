@@ -336,6 +336,16 @@ h1 span {
     font-size: 15px;
     line-height: 1.7;
 }
+.post-cover {
+    margin: 46px 0 0;
+}
+.post-cover img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid #504945;
+    background: var(--surface);
+}
 .post-body {
     padding-top: 46px;
     color: #d5c4a1;
@@ -903,7 +913,7 @@ footer a:hover {
     .cosmic-zoom-control {
         top: auto;
         right: 9%;
-        bottom: 46px;
+        bottom: 64px;
         left: 9%;
         transform: none;
     }

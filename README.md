@@ -11,7 +11,26 @@ npm run build
 npm run preview
 ```
 
-Set `SITE_URL` when the public domain changes. It controls the sitemap, RSS links, and `robots.txt` URLs. The deployment currently uses `https://liskovec.pages.dev` until the custom domain is ready.
+Set `SITE_URL` when the public domain changes. It controls canonical URLs, social metadata, structured data, the sitemap, RSS links, and `robots.txt`. The deployment currently uses `https://liskovec.pages.dev` until the custom domain is ready. Redirect the temporary `pages.dev` hostname permanently to the custom domain after the move so only one public origin remains indexable.
+
+## Writing blog posts
+
+Posts live in `src/content/blog`. A post supports this frontmatter:
+
+```yaml
+title: A useful title
+description: A short, page-specific summary.
+published: 2026-08-23
+updated: 2026-08-24 # optional
+featured: false
+draft: true
+tags:
+    - devops
+image: /images/blog/example.png # optional; also used for link previews
+imageAlt: A concise description of the image
+```
+
+Store local images under `public/images/blog`. Posts without a cover image use `public/og-default.png` for social previews. Draft posts are excluded from pages, the sitemap, RSS, and structured data.
 
 ## Astronomical data and sources
 

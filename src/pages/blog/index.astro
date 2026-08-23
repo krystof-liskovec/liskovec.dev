@@ -8,11 +8,29 @@ import '../../styles/site.css';
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
     (a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
 );
+const siteUrl = Astro.site ?? Astro.url;
+const blogUrl = new URL('/blog/', siteUrl).href;
+const homeUrl = new URL('/', siteUrl).href;
+const blogStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${blogUrl}#blog`,
+    url: blogUrl,
+    name: 'Blog — Kryštof Lískovec',
+    description: 'Random adventures and struggles—mostly about software, DevOps, and whatever I am figuring out.',
+    author: {
+        '@type': 'Person',
+        '@id': `${homeUrl}#person`,
+        name: 'Kryštof Lískovec',
+        url: homeUrl,
+    },
+};
 ---
 
 <Layout
-    title="blog — krystof.liskovec"
-    description="Random adventures and struggles from Krystof Liskovec—mostly about software, DevOps, and whatever he is figuring out."
+    title="Blog — Kryštof Lískovec"
+    description="Random adventures and struggles from Kryštof Lískovec—mostly about software, DevOps, and whatever he is figuring out."
+    structuredData={blogStructuredData}
 >
     <SiteShell mainClass="blog-page">
         <section class="blog-hero">

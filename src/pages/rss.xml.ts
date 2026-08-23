@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ site }) => {
     );
 
     return rss({
-        title: 'Kryštof Liskovec — blog',
+        title: 'Kryštof Lískovec — blog',
         description:
             'Random adventures and struggles—mostly about software, DevOps, and whatever I happen to be figuring out.',
         site: site!,

@@ -7,6 +7,8 @@ draft: true
 tags:
     - devops
     - deployments
+image: /og-default.png
+imageAlt: A Gruvbox-inspired ASCII solar system orrery
 ---
 
 This is a mock post. It is here to make sure the blog works from Markdown file to finished page—and to give me something real to replace later.

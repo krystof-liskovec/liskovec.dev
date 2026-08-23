@@ -4,7 +4,12 @@ import SiteShell from '../components/SiteShell.astro';
 import '../styles/site.css';
 ---
 
-<Layout title="404 — liskovec.dev" description="The requested page could not be found.">
+<Layout
+    title="404 — Not Found | Kryštof Lískovec"
+    description="The requested page could not be found."
+    canonical={false}
+    noindex
+>
     <SiteShell mainClass="not-found-page">
         <section class="not-found">
             <div class="not-found-scene" aria-hidden="true">
