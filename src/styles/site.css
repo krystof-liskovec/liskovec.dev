@@ -85,6 +85,7 @@ a {
 }
 .wordmark {
     text-decoration: none;
+    font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.02em;
 }
@@ -97,6 +98,11 @@ nav {
     color: var(--muted);
 }
 nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 5px 3px;
+    font-size: 13px;
     text-decoration: none;
     transition: color 0.2s;
 }
@@ -146,6 +152,10 @@ h1 span {
 .content-section.is-arriving .section-label {
     animation: section-arrival 0.9s ease-out;
 }
+.about-toolbox.is-arriving .section-label,
+.about-contact.is-arriving .section-label {
+    animation: section-arrival 0.9s ease-out;
+}
 @keyframes section-arrival {
     0%,
     100% {
@@ -167,18 +177,45 @@ h1 span {
 .about-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
-    gap: clamp(50px, 8vw, 110px);
+    column-gap: clamp(50px, 8vw, 110px);
+    row-gap: 32px;
     align-items: start;
     padding: 38px 0 44px;
-    border-bottom: 1px solid #3c3836;
 }
 .about-grid h2 {
+    grid-column: 1;
+    grid-row: 1;
     max-width: 620px;
     margin: 0;
     font: 500 clamp(30px, 4.2vw, 54px)/1.05 var(--sans);
     letter-spacing: -0.055em;
 }
+.about-side {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+.about-toolbox {
+    scroll-margin-top: 24px;
+}
+.about-toolbox .skill-groups {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+}
+.about-toolbox .skill-groups div {
+    grid-template-columns: 86px minmax(0, 1fr);
+    gap: 12px;
+    padding: 13px 0;
+}
+.about-contact {
+    margin-top: 58px;
+    scroll-margin-top: 24px;
+}
+.about-contact .contact-links {
+    padding-top: 22px;
+}
 .about-copy {
+    grid-column: 1;
+    grid-row: 2;
     max-width: 540px;
 }
 .about-copy p {
@@ -189,9 +226,6 @@ h1 span {
 }
 .about-copy p + p {
     margin-top: 18px;
-}
-.post-list {
-    border-bottom: 1px solid #3c3836;
 }
 .post-card {
     display: grid;
@@ -500,6 +534,9 @@ footer a:hover {
     }
     .about-grid {
         display: block;
+    }
+    .about-side {
+        margin-top: 54px;
     }
     .about-copy {
         margin-top: 28px;

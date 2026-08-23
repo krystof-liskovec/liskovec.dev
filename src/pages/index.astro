@@ -146,7 +146,8 @@ const profileStructuredData = {
             <div class="section-label"><span>01 / about me</span><span>devops + software development</span></div><div
                 class="about-grid"
             >
-                <h2>i build reliable software and the systems it runs on.</h2><div class="about-copy">
+                <h2>i build reliable software and the systems it runs on.</h2>
+                <div class="about-copy">
                     <p>
                         hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic working across
                         DevOps, infrastructure, and application development. my background began in backend development
@@ -158,34 +159,42 @@ const profileStructuredData = {
                         systems.
                     </p><p>outside work, i’m usually somewhere around Linux, homelabs, or open-source projects.</p>
                 </div>
+                <div class="about-side">
+                    <section class="about-toolbox" id="skills">
+                        <div class="section-label"><span>02 / toolbox</span><span>tools &amp; tech</span></div><div
+                            class="skill-groups"
+                        >
+                            <div>
+                                <span>operations</span><p>
+                                    Linux &lt;3&nbsp;· Docker&nbsp;· GitLab CI/CD&nbsp;· IaC&nbsp;·
+                                    Nginx&nbsp;· Consul&nbsp;· OpenBao&nbsp;· Sonatype Nexus&nbsp;· n8n
+                                </p>
+                            </div><div>
+                                <span>data</span><p>
+                                    PostgreSQL&nbsp;· MySQL&nbsp;· MongoDB&nbsp;· Elasticsearch&nbsp;· Redis&nbsp;·
+                                    Kibana
+                                </p>
+                            </div><div><span>backend</span><p>Go &lt;3&nbsp;· NestJS&nbsp;· Symfony</p></div><div>
+                                <span>frontend</span><p>React&nbsp;· Svelte&nbsp;· Astro</p>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="about-contact" id="contact">
+                        <div class="section-label"><span>03 / contact</span><span>get in touch</span></div>
+                        <div class="contact-links">
+                            <a href="mailto:krystof@liskovec.dev">email <span>↗</span></a>
+                        </div>
+                    </section>
+                </div>
             </div>
         </section>
-        <section class="content-section skills-section" id="skills">
-            <div class="section-label"><span>02 / toolbox</span><span>tools &amp; tech</span></div><div
-                class="skill-groups"
-            >
-                <div>
-                    <span>operations</span><p>Linux · Docker · GitLab CI/CD · IaC · Nginx · Consul · OpenBao · Nexus</p>
-                </div><div><span>backend</span><p>Go &lt;3 · NestJS · Symfony</p></div><div>
-                    <span>data</span><p>PostgreSQL · MySQL · MongoDB · Elasticsearch · Redis · Kibana</p>
-                </div><div><span>frontend</span><p>React · Svelte · Nuxt</p></div>
+        <section class="content-section" id="blog">
+            <div class="section-label">
+                <span>04 / featured posts</span><span>sometimes with opinions included</span>
+            </div><PostList posts={featuredPosts} /><div class="blog-actions">
+                <a class="blog-link" href="/blog">[ visit the blog → ]</a>
             </div>
         </section>
-        <div class="closing-grid">
-            <section class="content-section" id="blog">
-                <div class="section-label">
-                    <span>03 / featured posts</span><span>sometimes with opinions included</span>
-                </div><PostList posts={featuredPosts} /><div class="blog-actions">
-                    <a class="blog-link" href="/blog">[ visit the blog → ]</a>
-                </div>
-            </section><section class="content-section compact" id="contact">
-                <div class="section-label"><span>04 / contact</span><span>get in touch</span></div><div
-                    class="contact-links"
-                >
-                    <a href="mailto:krystof@liskovec.dev">email <span>↗</span></a>
-                </div>
-            </section>
-        </div>
     </SiteShell>
 </Layout>
 
@@ -236,12 +245,36 @@ const profileStructuredData = {
         link.addEventListener('click', () => {
             const id = link.hash.slice(1);
             const section = document.getElementById(id);
-            if (section?.classList.contains('content-section')) waitForScrollEnd(section);
+            if (
+                section?.classList.contains('content-section') ||
+                section?.id === 'contact' ||
+                section?.id === 'skills'
+            ) {
+                waitForScrollEnd(section);
+            }
         });
     });
 
+    const updateNavigationState = () => {
+        document.querySelectorAll<HTMLAnchorElement>('nav a').forEach((link) => {
+            if (link.getAttribute('href') === '#contact') {
+                if (window.location.hash === '#contact') link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            }
+        });
+    };
+
+    window.addEventListener('hashchange', updateNavigationState);
+    updateNavigationState();
+
     if (window.location.hash) {
         const initialSection = document.getElementById(window.location.hash.slice(1));
-        if (initialSection?.classList.contains('content-section')) waitForScrollEnd(initialSection);
+        if (
+            initialSection?.classList.contains('content-section') ||
+            initialSection?.id === 'contact' ||
+            initialSection?.id === 'skills'
+        ) {
+            waitForScrollEnd(initialSection);
+        }
     }
 </script>
