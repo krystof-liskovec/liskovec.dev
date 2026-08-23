@@ -374,6 +374,26 @@ export class SolarSystemSceneRenderer {
             introSunOpacity,
         } = options;
 
+        const drawBody = (body: ProjectedBody) => {
+            this.drawPlanetShadow(context, body, options);
+            this.drawPlanetarySystem(context, body, false, options);
+            drawSolarBody(context, body, {
+                focusedPlanet,
+                seconds,
+                reducedMotion,
+                solarSystemScale,
+                viewportGlyphScale,
+                localDetailOpacity,
+                planetSceneFocus,
+                isHovered: body === hoveredBody && showHoverVisuals,
+            });
+            this.drawPlanetarySystem(context, body, true, options);
+        };
+
+        for (const body of bodies) {
+            if (body.z < 0) drawBody(body);
+        }
+
         drawSun(context, {
             x: centerX,
             y: centerY,
@@ -394,19 +414,7 @@ export class SolarSystemSceneRenderer {
         }
 
         for (const body of bodies) {
-            this.drawPlanetShadow(context, body, options);
-            this.drawPlanetarySystem(context, body, false, options);
-            drawSolarBody(context, body, {
-                focusedPlanet,
-                seconds,
-                reducedMotion,
-                solarSystemScale,
-                viewportGlyphScale,
-                localDetailOpacity,
-                planetSceneFocus,
-                isHovered: body === hoveredBody && showHoverVisuals,
-            });
-            this.drawPlanetarySystem(context, body, true, options);
+            if (body.z >= 0) drawBody(body);
         }
     }
 

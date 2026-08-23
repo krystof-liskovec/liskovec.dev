@@ -426,7 +426,10 @@ if (canvasElement && systemElement && canvasContext) {
         const localPointerX = pointer.clientX - systemBounds.left;
         const localPointerY = pointer.clientY - systemBounds.top;
         const showHoverVisuals = pointer.showsHover;
-        const bodyHoverCandidate =
+        const pointerInsideSun =
+            Math.hypot(centerX - localPointerX, centerY - localPointerY) <
+            48 * Math.max(0.55, Math.sqrt(renderedSunScale));
+        const rawBodyHoverCandidate =
             pointer.active && !camera.dragging && !objectFocus.target && localDetailOpacity > 0.45
                 ? findHoveredBody({
                       bodies,
@@ -436,7 +439,9 @@ if (canvasElement && systemElement && canvasContext) {
                       viewportGlyphScale,
                   })
                 : null;
-        const cometHoverCandidate =
+        const bodyHoverCandidate =
+            rawBodyHoverCandidate && (rawBodyHoverCandidate.z >= 0 || !pointerInsideSun) ? rawBodyHoverCandidate : null;
+        const rawCometHoverCandidate =
             pointer.active &&
             !camera.dragging &&
             !objectFocus.target &&
@@ -444,6 +449,8 @@ if (canvasElement && systemElement && canvasContext) {
             intro.details > 0.4
                 ? findHoveredComet(projectedHalley, localPointerX, localPointerY)
                 : null;
+        const cometHoverCandidate =
+            rawCometHoverCandidate && (projectedHalley.z >= 0 || !pointerInsideSun) ? rawCometHoverCandidate : null;
         const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - 0.42) / 0.35);
         galaxyObjectRenderer.project({
             radius: galaxyRadius,
@@ -482,8 +489,7 @@ if (canvasElement && systemElement && canvasContext) {
             !objectFocus.target &&
             localDetailOpacity > 0.45 &&
             intro.sun > 0.55 &&
-            Math.hypot(centerX - localPointerX, centerY - localPointerY) <
-                48 * Math.max(0.55, Math.sqrt(renderedSunScale));
+            pointerInsideSun;
 
         activeFocusCandidate = createFocusCandidate({
             hoveredBody,

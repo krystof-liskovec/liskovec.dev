@@ -36,6 +36,23 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     const spin = decorativeRotation('Sol', seconds, reducedMotion);
     const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
 
+    // The glyphs describe an opaque sphere. Mask the interior before drawing
+    // them so orbit marks and bodies on the far side cannot show through the
+    // whitespace between individual ASCII character cells.
+    context.beginPath();
+    context.ellipse(
+        0,
+        0,
+        SURFACE_COLUMNS * characterWidth * 0.51,
+        SURFACE_ROW_WIDTHS.length * lineHeight * 0.51,
+        0,
+        0,
+        Math.PI * 2,
+    );
+    context.fillStyle = '#1d2021';
+    context.globalAlpha = opacity;
+    context.fill();
+
     SURFACE_ROW_WIDTHS.forEach((rowWidth, row) => {
         const normalizedY = (row - middleRow) / (SURFACE_ROW_WIDTHS.length / 2);
         const firstColumn = (SURFACE_COLUMNS - rowWidth) / 2;
