@@ -45,11 +45,59 @@ export type GalaxyCameraState = {
 export type OrbitClockState = {
     active: boolean;
     returning: boolean;
+    speed: number;
     anchorDate: number;
     startedAt: number;
     returnFrom: number;
     returnStartedAt: number;
 };
+
+export type GalacticClockState = {
+    started: boolean;
+    speed: number;
+    anchorYears: number;
+    startedAt: number;
+};
+
+export type RotationClockState = {
+    started: boolean;
+    speed: number;
+    anchorHours: number;
+    startedAt: number;
+};
+
+export const ORBIT_SPEED_PRESETS = [
+    { multiplier: 1, label: '1×', description: 'realtime' },
+    { multiplier: 3_600, label: '1h/s', description: 'one simulated hour per second' },
+    { multiplier: 43_200, label: '12h/s', description: 'twelve simulated hours per second' },
+    { multiplier: 604_800, label: '7d/s', description: 'seven simulated days per second' },
+    { multiplier: 2_592_000, label: '30d/s', description: 'thirty simulated days per second' },
+    { multiplier: 31_557_600, label: '1y/s', description: 'one simulated Julian year per second' },
+] as const;
+export const DEFAULT_ORBIT_SPEED_PRESET = 1;
+
+export const GALACTIC_SPEED_PRESETS = [
+    { yearsPerSecond: 1 / 31_557_600, label: '1×', description: 'realtime' },
+    { yearsPerSecond: 1_000_000, label: '1My/s', description: 'one million simulated years per second' },
+    { yearsPerSecond: 5_000_000, label: '5My/s', description: 'five million simulated years per second' },
+    { yearsPerSecond: 10_000_000, label: '10My/s', description: 'ten million simulated years per second' },
+] as const;
+export const DEFAULT_GALACTIC_SPEED_PRESET = 1;
+
+export const ROTATION_SPEED_PRESETS = [
+    { hoursPerSecond: 1 / 3_600, label: '1×', description: 'realtime axial rotation' },
+    { hoursPerSecond: 1, label: '1h/s', description: 'one simulated hour per second' },
+    { hoursPerSecond: 6, label: '6h/s', description: 'six simulated hours per second' },
+    { hoursPerSecond: 12, label: '12h/s', description: 'twelve simulated hours per second' },
+    { hoursPerSecond: 24, label: '1d/s', description: 'one simulated day per second' },
+] as const;
+export const DEFAULT_ROTATION_SPEED_PRESET = 1;
+
+export const orbitSpeedLabel = (speed: number) =>
+    ORBIT_SPEED_PRESETS.find((preset) => preset.multiplier === speed)?.label.toUpperCase() ?? `${speed}×`;
+
+export const galacticSpeedLabel = (speed: number) =>
+    GALACTIC_SPEED_PRESETS.find((preset) => preset.yearsPerSecond === speed)?.label.toUpperCase() ?? `${speed}Y/S`;
 
 export type EasterEggState = {
     clicks: number;
@@ -61,6 +109,8 @@ export type EasterEggState = {
 export type CosmicZoomState = { current: number; target: number };
 
 export const createRuntimeState = () => {
+    const startedAt = performance.now();
+    const anchorDate = Date.now();
     const pointer: PointerState = {
         x: 0,
         y: 0,
@@ -124,17 +174,36 @@ export const createRuntimeState = () => {
         easterEgg: { clicks: 0, lastClickAt: 0, unlocked: false, revealedAt: 0 } as EasterEggState,
         cosmicZoom: { current: 0, target: 0 } as CosmicZoomState,
         orbitClock: {
-            active: false,
+            active: true,
             returning: false,
-            anchorDate: Date.now(),
-            startedAt: 0,
-            returnFrom: Date.now(),
+            speed: ORBIT_SPEED_PRESETS[DEFAULT_ORBIT_SPEED_PRESET].multiplier,
+            anchorDate,
+            startedAt,
+            returnFrom: anchorDate,
             returnStartedAt: 0,
         } as OrbitClockState,
+        galacticClock: {
+            started: false,
+            speed: GALACTIC_SPEED_PRESETS[DEFAULT_GALACTIC_SPEED_PRESET].yearsPerSecond,
+            anchorYears: 0,
+            startedAt,
+        } as GalacticClockState,
+        rotationClock: {
+            started: false,
+            speed: ROTATION_SPEED_PRESETS[DEFAULT_ROTATION_SPEED_PRESET].hoursPerSecond,
+            anchorHours: 0,
+            startedAt,
+        } as RotationClockState,
     };
 };
 
-export const getOrbitDate = (clock: OrbitClockState, frameTime: number, reducedMotion: boolean) => {
+export const getGalacticElapsedYears = (clock: GalacticClockState, frameTime: number) =>
+    clock.started ? clock.anchorYears + ((frameTime - clock.startedAt) / 1000) * clock.speed : clock.anchorYears;
+
+export const getRotationElapsedHours = (clock: RotationClockState, frameTime: number) =>
+    clock.started ? clock.anchorHours + ((frameTime - clock.startedAt) / 1000) * clock.speed : clock.anchorHours;
+
+export const getOrbitDate = (clock: OrbitClockState, frameTime: number, _reducedMotion: boolean) => {
     if (clock.returning) {
         const progress = Math.min(1, (frameTime - clock.returnStartedAt) / 900);
         const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
@@ -143,8 +212,7 @@ export const getOrbitDate = (clock: OrbitClockState, frameTime: number, reducedM
         return date;
     }
     if (clock.active) {
-        const speed = reducedMotion ? 1 : 43_200;
-        return clock.anchorDate + (frameTime - clock.startedAt) * speed;
+        return clock.anchorDate + (frameTime - clock.startedAt) * clock.speed;
     }
     return Date.now();
 };

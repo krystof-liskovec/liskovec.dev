@@ -36,6 +36,11 @@ transition timing are compressed or stylized so the scene remains readable.
   and [planet overview](https://science.nasa.gov/solar-system/planets/). The
   rendered radii are deliberately enlarged and compressed; they are not the
   planets' physical radius ratios.
+- Detailed axial rotation uses the sidereal periods in NASA's [Planetary Fact
+  Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/). Negative periods
+  preserve the retrograde rotation of Venus, Uranus, and Pluto. The focused
+  rotation clock is independent from the orbital clock so either timescale can
+  be explored without changing the other.
 - Major-moon semimajor axes, eccentricities, inclinations, nodes, periapses,
   mean anomalies, and periods come from JPL's [Planetary Satellite Mean
   Elements](https://ssd.jpl.nasa.gov/sats/elem/), at epoch
@@ -78,6 +83,18 @@ The central bar is drawn at `27°` with a `4.6 kpc` half-length, based on the
 range discussed by Wegg, Gerhard, and Portail, [_The structure of the Milky
 Way's bar outside the
 bulge_](https://academic.oup.com/mnras/article/450/4/4050/989881) (2015).
+
+The accelerated galactic clock uses a simplified flat rotation curve anchored
+to NASA's estimate that the Solar System completes a Galactic orbit in about
+[230 million years](https://science.nasa.gov/solar-system/solar-system-facts/).
+Material orbital periods therefore increase in proportion to distance from the
+Galactic centre. The bar and spiral-arm density pattern use a separate
+230-million-year visual period, placing the pattern's illustrative corotation
+radius near Sol. Diffuse stars at other radii can therefore move through the
+arms without detaching the Local Arm or its short-lived landmarks. This pattern
+speed is an artistic assumption, not a measured Milky Way value. Named
+short-lived objects remain visible throughout accelerated time and should not
+be interpreted as historical predictions millions of years away.
 
 Galactic longitude and latitude for each landmark come from its linked
 [SIMBAD](https://simbad.cds.unistra.fr/simbad/) catalogue record. The distance

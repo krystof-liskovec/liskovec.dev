@@ -4,6 +4,7 @@
 
 - `catalog.ts` — planets, moons, and galactic object metadata
 - `galaxy-model.ts` — named Milky Way arm geometry and Galactic-to-scene coordinates
+- `galactic-simulation.ts` — material rotation curve and spiral-pattern motion
 - `scene-data.ts` — generated stars, orbit samples, dust, and asteroid fields
 - `math.ts` — coordinate, orbit, and projection helpers
 - `runtime-state.ts` — mutable camera/focus/clock state and its defaults

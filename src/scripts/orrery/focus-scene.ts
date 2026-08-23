@@ -6,7 +6,6 @@ import { drawFocusedGalacticObject } from './galactic-renderer';
 import { drawFocusedIss } from './iss-renderer';
 import {
     DEG,
-    J2000,
     randomUnit,
     rotateX,
     rotateY,
@@ -44,6 +43,8 @@ type FocusSceneOptions = {
     localSphereGrowth: number;
     planetSceneFocus: number;
     seconds: number;
+    rotationHours: number;
+    moonElapsedDays: number;
     reducedMotion: boolean;
     pointer: PointerState;
     camera: CameraState;
@@ -65,6 +66,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         localSphereGrowth,
         planetSceneFocus,
         seconds,
+        rotationHours,
+        moonElapsedDays,
         reducedMotion,
         pointer,
         camera,
@@ -145,7 +148,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             context.font = `bold ${fontSize}px "DM Mono", monospace`;
             const characterWidth = context.measureText('M').width * 0.76;
             const lineHeight = fontSize * 0.82;
-            const spin = focusedRotation(target.name, seconds, reducedMotion) + objectFocus.longitude;
+            const spin = focusedRotation(target.name, rotationHours, reducedMotion) + objectFocus.longitude;
             const latitudeTilt = objectFocus.latitude;
             const sphereWidth = columns * characterWidth;
             const sphereHeight = rows * lineHeight;
@@ -239,8 +242,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             width < 600
                 ? Math.min(focusedEarthRadius * 1.55, width * 0.42)
                 : Math.min(focusedEarthRadius * 1.65, height * 0.38);
-        const focusedMoonAngle =
-            ((Date.now() - J2000) / 86400000 / 27.321661) * Math.PI * 2 + (reducedMotion ? 0 : seconds * 0.014);
+        const focusedMoonAngle = (moonElapsedDays / 27.321661) * Math.PI * 2;
         const focusedMoonOffset = focusedOrbitOffset(
             focusedMoonAngle,
             focusedMoonRadius,
@@ -642,7 +644,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         reveal: childReveal,
                         longitude: objectFocus.childLongitude,
                         latitude: objectFocus.childLatitude,
-                        seconds,
+                        rotationHours,
                         reducedMotion,
                         compact: width < 600,
                     });
@@ -653,7 +655,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     context.font = `bold ${fontSize}px "DM Mono", monospace`;
                     const characterWidth = context.measureText('M').width * 0.76;
                     const lineHeight = fontSize * 0.82;
-                    const spin = focusedRotation(child.name, seconds, reducedMotion) + objectFocus.childLongitude;
+                    const spin = focusedRotation(child.name, rotationHours, reducedMotion) + objectFocus.childLongitude;
                     for (let row = 0; row < rows; row++) {
                         const normalizedY = (row + 0.5 - rows / 2) / (rows / 2);
                         const lineY = childCenterY + (row - (rows - 1) / 2) * lineHeight;

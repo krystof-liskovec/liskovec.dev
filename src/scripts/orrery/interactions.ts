@@ -3,9 +3,19 @@ import type {
     CameraState,
     CosmicZoomState,
     EasterEggState,
+    GalacticClockState,
     GalaxyCameraState,
     OrbitClockState,
     PointerState,
+    RotationClockState,
+} from './runtime-state';
+import {
+    DEFAULT_GALACTIC_SPEED_PRESET,
+    DEFAULT_ORBIT_SPEED_PRESET,
+    DEFAULT_ROTATION_SPEED_PRESET,
+    GALACTIC_SPEED_PRESETS,
+    ORBIT_SPEED_PRESETS,
+    ROTATION_SPEED_PRESETS,
 } from './runtime-state';
 import type { FocusState, FocusTarget } from './types';
 
@@ -15,6 +25,9 @@ type InteractionOptions = {
     focusReturn: HTMLButtonElement | null;
     zoomInput: HTMLInputElement | null;
     zoomStatus: HTMLOutputElement | null;
+    solarSimulationSpeed: HTMLSelectElement | null;
+    galacticSimulationSpeed: HTMLSelectElement | null;
+    rotationSimulationSpeed: HTMLSelectElement | null;
     pointer: PointerState;
     camera: CameraState;
     galaxyCamera: GalaxyCameraState;
@@ -22,8 +35,12 @@ type InteractionOptions = {
     easterEgg: EasterEggState;
     cosmicZoom: CosmicZoomState;
     orbitClock: OrbitClockState;
+    galacticClock: GalacticClockState;
+    rotationClock: RotationClockState;
     getActiveFocusCandidate: () => FocusTarget | null;
     getOrbitDate: (frameTime: number) => number;
+    getGalacticElapsedYears: (frameTime: number) => number;
+    getRotationElapsedHours: (frameTime: number) => number;
     beginObjectFocus: (target: FocusTarget) => void;
     beginChildFocus: (target: FocusTarget) => void;
     leaveObjectFocus: () => void;
@@ -37,6 +54,9 @@ export const bindOrreryInteractions = ({
     focusReturn,
     zoomInput,
     zoomStatus,
+    solarSimulationSpeed,
+    galacticSimulationSpeed,
+    rotationSimulationSpeed,
     pointer,
     camera,
     galaxyCamera,
@@ -44,8 +64,12 @@ export const bindOrreryInteractions = ({
     easterEgg,
     cosmicZoom,
     orbitClock,
+    galacticClock,
+    rotationClock,
     getActiveFocusCandidate,
     getOrbitDate,
+    getGalacticElapsedYears,
+    getRotationElapsedHours,
     beginObjectFocus,
     beginChildFocus,
     leaveObjectFocus,
@@ -54,6 +78,86 @@ export const bindOrreryInteractions = ({
 }: InteractionOptions) => {
     let pressedFocusCandidate: FocusTarget | null = null;
     const touchGesture = { pending: false, pointerId: -1, startX: 0, startY: 0 };
+    let simulationControlMode: 'solar' | 'galactic' | 'rotation' = 'solar';
+    let solarPresetIndex = DEFAULT_ORBIT_SPEED_PRESET;
+    let galacticPresetIndex = DEFAULT_GALACTIC_SPEED_PRESET;
+    let rotationPresetIndex = DEFAULT_ROTATION_SPEED_PRESET;
+
+    const updateSimulationSpeedControl = (presetIndex: number) => {
+        const control =
+            simulationControlMode === 'solar'
+                ? solarSimulationSpeed
+                : simulationControlMode === 'galactic'
+                  ? galacticSimulationSpeed
+                  : rotationSimulationSpeed;
+        if (!control) return;
+        const preset =
+            simulationControlMode === 'solar'
+                ? ORBIT_SPEED_PRESETS[presetIndex]
+                : simulationControlMode === 'galactic'
+                  ? GALACTIC_SPEED_PRESETS[presetIndex]
+                  : ROTATION_SPEED_PRESETS[presetIndex];
+        control.value = String(presetIndex);
+        control.setAttribute('aria-label', `Simulation speed: ${preset.description}`);
+    };
+
+    const setSimulationControlMode = (mode: 'solar' | 'galactic' | 'rotation') => {
+        if (mode === simulationControlMode) return;
+        simulationControlMode = mode;
+        if (solarSimulationSpeed) solarSimulationSpeed.hidden = mode !== 'solar';
+        if (galacticSimulationSpeed) galacticSimulationSpeed.hidden = mode !== 'galactic';
+        if (rotationSimulationSpeed) rotationSimulationSpeed.hidden = mode !== 'rotation';
+        if (mode === 'galactic' && !galacticClock.started) {
+            galacticClock.started = true;
+            galacticClock.startedAt = performance.now();
+        }
+        if (mode === 'rotation' && !rotationClock.started) {
+            rotationClock.started = true;
+            rotationClock.startedAt = performance.now();
+        }
+        updateSimulationSpeedControl(
+            mode === 'solar' ? solarPresetIndex : mode === 'galactic' ? galacticPresetIndex : rotationPresetIndex,
+        );
+    };
+
+    const setSimulationSpeed = (presetIndex: number, changedAt = performance.now()) => {
+        const preset = ORBIT_SPEED_PRESETS[presetIndex];
+        const currentDate = getOrbitDate(changedAt);
+        orbitClock.speed = preset.multiplier;
+        solarPresetIndex = presetIndex;
+        if (presetIndex === 0) {
+            orbitClock.returnFrom = currentDate;
+            orbitClock.returnStartedAt = changedAt;
+            orbitClock.returning = orbitClock.active;
+            orbitClock.active = false;
+        } else {
+            orbitClock.anchorDate = currentDate;
+            orbitClock.startedAt = changedAt;
+            orbitClock.returning = false;
+            orbitClock.active = true;
+        }
+        if (simulationControlMode === 'solar') updateSimulationSpeedControl(presetIndex);
+    };
+
+    const setGalacticSimulationSpeed = (presetIndex: number, changedAt = performance.now()) => {
+        const preset = GALACTIC_SPEED_PRESETS[presetIndex];
+        galacticClock.anchorYears = getGalacticElapsedYears(changedAt);
+        galacticClock.startedAt = changedAt;
+        galacticClock.speed = preset.yearsPerSecond;
+        galacticClock.started = true;
+        galacticPresetIndex = presetIndex;
+        if (simulationControlMode === 'galactic') updateSimulationSpeedControl(presetIndex);
+    };
+
+    const setRotationSimulationSpeed = (presetIndex: number, changedAt = performance.now()) => {
+        const preset = ROTATION_SPEED_PRESETS[presetIndex];
+        rotationClock.anchorHours = getRotationElapsedHours(changedAt);
+        rotationClock.startedAt = changedAt;
+        rotationClock.speed = preset.hoursPerSecond;
+        rotationClock.started = true;
+        rotationPresetIndex = presetIndex;
+        if (simulationControlMode === 'rotation') updateSimulationSpeedControl(presetIndex);
+    };
 
     const startCameraDrag = (event: PointerEvent, startX = event.clientX, startY = event.clientY) => {
         if (camera.dragMode === 'solar') {
@@ -167,15 +271,21 @@ export const bindOrreryInteractions = ({
             ) {
                 beginChildFocus(clickedFocusCandidate);
             } else if (!objectFocus.target) {
+                if (clickedFocusCandidate.kind === 'planet' || clickedFocusCandidate.kind === 'star') {
+                    setSimulationControlMode('rotation');
+                }
                 beginObjectFocus(clickedFocusCandidate);
             }
         }
         if (event.type === 'pointerup' && camera.dragMode === 'solar' && dragDistance >= clickThreshold) {
             const startedAt = performance.now();
-            orbitClock.anchorDate = getOrbitDate(startedAt);
-            orbitClock.startedAt = startedAt;
-            orbitClock.active = true;
-            orbitClock.returning = false;
+            const activePreset = orbitClock.active
+                ? Math.max(
+                      1,
+                      ORBIT_SPEED_PRESETS.findIndex((preset) => preset.multiplier === orbitClock.speed),
+                  )
+                : 2;
+            setSimulationSpeed(activePreset, startedAt);
         }
         if (
             event.type === 'pointerup' &&
@@ -236,10 +346,6 @@ export const bindOrreryInteractions = ({
             event.preventDefault();
             return;
         }
-        orbitClock.returnFrom = getOrbitDate(resetAt);
-        orbitClock.returnStartedAt = resetAt;
-        orbitClock.returning = orbitClock.active;
-        orbitClock.active = false;
         camera.manual = false;
         camera.dragging = false;
         system.classList.remove('is-dragging');
@@ -263,10 +369,27 @@ export const bindOrreryInteractions = ({
         pointer.active = false;
     });
 
-    focusReturn?.addEventListener('click', leaveObjectFocus);
+    focusReturn?.addEventListener('click', () => {
+        const leavingChild = Boolean(objectFocus.child);
+        leaveObjectFocus();
+        if (!leavingChild) setSimulationControlMode(cosmicZoom.target < 0.5 ? 'solar' : 'galactic');
+    });
+    solarSimulationSpeed?.addEventListener('change', () => {
+        onInteract();
+        setSimulationSpeed(Number(solarSimulationSpeed.value));
+    });
+    galacticSimulationSpeed?.addEventListener('change', () => {
+        onInteract();
+        setGalacticSimulationSpeed(Number(galacticSimulationSpeed.value));
+    });
+    rotationSimulationSpeed?.addEventListener('change', () => {
+        onInteract();
+        setRotationSimulationSpeed(Number(rotationSimulationSpeed.value));
+    });
     zoomInput?.addEventListener('input', () => {
         onInteract();
         cosmicZoom.target = Number(zoomInput.value) / 100;
+        setSimulationControlMode(cosmicZoom.target < 0.5 ? 'solar' : 'galactic');
         const location =
             cosmicZoom.target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];
         setZoomLocation(location[0], location[1]);
@@ -275,4 +398,5 @@ export const bindOrreryInteractions = ({
         if (zoomStatus) zoomStatus.value = status;
         zoomInput.setAttribute('aria-valuetext', status);
     });
+    updateSimulationSpeedControl(solarPresetIndex);
 };

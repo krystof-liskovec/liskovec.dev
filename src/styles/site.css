@@ -793,6 +793,62 @@ footer a:hover {
     font-size: 10px;
     letter-spacing: 0.05em;
 }
+.solar-caption-primary {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+#camera-stats {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.solar-time-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 370px;
+}
+#solar-time {
+    overflow: hidden;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.simulation-speed-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--yellow);
+    text-transform: uppercase;
+}
+.simulation-speed {
+    min-width: 48px;
+    padding: 1px 14px 1px 4px;
+    border: 0;
+    border-bottom: 1px solid #665c54;
+    border-radius: 0;
+    appearance: auto;
+    color: var(--yellow);
+    background-color: transparent;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.simulation-speed:hover,
+.simulation-speed:focus-visible {
+    color: var(--orange);
+    border-color: var(--orange);
+    outline: none;
+}
+.simulation-speed option {
+    color: var(--text);
+    background: var(--bg);
+}
+.simulation-speed[hidden] {
+    display: none;
+}
 .hero-footer {
     position: relative;
     z-index: 3;
@@ -871,6 +927,10 @@ footer a:hover {
         right: 0;
         left: 0;
         font-size: 8px;
+    }
+    .solar-caption-primary,
+    .solar-time-controls {
+        width: 100%;
     }
     .solar-caption span:last-child {
         display: none;

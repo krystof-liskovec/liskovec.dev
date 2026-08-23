@@ -49,7 +49,7 @@ export const updateGalaxyCamera = (options: {
 }) => {
     const { galaxyCamera, solarCamera, frameTime, frameDelta, reducedMotion } = options;
     if (!(solarCamera.dragging && solarCamera.dragMode === 'galaxy') && !galaxyCamera.resetting && !reducedMotion) {
-        galaxyCamera.rotation += 0.000025 * frameDelta;
+        galaxyCamera.rotation -= 0.0000025 * frameDelta;
     }
     if (!galaxyCamera.resetting) return;
 

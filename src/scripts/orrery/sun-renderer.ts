@@ -1,4 +1,4 @@
-import { focusedRotation, planetSurfaceGlyph } from './planet-textures';
+import { decorativeRotation, planetSurfaceGlyph } from './planet-textures';
 
 type SunRenderOptions = {
     x: number;
@@ -33,7 +33,7 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     context.strokeStyle = '#1d2021';
     context.lineWidth = Math.max(1.2, fontSize * 0.15);
     const characterWidth = context.measureText('M').width * 0.76;
-    const spin = focusedRotation('Sol', seconds, reducedMotion);
+    const spin = decorativeRotation('Sol', seconds, reducedMotion);
     const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
 
     SURFACE_ROW_WIDTHS.forEach((rowWidth, row) => {

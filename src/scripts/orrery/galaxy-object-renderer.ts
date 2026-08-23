@@ -1,6 +1,7 @@
 import { GALACTIC_OBJECTS } from './catalog';
 import { smoothstep } from './math';
 import { galacticPositionFromSun } from './scene-data';
+import { galacticPatternPhase, moveGalacticMaterial, rotateGalacticPoint } from './galactic-simulation';
 
 export type ProjectedGalacticObject = {
     object: (typeof GALACTIC_OBJECTS)[number];
@@ -16,16 +17,19 @@ export class GalaxyObjectRenderer {
 
     private readonly pool: ProjectedGalacticObject[] = GALACTIC_OBJECTS.map((object) => ({ object, x: 0, y: 0 }));
     private readonly positionScratch = { x: 0, y: 0, z: 0 };
+    private readonly movedPositionScratch = { x: 0, y: 0 };
 
     project(options: {
         radius: number;
         coreX: number;
         coreY: number;
         verticalProjection: number;
+        elapsedGalacticYears: number;
         projectOffset: GalacticOffset;
     }) {
-        const { radius, coreX, coreY, verticalProjection, projectOffset } = options;
+        const { radius, coreX, coreY, verticalProjection, elapsedGalacticYears, projectOffset } = options;
         this.objects.length = 0;
+        const patternPhase = galacticPatternPhase(elapsedGalacticYears);
 
         for (let index = 0; index < GALACTIC_OBJECTS.length; index++) {
             const object = GALACTIC_OBJECTS[index];
@@ -36,7 +40,13 @@ export class GalaxyObjectRenderer {
                 object.heliocentricDistanceKpc,
                 this.positionScratch,
             );
-            projectOffset(position.x, position.y, radius, projected);
+            const movedPosition =
+                object.name === 'Sagittarius A*'
+                    ? position
+                    : object.name === 'Omega Centauri'
+                      ? moveGalacticMaterial(position.x, position.y, elapsedGalacticYears, this.movedPositionScratch)
+                      : rotateGalacticPoint(position.x, position.y, patternPhase, this.movedPositionScratch);
+            projectOffset(movedPosition.x, movedPosition.y, radius, projected);
             projected.x += coreX;
             projected.y += coreY - position.z * radius * verticalProjection;
             this.objects.push(projected);
@@ -54,6 +64,13 @@ export class GalaxyObjectRenderer {
             }
         }
         return closest;
+    }
+
+    findByName(name: string): ProjectedGalacticObject | null {
+        for (const object of this.objects) {
+            if (object.object.name === name) return object;
+        }
+        return null;
     }
 
     draw(

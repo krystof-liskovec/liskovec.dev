@@ -6,12 +6,37 @@ import {
     LOCAL_ARM_STARS,
     STARS,
 } from './scene-data';
+import { galacticPatternPhase, moveGalacticMaterial } from './galactic-simulation';
 
 type Offset = { x: number; y: number };
 type GalacticOffset = (x: number, y: number, radius: number, target: Offset) => Offset;
 
 const STAR_GLYPHS = ['.', '*', '+'] as const;
 const offsetScratch = { x: 0, y: 0 };
+
+const projectPatternPoint = (
+    x: number,
+    y: number,
+    patternCosine: number,
+    patternSine: number,
+    radius: number,
+    projectOffset: GalacticOffset,
+) => {
+    const movedX = x * patternCosine + y * patternSine;
+    const movedY = -x * patternSine + y * patternCosine;
+    return projectOffset(movedX, movedY, radius, offsetScratch);
+};
+
+const projectMaterialPoint = (
+    x: number,
+    y: number,
+    elapsedGalacticYears: number,
+    radius: number,
+    projectOffset: GalacticOffset,
+) => {
+    const moved = moveGalacticMaterial(x, y, elapsedGalacticYears, offsetScratch);
+    return projectOffset(moved.x, moved.y, radius, offsetScratch);
+};
 
 export const drawLocalStarfield = (
     context: CanvasRenderingContext2D,
@@ -74,6 +99,7 @@ export const drawGalaxyBackdrop = (
         width: number;
         height: number;
         seconds: number;
+        elapsedGalacticYears: number;
         reducedMotion: boolean;
         alpha: number;
         radius: number;
@@ -89,6 +115,7 @@ export const drawGalaxyBackdrop = (
     const {
         width,
         seconds,
+        elapsedGalacticYears,
         reducedMotion,
         alpha,
         radius,
@@ -102,10 +129,14 @@ export const drawGalaxyBackdrop = (
     } = options;
     if (alpha <= 0.001) return;
 
+    const patternPhase = galacticPatternPhase(elapsedGalacticYears);
+    const patternCosine = Math.cos(patternPhase);
+    const patternSine = Math.sin(patternPhase);
+
     context.font = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
     context.fillStyle = '#665c54';
     for (const particle of GALACTIC_DISK) {
-        const offset = projectOffset(particle.x, particle.y, radius, offsetScratch);
+        const offset = projectMaterialPoint(particle.x, particle.y, elapsedGalacticYears, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
@@ -115,7 +146,7 @@ export const drawGalaxyBackdrop = (
 
     context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
     for (const particle of GALACTIC_NEBULAE) {
-        const offset = projectOffset(particle.x, particle.y, radius, offsetScratch);
+        const offset = projectPatternPoint(particle.x, particle.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
@@ -130,7 +161,7 @@ export const drawGalaxyBackdrop = (
     for (let index = 0; index < GALAXY_STARS.length; index++) {
         const star = GALAXY_STARS[index];
         if (compact && !star.mobileVisible) continue;
-        const offset = projectOffset(star.x, star.y, radius, offsetScratch);
+        const offset = projectPatternPoint(star.x, star.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
@@ -144,7 +175,7 @@ export const drawGalaxyBackdrop = (
     context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
     context.fillStyle = '#1d2021';
     for (const dust of GALACTIC_DUST_LANES) {
-        const offset = projectOffset(dust.x, dust.y, radius, offsetScratch);
+        const offset = projectPatternPoint(dust.x, dust.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
@@ -153,7 +184,7 @@ export const drawGalaxyBackdrop = (
     }
 
     for (const star of LOCAL_ARM_STARS) {
-        const offset = projectOffset(star.x, star.y, radius, offsetScratch);
+        const offset = projectPatternPoint(star.x, star.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;

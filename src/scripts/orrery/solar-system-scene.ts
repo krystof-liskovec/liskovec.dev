@@ -98,6 +98,7 @@ export class SolarSystemSceneRenderer {
             bodies: ProjectedBody[];
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
+            moonElapsedDays: number;
             focusedPlanet: Planet | null;
             focusedSun: boolean;
             focusedSunDetailReveal: number;
@@ -332,6 +333,7 @@ export class SolarSystemSceneRenderer {
             bodies: ProjectedBody[];
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
+            moonElapsedDays: number;
             focusedPlanet: Planet | null;
             focusedSun: boolean;
             focusedSunDetailReveal: number;
@@ -439,7 +441,7 @@ export class SolarSystemSceneRenderer {
         options: {
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
-            seconds: number;
+            moonElapsedDays: number;
             solarSystemScale: number;
             viewportGlyphScale: number;
             localDetailOpacity: number;
@@ -459,7 +461,7 @@ export class SolarSystemSceneRenderer {
             const solvedMoon = majorMoon ? options.solveMoonOrbit(majorMoon, this.moonOrbit) : null;
             const moonAngle =
                 solvedMoon?.angle ??
-                options.seconds * system.speeds[moonIndex] + moonIndex * 1.73 + body.planet.displayRadius;
+                (options.moonElapsedDays / 27.321661) * Math.PI * 2 + moonIndex * 1.73 + body.planet.displayRadius;
             const moonRadius = system.radii[moonIndex] * (solvedMoon?.distance ?? 1);
             this.moonOffset.x = Math.cos(moonAngle) * moonRadius;
             this.moonOffset.y = Math.sin(moonAngle) * moonRadius;

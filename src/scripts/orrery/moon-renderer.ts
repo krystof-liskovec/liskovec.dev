@@ -7,7 +7,7 @@ type MoonRenderOptions = {
     reveal: number;
     longitude: number;
     latitude: number;
-    seconds: number;
+    rotationHours: number;
     reducedMotion: boolean;
     compact: boolean;
 };
@@ -57,7 +57,7 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
         reveal,
         longitude: inspectionLongitude,
         latitude: inspectionLatitude,
-        seconds,
+        rotationHours,
         reducedMotion,
         compact,
     } = options;
@@ -67,7 +67,7 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
     context.font = `bold ${fontSize}px "DM Mono", monospace`;
     const characterWidth = context.measureText('M').width * 0.72;
     const lineHeight = fontSize * 0.74;
-    const spin = focusedRotation('Moon', seconds, reducedMotion) + inspectionLongitude;
+    const spin = focusedRotation('Moon', rotationHours, reducedMotion) + inspectionLongitude;
     const latitudeCosine = Math.cos(inspectionLatitude);
     const latitudeSine = Math.sin(inspectionLatitude);
 

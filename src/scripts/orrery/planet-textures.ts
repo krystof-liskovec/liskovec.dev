@@ -1,6 +1,6 @@
 import { EARTH_MAP, EARTH_MAP_HEIGHT, EARTH_MAP_WIDTH } from './earth-map';
 
-const ROTATION_SPEEDS: Record<string, number> = {
+const DECORATIVE_ROTATION_SPEEDS: Record<string, number> = {
     Mercury: 0.011,
     Venus: -0.008,
     Earth: 0.055,
@@ -32,6 +32,41 @@ const ROTATION_SPEEDS: Record<string, number> = {
     Sol: 0.024,
 };
 
+// Approximate sidereal rotation periods in hours. Negative values preserve
+// retrograde rotation. Tidally locked major moons use their orbital periods;
+// Pluto's smaller moons use measured rotation periods from its fact sheet.
+const SIDEREAL_ROTATION_HOURS: Record<string, number> = {
+    Mercury: 1_407.6,
+    Venus: -5_832.5,
+    Earth: 23.9345,
+    Mars: 24.6229,
+    Jupiter: 9.925,
+    Saturn: 10.656,
+    Uranus: -17.24,
+    Neptune: 16.11,
+    Pluto: -153.2928,
+    Moon: 655.7199,
+    Io: 42.456,
+    Europa: 85.224,
+    Ganymede: 171.72,
+    Callisto: 400.536,
+    Enceladus: 32.88,
+    Rhea: 108.48,
+    Titan: 382.68,
+    Iapetus: 1_903.92,
+    Phobos: 7.65,
+    Deimos: 30.3,
+    Triton: -141.04,
+    Charon: -153.2928,
+    Styx: 77.76,
+    Nix: 43.92,
+    Kerberos: 127.44,
+    Hydra: 10.32,
+    Titania: 208.94,
+    Oberon: 323.12,
+    Sol: 609.12,
+};
+
 const wrapLongitude = (longitude: number) => Math.atan2(Math.sin(longitude), Math.cos(longitude));
 
 const insideFeature = (
@@ -45,8 +80,14 @@ const insideFeature = (
     return Math.hypot(longitudeDistance, latitude - centerLatitude) < radius;
 };
 
-export function focusedRotation(name: string, seconds: number, reducedMotion: boolean) {
-    return reducedMotion ? 0 : seconds * (ROTATION_SPEEDS[name] ?? 0.02);
+export function decorativeRotation(name: string, seconds: number, reducedMotion: boolean) {
+    return reducedMotion ? 0 : seconds * (DECORATIVE_ROTATION_SPEEDS[name] ?? 0.02);
+}
+
+export function focusedRotation(name: string, elapsedHours: number, reducedMotion: boolean) {
+    if (reducedMotion) return 0;
+    const periodHours = SIDEREAL_ROTATION_HOURS[name];
+    return periodHours ? (elapsedHours / periodHours) * Math.PI * 2 : 0;
 }
 
 export function planetSurfaceGlyph(name: string, longitude: number, latitude: number) {

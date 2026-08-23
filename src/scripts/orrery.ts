@@ -4,11 +4,17 @@ import { drawGalaxyBackdrop, drawLocalStarfield } from './orrery/background-rend
 import { drawFocusScene } from './orrery/focus-scene';
 import { FocusController } from './orrery/focus-controller';
 import { updateFocusRotation, updateGalaxyCamera, updateSolarCamera } from './orrery/frame-state';
+import { moveGalacticMaterial } from './orrery/galactic-simulation';
 import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-renderer';
 import { bindOrreryInteractions } from './orrery/interactions';
 import { OrreryIntroController } from './orrery/intro-controller';
 import { DEG, J2000, smoothstep, solveKeplerOrbit, visualTransitionProgress } from './orrery/math';
-import { createRuntimeState, getOrbitDate as resolveOrbitDate } from './orrery/runtime-state';
+import {
+    createRuntimeState,
+    getGalacticElapsedYears as resolveGalacticElapsedYears,
+    getOrbitDate as resolveOrbitDate,
+    getRotationElapsedHours as resolveRotationElapsedHours,
+} from './orrery/runtime-state';
 import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
 import { GALACTIC_SOL } from './orrery/scene-data';
 import { SolarSystemModel } from './orrery/solar-system-model';
@@ -21,8 +27,12 @@ const MIN_RENDER_INTERVAL = 1000 / MAX_RENDER_FPS;
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
+const cameraStats = document.querySelector<HTMLElement>('#camera-stats');
 const zoomInput = document.querySelector<HTMLInputElement>('#cosmic-zoom');
 const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-status');
+const solarSimulationSpeed = document.querySelector<HTMLSelectElement>('#solar-simulation-speed');
+const galacticSimulationSpeed = document.querySelector<HTMLSelectElement>('#galactic-simulation-speed');
+const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rotation-simulation-speed');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
 const canvasContext = canvasElement?.getContext('2d');
@@ -34,7 +44,17 @@ if (canvasElement && systemElement && canvasContext) {
     const system = systemElement;
     const context = canvasContext;
     system.classList.add('is-canvas-ready');
-    const { pointer, camera, galaxyCamera, objectFocus, easterEgg, cosmicZoom, orbitClock } = createRuntimeState();
+    const {
+        pointer,
+        camera,
+        galaxyCamera,
+        objectFocus,
+        easterEgg,
+        cosmicZoom,
+        orbitClock,
+        galacticClock,
+        rotationClock,
+    } = createRuntimeState();
     let activeFocusCandidate: FocusTarget | null = null;
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = reducedMotionQuery.matches;
@@ -45,16 +65,19 @@ if (canvasElement && systemElement && canvasContext) {
         solarHeading?.classList.add('is-intro-running');
     }
     let lastClockSecond = -1;
+    let lastCameraStatsTick = -1;
     let lastFrameAt = 0;
     let zoomLocationState = 'solar';
     let zoomLocationTimer = 0;
     let animationFrame = 0;
     let systemVisible = true;
     let pageVisible = !document.hidden;
+    const focusedMoonEpoch = Date.now();
 
     type ProjectedPoint = Vec3 & { scale: number };
     const finalSolOffsetScratch = { x: 0, y: 0 };
     const currentSolOffsetScratch = { x: 0, y: 0 };
+    const simulatedSolScratch = { x: 0, y: 0 };
     const solarSystemModel = new SolarSystemModel();
     const { bodies, farMarks, nearMarks } = solarSystemModel;
     const galaxyObjectRenderer = new GalaxyObjectRenderer();
@@ -79,6 +102,31 @@ if (canvasElement && systemElement && canvasContext) {
         zoomLocationTimer = window.setTimeout(() => {
             zoomLocation.textContent = copy;
         }, 180);
+    };
+
+    const signedDegrees = (radians: number) => {
+        const degrees = ((((radians / DEG + 180) % 360) + 360) % 360) - 180;
+        const sign = degrees >= 0 ? '+' : '−';
+        return `${sign}${Math.abs(degrees).toFixed(1)}°`;
+    };
+
+    const updateCameraStats = () => {
+        if (!cameraStats) return;
+
+        if (objectFocus.target && objectFocus.progress > 0.5) {
+            const pitch = objectFocus.child ? objectFocus.childLatitude : objectFocus.latitude;
+            const yaw = objectFocus.child ? objectFocus.childLongitude : objectFocus.longitude;
+            cameraStats.textContent = `CAM · PITCH ${signedDegrees(pitch)} · YAW ${signedDegrees(yaw)} · ROLL +0.0°`;
+            return;
+        }
+
+        if (cosmicZoom.current > 0.5) {
+            const projectedTilt = Math.max(-1, Math.min(1, 0.58 * galaxyCamera.tilt));
+            cameraStats.textContent = `CAM · PITCH ${signedDegrees(Math.asin(projectedTilt))} · YAW +0.0° · ROLL ${signedDegrees(galaxyCamera.rotation)}`;
+            return;
+        }
+
+        cameraStats.textContent = `CAM · PITCH ${signedDegrees(camera.renderedPitch)} · YAW ${signedDegrees(camera.renderedYaw)} · ROLL ${signedDegrees(camera.renderedRoll)}`;
     };
 
     const focusController = new FocusController(
@@ -124,6 +172,29 @@ if (canvasElement && systemElement && canvasContext) {
     function getOrbitDate(frameTime: number) {
         return resolveOrbitDate(orbitClock, frameTime, reducedMotion);
     }
+
+    function getGalacticElapsedYears(frameTime: number) {
+        return resolveGalacticElapsedYears(galacticClock, frameTime);
+    }
+
+    function getRotationElapsedHours(frameTime: number) {
+        return resolveRotationElapsedHours(rotationClock, frameTime);
+    }
+
+    const formatGalacticEpoch = (elapsedYears: number) => {
+        const absoluteYears = Math.abs(elapsedYears);
+        if (absoluteYears < 5_000) return 'PRESENT';
+        const direction = elapsedYears < 0 ? '−' : '+';
+        if (absoluteYears < 1_000_000_000) return `T${direction}${(absoluteYears / 1_000_000).toFixed(2)} MY`;
+        if (absoluteYears < 1_000_000_000_000) return `T${direction}${(absoluteYears / 1_000_000_000).toFixed(2)} GY`;
+        return `T${direction}${(absoluteYears / 1_000_000_000_000).toFixed(2)} TY`;
+    };
+
+    const padTimePart = (value: number) => String(value).padStart(2, '0');
+    const formatLocalDateTime = (timestamp: number) => {
+        const date = new Date(timestamp);
+        return `${date.getFullYear()}-${padTimePart(date.getMonth() + 1)}-${padTimePart(date.getDate())} / ${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}:${padTimePart(date.getSeconds())}`;
+    };
 
     function render(frameTime: number) {
         animationFrame = 0;
@@ -207,20 +278,21 @@ if (canvasElement && systemElement && canvasContext) {
             : 0;
         const plutoReveal = 1 - (1 - revealProgress) ** 3;
         const now = getOrbitDate(frameTime);
-        const moonNow = Date.now();
-        const solveMoonOrbit = (moon: MajorMoon, target = { angle: 0, distance: 1 }) => {
-            // Start from the moon's current astronomical phase, then advance a
-            // modest visual clock. At wall-clock speed even Io moves too little
-            // to register, while this still preserves every moon's real period,
-            // eccentricity, inclination, and relative orbital speed. Keep this
-            // independent from the accelerated planetary clock enabled by a drag.
-            const visualElapsedDays = reducedMotion ? 0 : seconds * 0.005;
-            const elapsedDays = (moonNow - J2000) / 86400000 + visualElapsedDays;
+        const elapsedGalacticYears = getGalacticElapsedYears(frameTime);
+        const elapsedRotationHours = getRotationElapsedHours(frameTime);
+        const solveMoonOrbitAtDate = (moon: MajorMoon, elapsedDays: number, target = { angle: 0, distance: 1 }) => {
             const meanAnomaly = (moon.meanAnomaly + (elapsedDays / moon.periodDays) * 360) * DEG;
             solveKeplerOrbit(meanAnomaly, moon.eccentricity, target);
             target.angle += moon.periapsis * DEG;
             return target;
         };
+        const solarMoonElapsedDays = (now - J2000) / 86400000;
+        const focusedMoonElapsedDays =
+            (focusedMoonEpoch - J2000) / 86400000 + (reducedMotion ? 0 : elapsedRotationHours / 24);
+        const solveSolarMoonOrbit = (moon: MajorMoon, target = { angle: 0, distance: 1 }) =>
+            solveMoonOrbitAtDate(moon, solarMoonElapsedDays, target);
+        const solveFocusedMoonOrbit = (moon: MajorMoon, target = { angle: 0, distance: 1 }) =>
+            solveMoonOrbitAtDate(moon, focusedMoonElapsedDays, target);
         const viewportCenterX = width * 0.52;
         const viewportCenterY = height * 0.38;
         const finalGalaxyRadius = Math.min(width * 0.48, height * 0.62);
@@ -246,8 +318,14 @@ if (canvasElement && systemElement && canvasContext) {
         // Follow Sol's live projected coordinate during the zoom. This is the same
         // point used by the Orion Spur marker, so rotation can never separate the
         // local scene from the place it expands into or contracts from.
-        const finalSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, finalGalaxyRadius, finalSolOffsetScratch);
-        const currentSolOffset = galacticOffset(GALACTIC_SOL.x, GALACTIC_SOL.y, galaxyRadius, currentSolOffsetScratch);
+        const simulatedSol = moveGalacticMaterial(
+            GALACTIC_SOL.x,
+            GALACTIC_SOL.y,
+            elapsedGalacticYears,
+            simulatedSolScratch,
+        );
+        const finalSolOffset = galacticOffset(simulatedSol.x, simulatedSol.y, finalGalaxyRadius, finalSolOffsetScratch);
+        const currentSolOffset = galacticOffset(simulatedSol.x, simulatedSol.y, galaxyRadius, currentSolOffsetScratch);
         let centerX = viewportCenterX + finalSolOffset.x * galaxyProgress;
         let centerY = viewportCenterY + finalSolOffset.y * galaxyProgress;
         const galaxyCoreX = centerX - currentSolOffset.x;
@@ -315,6 +393,7 @@ if (canvasElement && systemElement && canvasContext) {
             width,
             height,
             seconds,
+            elapsedGalacticYears,
             reducedMotion,
             alpha: galaxyAlpha,
             radius: galaxyRadius,
@@ -371,8 +450,16 @@ if (canvasElement && systemElement && canvasContext) {
             coreX: galaxyCoreX,
             coreY: galaxyCoreY,
             verticalProjection: Math.sqrt(Math.max(0, 1 - galacticProjectedTilt ** 2)),
+            elapsedGalacticYears,
             projectOffset: galacticOffset,
         });
+        if (objectFocus.target?.kind === 'galactic') {
+            const liveFocusedObject = galaxyObjectRenderer.findByName(objectFocus.target.name);
+            if (liveFocusedObject) {
+                objectFocus.target.originX = liveFocusedObject.x;
+                objectFocus.target.originY = liveFocusedObject.y;
+            }
+        }
         const hoveredGalacticObject =
             pointer.active && !camera.dragging && !objectFocus.target && galaxyObjectOpacity > 0.35
                 ? galaxyObjectRenderer.findHovered(localPointerX, localPointerY)
@@ -412,7 +499,8 @@ if (canvasElement && systemElement && canvasContext) {
             nearMarks,
             bodies,
             cameraTransform,
-            solveMoonOrbit,
+            solveMoonOrbit: solveSolarMoonOrbit,
+            moonElapsedDays: solarMoonElapsedDays,
             focusedPlanet,
             focusedSun,
             focusedSunDetailReveal,
@@ -481,19 +569,30 @@ if (canvasElement && systemElement && canvasContext) {
                 localSphereGrowth,
                 planetSceneFocus,
                 seconds,
+                rotationHours: elapsedRotationHours,
                 reducedMotion,
                 pointer,
                 camera,
                 localPointerX,
                 localPointerY,
                 showHoverVisuals,
-                solveMoonOrbit,
+                solveMoonOrbit: solveFocusedMoonOrbit,
+                moonElapsedDays: focusedMoonElapsedDays,
             });
         }
         const currentSecond = Math.floor(frameTime / 1000);
+        const cameraStatsTick = Math.floor(frameTime / 100);
+        if (cameraStatsTick !== lastCameraStatsTick) {
+            updateCameraStats();
+            lastCameraStatsTick = cameraStatsTick;
+        }
         if (clock && currentSecond !== lastClockSecond) {
-            const clockMode = orbitClock.active && !orbitClock.returning ? ' · SIM 12H/S' : ' UTC';
-            clock.textContent = new Date(now).toISOString().replace('T', ' / ').slice(0, 22) + clockMode;
+            if (cosmicZoom.current > 0.5) {
+                clock.textContent = `GALACTIC EPOCH / ${formatGalacticEpoch(elapsedGalacticYears)}`;
+            } else {
+                const clockMode = orbitClock.active && !orbitClock.returning ? ' SIM' : '';
+                clock.textContent = formatLocalDateTime(now) + clockMode;
+            }
             lastClockSecond = currentSecond;
         }
         scheduleRender();
@@ -505,6 +604,9 @@ if (canvasElement && systemElement && canvasContext) {
         focusReturn,
         zoomInput,
         zoomStatus,
+        solarSimulationSpeed,
+        galacticSimulationSpeed,
+        rotationSimulationSpeed,
         pointer,
         camera,
         galaxyCamera,
@@ -512,8 +614,12 @@ if (canvasElement && systemElement && canvasContext) {
         easterEgg,
         cosmicZoom,
         orbitClock,
+        galacticClock,
+        rotationClock,
         getActiveFocusCandidate: () => activeFocusCandidate,
         getOrbitDate,
+        getGalacticElapsedYears,
+        getRotationElapsedHours,
         beginObjectFocus: (target) => focusController.begin(target),
         beginChildFocus: (target) => focusController.beginChild(target),
         leaveObjectFocus: () => focusController.leave(),

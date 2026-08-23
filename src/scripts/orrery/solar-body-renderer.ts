@@ -1,5 +1,5 @@
 import { DEG, smoothstep } from './math';
-import { focusedRotation, planetSurfaceGlyph } from './planet-textures';
+import { decorativeRotation, planetSurfaceGlyph } from './planet-textures';
 import type { Planet, ProjectedBody } from './types';
 
 export const COMPACT_PLANET_GRIDS: Record<
@@ -79,7 +79,7 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         const characterWidth = context.measureText('M').width * 0.76;
         const sphereWidth = compactGrid.columns * characterWidth;
         const sphereHeight = compactGrid.rows * compactLineHeight;
-        const spin = focusedRotation(planet.name, seconds, reducedMotion);
+        const spin = decorativeRotation(planet.name, seconds, reducedMotion);
         spriteWidth = sphereWidth;
 
         const drawCompactRings = (foreground: boolean) => {
