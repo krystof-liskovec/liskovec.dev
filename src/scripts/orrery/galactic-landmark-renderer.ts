@@ -4,6 +4,12 @@ import type { GalacticRenderOptions } from './galactic-renderer';
 type EtaParticle = { x: number; y: number; z: number; lobe: number; energy: number };
 type ShellParticle = { x: number; y: number; z: number; energy: number; phase: number };
 type ClusterStar = { x: number; y: number; z: number; energy: number; phase: number };
+type ProjectionBasis = {
+    yawCosine: number;
+    yawSine: number;
+    pitchCosine: number;
+    pitchSine: number;
+};
 
 const ETA_PARTICLES: EtaParticle[] = Array.from({ length: 240 }, (_, index) => {
     const lobe = index % 2 ? 1 : -1;
@@ -47,18 +53,21 @@ const OMEGA_STARS: ClusterStar[] = Array.from({ length: 430 }, (_, index) => {
     };
 });
 
+const createProjectionBasis = (longitude: number, latitude: number): ProjectionBasis => ({
+    yawCosine: Math.cos(longitude),
+    yawSine: Math.sin(longitude),
+    pitchCosine: Math.cos(latitude),
+    pitchSine: Math.sin(latitude),
+});
+
 const projectPoint = (
     x: number,
     y: number,
     z: number,
-    longitude: number,
-    latitude: number,
+    basis: ProjectionBasis,
     target: { x: number; y: number; depth: number },
 ) => {
-    const yawCosine = Math.cos(longitude);
-    const yawSine = Math.sin(longitude);
-    const pitchCosine = Math.cos(latitude);
-    const pitchSine = Math.sin(latitude);
+    const { yawCosine, yawSine, pitchCosine, pitchSine } = basis;
     const yawedX = x * yawCosine + z * yawSine;
     const yawedZ = -x * yawSine + z * yawCosine;
     target.x = yawedX;
@@ -80,11 +89,12 @@ const drawEtaCarinae = (
     const { x, y, opacity, seconds, longitude, latitude, reducedMotion } = options;
     const rotation = longitude * 0.28 - 0.38;
     const tilt = latitude * 0.55 + 0.2;
+    const projection = createProjectionBasis(tilt, longitude * 0.16);
     context.font = `bold ${fontSize * 0.72}px "DM Mono", monospace`;
 
     for (let layer = 0; layer < 2; layer++) {
         for (const particle of ETA_PARTICLES) {
-            const point = projectPoint(particle.x, particle.y, particle.z, tilt, longitude * 0.16, PROJECTED_POINT);
+            const point = projectPoint(particle.x, particle.y, particle.z, projection, PROJECTED_POINT);
             if ((point.depth >= 0 ? 1 : 0) !== layer) continue;
             const screenX = point.x * Math.cos(rotation) - point.y * Math.sin(rotation);
             const screenY = point.x * Math.sin(rotation) + point.y * Math.cos(rotation);
@@ -135,18 +145,12 @@ const drawCassiopeia = (
 ) => {
     const { x, y, opacity, seconds, longitude, latitude, reducedMotion } = options;
     const expansion = reducedMotion ? 1 : 1 + Math.sin(seconds * 0.18) * 0.012;
+    const projection = createProjectionBasis(longitude * 0.22, latitude * 0.48);
     context.font = `bold ${fontSize * 0.7}px "DM Mono", monospace`;
 
     for (let layer = 0; layer < 2; layer++) {
         for (const particle of CASSIOPEIA_SHELL) {
-            const point = projectPoint(
-                particle.x,
-                particle.y,
-                particle.z,
-                longitude * 0.22,
-                latitude * 0.48,
-                PROJECTED_POINT,
-            );
+            const point = projectPoint(particle.x, particle.y, particle.z, projection, PROJECTED_POINT);
             if ((point.depth >= 0 ? 1 : 0) !== layer) continue;
             const pulse = reducedMotion ? 0 : Math.sin(seconds * 0.74 + particle.phase) * 0.09;
             context.globalAlpha =
@@ -186,11 +190,12 @@ const drawOmegaCentauri = (
     fontSize: number,
 ) => {
     const { x, y, opacity, seconds, longitude, latitude, reducedMotion } = options;
+    const projection = createProjectionBasis(longitude * 0.2, latitude * 0.3);
     context.font = `bold ${fontSize * 0.68}px "DM Mono", monospace`;
 
     for (let layer = 0; layer < 2; layer++) {
         for (const star of OMEGA_STARS) {
-            const point = projectPoint(star.x, star.y, star.z, longitude * 0.2, latitude * 0.3, PROJECTED_POINT);
+            const point = projectPoint(star.x, star.y, star.z, projection, PROJECTED_POINT);
             if ((point.depth >= 0 ? 1 : 0) !== layer) continue;
             const perspective = 1 + point.depth * 0.14;
             const twinkle = reducedMotion ? 0 : Math.sin(seconds * 0.8 + star.phase) * 0.1;
@@ -236,6 +241,7 @@ const drawB1509Pulsar = (
     const beamX = Math.sin(magneticTilt) * Math.cos(rotationPhase);
     const beamY = Math.cos(magneticTilt);
     const beamZ = Math.sin(magneticTilt) * Math.sin(rotationPhase);
+    const projection = createProjectionBasis(yaw, pitch);
 
     // Paint the rear and front halves separately so the wind torus and beams
     // pass behind and in front of the neutron star as it rotates.
@@ -249,8 +255,7 @@ const drawB1509Pulsar = (
                 Math.cos(angle) * localRadius,
                 (lane - 1) * 0.025,
                 Math.sin(angle) * localRadius,
-                yaw,
-                pitch,
+                projection,
                 PROJECTED_POINT,
             );
             if ((point.depth >= 0 ? 1 : 0) !== layer) continue;
@@ -273,8 +278,7 @@ const drawB1509Pulsar = (
                     side * beamX * distance + spread,
                     side * beamY * distance,
                     side * beamZ * distance - spread,
-                    yaw,
-                    pitch,
+                    projection,
                     PROJECTED_POINT,
                 );
                 if ((point.depth >= 0 ? 1 : 0) !== layer) continue;
@@ -329,7 +333,7 @@ const drawB1509Pulsar = (
     for (let side = -1; side <= 1; side += 2) {
         for (let sample = 4; sample < 22; sample++) {
             const distance = (sample / 22) * 0.72;
-            const point = projectPoint(0, side * distance, 0, yaw, pitch, PROJECTED_POINT);
+            const point = projectPoint(0, side * distance, 0, projection, PROJECTED_POINT);
             context.globalAlpha = opacity * (0.34 - sample * 0.009);
             context.fillStyle = '#b8bb26';
             context.fillText(sample % 4 === 0 ? ':' : '.', x + point.x * radius, y + point.y * radius);

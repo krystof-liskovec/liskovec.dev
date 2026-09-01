@@ -45,9 +45,17 @@ export class SolarSystemModel {
         localDetailOpacity: number;
         planetSceneFocus: number;
         introProgress: number;
+        compact: boolean;
     }) {
-        const { cameraTransform, plutoUnlocked, plutoReveal, localDetailOpacity, planetSceneFocus, introProgress } =
-            options;
+        const {
+            cameraTransform,
+            plutoUnlocked,
+            plutoReveal,
+            localDetailOpacity,
+            planetSceneFocus,
+            introProgress,
+            compact,
+        } = options;
         this.farMarks.length = 0;
         this.nearMarks.length = 0;
         let markCount = 0;
@@ -55,6 +63,7 @@ export class SolarSystemModel {
         PLANETS.forEach((planet, planetIndex) => {
             if (planet.easterEgg && !plutoUnlocked) return;
             const introReveal = smoothstep((introProgress - planetIndex * 0.055) / 0.58);
+            let previousGlyph: string | null = null;
             for (let sample = 0; sample < ORBIT_SAMPLES; sample++) {
                 if ((sample + planetIndex) % 3 === 0) continue;
                 const projected = cameraTransform(ORBIT_POINTS[planetIndex][sample], this.orbitProjection);
@@ -65,12 +74,19 @@ export class SolarSystemModel {
                 const dx = next.x - projected.x;
                 const dy = next.y - projected.y;
                 const slope = Math.abs(dy / (dx || 0.001));
+                const glyph = slope > 2.1 ? '|' : slope > 0.55 ? (dx * dy > 0 ? '\\' : '/') : '-';
+                const directionChanged = glyph !== previousGlyph;
+                previousGlyph = glyph;
+                // Keep the mobile gaps regular. Combining the desktop
+                // every-third pattern with an every-other pattern creates
+                // uneven holes that can erase short /-to-- transitions.
+                if (compact && sample % 4 === 3 && !directionChanged) continue;
                 const mark = this.orbitMarkPool[markCount++];
                 mark.x = projected.x;
                 mark.y = projected.y;
                 mark.z = projected.z;
                 mark.scale = projected.scale;
-                mark.glyph = slope > 2.1 ? '|' : slope > 0.55 ? (dx * dy > 0 ? '\\' : '/') : '-';
+                mark.glyph = glyph;
                 mark.alpha = 0.7 * localDetailOpacity * (1 - planetSceneFocus);
                 mark.reveal = introReveal * (planet.easterEgg ? plutoReveal : 1);
                 (projected.z < 0 ? this.farMarks : this.nearMarks).push(mark);

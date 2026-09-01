@@ -21,8 +21,14 @@ import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
 import type { FocusTarget, Vec3 } from './orrery/types';
 
+// Keep the scene fluid on high-refresh displays while bounding work above 120Hz.
 const MAX_RENDER_FPS = 120;
 const MIN_RENDER_INTERVAL = 1000 / MAX_RENDER_FPS;
+const MAX_BACKGROUND_FPS = 60;
+const MIN_BACKGROUND_INTERVAL = 1000 / MAX_BACKGROUND_FPS;
+// Rendering at a phone's full 3x/4x DPR multiplies both glyph rasterization and
+// canvas compositing cost without adding useful detail to the pixelated output.
+const MAX_CANVAS_DPR = 2;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const systemElement = document.querySelector<HTMLElement>('#solar-system');
@@ -44,6 +50,8 @@ if (canvasElement && systemElement && canvasContext) {
     const canvas = canvasElement;
     const system = systemElement;
     const context = canvasContext;
+    const backgroundCanvas = document.createElement('canvas');
+    const backgroundContext = backgroundCanvas.getContext('2d');
     system.classList.add('is-canvas-ready');
     const {
         pointer,
@@ -71,6 +79,50 @@ if (canvasElement && systemElement && canvasContext) {
     let zoomLocationState = 'solar';
     let zoomLocationTimer = 0;
     let animationFrame = 0;
+    let renderTimer = 0;
+    let galaxyBackdropCacheValid = false;
+    let lastGalaxyBackdropAt = -Infinity;
+    const renderMetrics = {
+        width: 0,
+        height: 0,
+        renderWidth: 0,
+        renderHeight: 0,
+        systemLeft: 0,
+        systemTop: 0,
+        canvasOriginX: 0,
+        canvasOriginY: 0,
+        renderLeft: 0,
+        renderTop: 0,
+        renderRight: 0,
+        renderBottom: 0,
+        dirty: true,
+    };
+    const invalidateRenderMetrics = () => {
+        renderMetrics.dirty = true;
+        galaxyBackdropCacheValid = false;
+    };
+    const updateRenderMetrics = () => {
+        const canvasBounds = canvas.getBoundingClientRect();
+        const systemBounds = system.getBoundingClientRect();
+        renderMetrics.width = system.clientWidth;
+        renderMetrics.height = system.clientHeight;
+        renderMetrics.renderWidth = canvas.clientWidth;
+        renderMetrics.renderHeight = canvas.clientHeight;
+        renderMetrics.systemLeft = systemBounds.left;
+        renderMetrics.systemTop = systemBounds.top;
+        renderMetrics.canvasOriginX = systemBounds.left - canvasBounds.left;
+        renderMetrics.canvasOriginY = systemBounds.top - canvasBounds.top;
+        renderMetrics.renderLeft = -renderMetrics.canvasOriginX;
+        renderMetrics.renderTop = -renderMetrics.canvasOriginY;
+        renderMetrics.renderRight = renderMetrics.renderWidth - renderMetrics.canvasOriginX;
+        renderMetrics.renderBottom = renderMetrics.renderHeight - renderMetrics.canvasOriginY;
+        renderMetrics.dirty = false;
+    };
+    const renderMetricsObserver = new ResizeObserver(invalidateRenderMetrics);
+    renderMetricsObserver.observe(system);
+    renderMetricsObserver.observe(canvas);
+    window.addEventListener('resize', invalidateRenderMetrics, { passive: true });
+    window.addEventListener('scroll', invalidateRenderMetrics, { passive: true });
     let systemVisible = true;
     let pageVisible = !document.hidden;
     const focusedMoonEpoch = Date.now();
@@ -85,8 +137,28 @@ if (canvasElement && systemElement && canvasContext) {
     const solarSystemRenderer = new SolarSystemSceneRenderer();
 
     const scheduleRender = () => {
-        if (animationFrame || !systemVisible || !pageVisible) return;
+        if (animationFrame || renderTimer || !systemVisible || !pageVisible) return;
+        const waitForFrame = lastFrameAt ? MIN_RENDER_INTERVAL - (performance.now() - lastFrameAt) : 0;
+        if (waitForFrame > 1) {
+            renderTimer = window.setTimeout(() => {
+                renderTimer = 0;
+                if (!systemVisible || !pageVisible) return;
+                animationFrame = requestAnimationFrame(render);
+            }, waitForFrame);
+            return;
+        }
         animationFrame = requestAnimationFrame(render);
+    };
+
+    const cancelScheduledRender = () => {
+        if (animationFrame) {
+            cancelAnimationFrame(animationFrame);
+            animationFrame = 0;
+        }
+        if (renderTimer) {
+            window.clearTimeout(renderTimer);
+            renderTimer = 0;
+        }
     };
 
     const setZoomLocation = (state: string, copy: string) => {
@@ -152,9 +224,8 @@ if (canvasElement && systemElement && canvasContext) {
         if (systemVisible) {
             lastFrameAt = 0;
             scheduleRender();
-        } else if (animationFrame) {
-            cancelAnimationFrame(animationFrame);
-            animationFrame = 0;
+        } else {
+            cancelScheduledRender();
         }
     });
     visibilityObserver.observe(system);
@@ -164,9 +235,8 @@ if (canvasElement && systemElement && canvasContext) {
         if (pageVisible) {
             lastFrameAt = 0;
             scheduleRender();
-        } else if (animationFrame) {
-            cancelAnimationFrame(animationFrame);
-            animationFrame = 0;
+        } else {
+            cancelScheduledRender();
         }
     });
 
@@ -206,18 +276,21 @@ if (canvasElement && systemElement && canvasContext) {
         }
         // The bitmap has an overflow-safe bleed around the hero, while all
         // projection and scale math remains tied to the original system box.
-        const width = system.clientWidth;
-        const height = system.clientHeight;
-        const canvasBounds = canvas.getBoundingClientRect();
-        const systemBounds = system.getBoundingClientRect();
-        const renderWidth = canvas.clientWidth;
-        const renderHeight = canvas.clientHeight;
-        const canvasOriginX = systemBounds.left - canvasBounds.left;
-        const canvasOriginY = systemBounds.top - canvasBounds.top;
-        const renderLeft = -canvasOriginX;
-        const renderTop = -canvasOriginY;
-        const renderRight = renderWidth - canvasOriginX;
-        const renderBottom = renderHeight - canvasOriginY;
+        if (renderMetrics.dirty) updateRenderMetrics();
+        const {
+            width,
+            height,
+            renderWidth,
+            renderHeight,
+            systemLeft,
+            systemTop,
+            canvasOriginX,
+            canvasOriginY,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
+        } = renderMetrics;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene.
@@ -225,12 +298,18 @@ if (canvasElement && systemElement && canvasContext) {
         const innerPlanetScale = width < 600 ? 0.84 : 1;
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
         const viewportSunScale = 0.52 + mobileSunProgress * 0.48;
-        const dpr = Math.max(1, window.devicePixelRatio || 1);
+        const dpr = Math.min(MAX_CANVAS_DPR, Math.max(1, window.devicePixelRatio || 1));
         const pixelWidth = Math.max(1, Math.round(renderWidth * dpr));
         const pixelHeight = Math.max(1, Math.round(renderHeight * dpr));
         if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
             canvas.width = pixelWidth;
             canvas.height = pixelHeight;
+            galaxyBackdropCacheValid = false;
+        }
+        if (backgroundCanvas.width !== pixelWidth || backgroundCanvas.height !== pixelHeight) {
+            backgroundCanvas.width = pixelWidth;
+            backgroundCanvas.height = pixelHeight;
+            galaxyBackdropCacheValid = false;
         }
         // Use the canvas's real backing-store ratio. CSS grid sizing can produce
         // fractional dimensions, and a nominal DPR transform leaves that bitmap
@@ -378,6 +457,25 @@ if (canvasElement && systemElement && canvasContext) {
             return target;
         };
 
+        const drawGalaxy = (targetContext: CanvasRenderingContext2D) => {
+            drawGalaxyBackdrop(targetContext, {
+                width,
+                height,
+                seconds,
+                elapsedGalacticYears,
+                reducedMotion,
+                alpha: galaxyAlpha,
+                radius: galaxyRadius,
+                coreX: galaxyCoreX,
+                coreY: galaxyCoreY,
+                projectOffset: galacticOffset,
+                renderLeft,
+                renderTop,
+                renderRight,
+                renderBottom,
+            });
+        };
+
         drawLocalStarfield(context, {
             width,
             height,
@@ -391,22 +489,28 @@ if (canvasElement && systemElement && canvasContext) {
             renderRight,
             renderBottom,
         });
-        drawGalaxyBackdrop(context, {
-            width,
-            height,
-            seconds,
-            elapsedGalacticYears,
-            reducedMotion,
-            alpha: galaxyAlpha,
-            radius: galaxyRadius,
-            coreX: galaxyCoreX,
-            coreY: galaxyCoreY,
-            projectOffset: galacticOffset,
-            renderLeft,
-            renderTop,
-            renderRight,
-            renderBottom,
-        });
+        const canCacheGalaxyBackdrop =
+            Boolean(backgroundContext) &&
+            galaxyProgress > 0.98 &&
+            !objectFocus.target &&
+            !camera.dragging &&
+            !galaxyCamera.resetting;
+        if (canCacheGalaxyBackdrop && backgroundContext) {
+            if (!galaxyBackdropCacheValid || frameTime - lastGalaxyBackdropAt >= MIN_BACKGROUND_INTERVAL) {
+                backgroundContext.setTransform(pixelWidth / renderWidth, 0, 0, pixelHeight / renderHeight, 0, 0);
+                backgroundContext.clearRect(0, 0, renderWidth, renderHeight);
+                backgroundContext.translate(canvasOriginX, canvasOriginY);
+                backgroundContext.textAlign = 'center';
+                backgroundContext.textBaseline = 'middle';
+                drawGalaxy(backgroundContext);
+                galaxyBackdropCacheValid = true;
+                lastGalaxyBackdropAt = frameTime;
+            }
+            context.drawImage(backgroundCanvas, -canvasOriginX, -canvasOriginY, renderWidth, renderHeight);
+        } else {
+            galaxyBackdropCacheValid = false;
+            drawGalaxy(context);
+        }
 
         solarSystemModel.projectOrbits({
             cameraTransform,
@@ -415,6 +519,7 @@ if (canvasElement && systemElement && canvasContext) {
             localDetailOpacity,
             planetSceneFocus,
             introProgress: intro.orbits,
+            compact: width < 600,
         });
         solarSystemModel.projectBodies({
             cameraTransform,
@@ -425,8 +530,8 @@ if (canvasElement && systemElement && canvasContext) {
         });
         const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
 
-        const localPointerX = pointer.clientX - systemBounds.left;
-        const localPointerY = pointer.clientY - systemBounds.top;
+        const localPointerX = pointer.clientX - systemLeft;
+        const localPointerY = pointer.clientY - systemTop;
         const showHoverVisuals = pointer.showsHover;
         const pointerInsideSun =
             Math.hypot(centerX - localPointerX, centerY - localPointerY) <
@@ -527,6 +632,7 @@ if (canvasElement && systemElement && canvasContext) {
             solarSystemScale,
             viewportGlyphScale,
             innerPlanetScale,
+            compact: width < 600,
             localDetailOpacity,
             planetSceneFocus,
             introSunOpacity: intro.sun,

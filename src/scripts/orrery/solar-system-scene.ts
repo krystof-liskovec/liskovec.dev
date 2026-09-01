@@ -126,6 +126,7 @@ export class SolarSystemSceneRenderer {
             solarSystemScale: number;
             viewportGlyphScale: number;
             innerPlanetScale: number;
+            compact: boolean;
             localDetailOpacity: number;
             planetSceneFocus: number;
             introSunOpacity: number;
@@ -160,11 +161,13 @@ export class SolarSystemSceneRenderer {
             planetSceneFocus: number;
             cameraTransform: CameraTransform;
             introDetailOpacity: number;
+            compact: boolean;
         },
     ) {
-        const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform } = options;
+        const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform, compact } = options;
         const elapsedDays = (now - J2000) / 86400000;
         const opacity = localDetailOpacity * (1 - planetSceneFocus) * options.introDetailOpacity;
+        if (opacity <= 0.001) return;
         const scaleRoot = Math.sqrt(solarSystemScale);
 
         this.drawParticleField(
@@ -175,6 +178,7 @@ export class SolarSystemSceneRenderer {
             opacity,
             Math.max(5, 6.5 * scaleRoot),
             ZODIACAL_DUST_STYLE,
+            compact,
         );
         this.drawParticleField(
             context,
@@ -184,6 +188,7 @@ export class SolarSystemSceneRenderer {
             opacity,
             Math.max(5.5, 7.5 * scaleRoot),
             ASTEROID_BELT_STYLE,
+            compact,
         );
         this.drawParticleField(
             context,
@@ -193,6 +198,7 @@ export class SolarSystemSceneRenderer {
             opacity,
             Math.max(6.5, 8.35 * scaleRoot),
             KUIPER_BELT_STYLE,
+            compact,
         );
         context.globalAlpha = 1;
     }
@@ -205,10 +211,13 @@ export class SolarSystemSceneRenderer {
         opacity: number,
         fontSize: number,
         style: ParticleFieldStyle,
+        compact: boolean,
     ) {
         context.font = `${fontSize}px "DM Mono", monospace`;
         context.fillStyle = style.color;
-        for (const particle of particles) {
+        for (let index = 0; index < particles.length; index++) {
+            if (compact && index % 2 !== 0) continue;
+            const particle = particles[index];
             const radialProgress = Math.max(
                 0,
                 Math.min(1, (particle.radius - style.innerRadius) / (style.outerRadius - style.innerRadius)),
@@ -216,11 +225,16 @@ export class SolarSystemSceneRenderer {
             const orbitalPeriodDays =
                 style.innerPeriodDays + (style.outerPeriodDays - style.innerPeriodDays) * radialProgress;
             const angle = particle.angle + (elapsedDays / orbitalPeriodDays) * Math.PI * 2;
-            this.asteroidPoint.x = Math.cos(angle) * particle.radius;
-            this.asteroidPoint.y = Math.sin(angle) * particle.radius;
-            this.asteroidPoint.z = 0;
-            rotateX(this.asteroidPoint, particle.inclination, this.asteroidPoint);
-            rotateZ(this.asteroidPoint, particle.node, this.asteroidPoint);
+            const orbitalX = Math.cos(angle) * particle.radius;
+            const orbitalY = Math.sin(angle) * particle.radius;
+            // Inclination and node are fixed per particle; their trig values are
+            // prepared once in scene-data.ts, leaving only the animated orbital
+            // angle to evaluate in this hot loop.
+            this.asteroidPoint.x =
+                orbitalX * particle.nodeCosine - orbitalY * particle.inclinationCosine * particle.nodeSine;
+            this.asteroidPoint.y =
+                orbitalX * particle.nodeSine + orbitalY * particle.inclinationCosine * particle.nodeCosine;
+            this.asteroidPoint.z = orbitalY * particle.inclinationSine;
             const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
             context.globalAlpha = opacity * (style.baseAlpha + particle.phase * style.alphaVariation);
             context.fillText(particle.glyph, projected.x, projected.y);
@@ -238,6 +252,7 @@ export class SolarSystemSceneRenderer {
             localDetailOpacity: number;
             planetSceneFocus: number;
             introDetailOpacity: number;
+            compact: boolean;
         },
     ) {
         let jupiter: ProjectedBody | null = null;
@@ -251,10 +266,13 @@ export class SolarSystemSceneRenderer {
 
         const baseAngle = Math.atan2(jupiter.world.y, jupiter.world.x);
         const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
+        if (opacity <= 0.001) return;
         context.fillStyle = '#d79921';
         context.font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
         const elapsedDays = (options.now - J2000) / 86400000;
-        for (const trojan of JUPITER_TROJANS) {
+        for (let index = 0; index < JUPITER_TROJANS.length; index++) {
+            if (options.compact && index % 2 !== 0) continue;
+            const trojan = JUPITER_TROJANS[index];
             const libration = options.reducedMotion
                 ? 0
                 : Math.sin((elapsedDays / JUPITER_TROJAN_LIBRATION_PERIOD_DAYS) * Math.PI * 2 + trojan.phase * 6.28) *

@@ -154,39 +154,75 @@ export type SolarParticle = {
     angle: number;
     radius: number;
     inclination: number;
+    inclinationCosine: number;
+    inclinationSine: number;
     node: number;
+    nodeCosine: number;
+    nodeSine: number;
     phase: number;
     glyph: '.' | ':' | "'";
 };
 
-export const ZODIACAL_DUST: SolarParticle[] = Array.from({ length: 130 }, (_, index) => ({
-    angle: randomUnit(index + 2901) * Math.PI * 2,
-    radius: 3.2 + Math.pow(randomUnit(index + 3001), 1.55) * 14.8,
-    inclination: (randomUnit(index + 3101) - 0.5) * 5 * DEG,
-    node: randomUnit(index + 3201) * Math.PI * 2,
-    phase: randomUnit(index + 3301),
-    glyph: '.',
-}));
+const createSolarParticle = (
+    angle: number,
+    radius: number,
+    inclination: number,
+    node: number,
+    phase: number,
+    glyph: SolarParticle['glyph'],
+): SolarParticle => ({
+    angle,
+    radius,
+    inclination,
+    inclinationCosine: Math.cos(inclination),
+    inclinationSine: Math.sin(inclination),
+    node,
+    nodeCosine: Math.cos(node),
+    nodeSine: Math.sin(node),
+    phase,
+    glyph,
+});
 
-export const ASTEROID_BELT: SolarParticle[] = Array.from({ length: 270 }, (_, index) => ({
-    angle: randomUnit(index + 1201) * Math.PI * 2,
-    // Four overlapping lanes leave narrow low-density regions reminiscent of
-    // the belt's resonant gaps without turning them into diagrammatic rings.
-    radius: 20.05 + (((index % 4) + randomUnit(index + 1301) * 0.76) / 4) * 2.4,
-    inclination: (randomUnit(index + 1401) - 0.5) * 8 * DEG,
-    node: randomUnit(index + 1501) * Math.PI * 2,
-    phase: randomUnit(index + 1601),
-    glyph: index % 19 === 0 ? ':' : index % 7 === 0 ? "'" : '.',
-}));
+export const ZODIACAL_DUST: SolarParticle[] = Array.from({ length: 130 }, (_, index) => {
+    const inclination = (randomUnit(index + 3101) - 0.5) * 5 * DEG;
+    const node = randomUnit(index + 3201) * Math.PI * 2;
+    return createSolarParticle(
+        randomUnit(index + 2901) * Math.PI * 2,
+        3.2 + Math.pow(randomUnit(index + 3001), 1.55) * 14.8,
+        inclination,
+        node,
+        randomUnit(index + 3301),
+        '.',
+    );
+});
 
-export const KUIPER_BELT: SolarParticle[] = Array.from({ length: 560 }, (_, index) => ({
-    angle: randomUnit(index + 3401) * Math.PI * 2,
-    radius: 43 + Math.pow(randomUnit(index + 3501), 0.82) * 9.5,
-    inclination: (randomUnit(index + 3601) + randomUnit(index + 3701) - 1) * 14 * DEG,
-    node: randomUnit(index + 3801) * Math.PI * 2,
-    phase: randomUnit(index + 3901),
-    glyph: index % 31 === 0 ? ':' : index % 11 === 0 ? "'" : '.',
-}));
+export const ASTEROID_BELT: SolarParticle[] = Array.from({ length: 270 }, (_, index) => {
+    const inclination = (randomUnit(index + 1401) - 0.5) * 8 * DEG;
+    const node = randomUnit(index + 1501) * Math.PI * 2;
+    return createSolarParticle(
+        randomUnit(index + 1201) * Math.PI * 2,
+        // Four overlapping lanes leave narrow low-density regions reminiscent of
+        // the belt's resonant gaps without turning them into diagrammatic rings.
+        20.05 + (((index % 4) + randomUnit(index + 1301) * 0.76) / 4) * 2.4,
+        inclination,
+        node,
+        randomUnit(index + 1601),
+        index % 19 === 0 ? ':' : index % 7 === 0 ? "'" : '.',
+    );
+});
+
+export const KUIPER_BELT: SolarParticle[] = Array.from({ length: 560 }, (_, index) => {
+    const inclination = (randomUnit(index + 3601) + randomUnit(index + 3701) - 1) * 14 * DEG;
+    const node = randomUnit(index + 3801) * Math.PI * 2;
+    return createSolarParticle(
+        randomUnit(index + 3401) * Math.PI * 2,
+        43 + Math.pow(randomUnit(index + 3501), 0.82) * 9.5,
+        inclination,
+        node,
+        randomUnit(index + 3901),
+        index % 31 === 0 ? ':' : index % 11 === 0 ? "'" : '.',
+    );
+});
 
 export type TrojanParticle = {
     angleOffset: number;
