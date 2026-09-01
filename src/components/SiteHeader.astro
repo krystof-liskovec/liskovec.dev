@@ -10,10 +10,10 @@ const onBlog = Astro.url.pathname.startsWith('/blog');
     </div>
     <nav aria-label="Primary navigation">
         <a href={onHomepage ? '#about' : '/#about'}>[ about ]</a>
-        <a href="/blog" aria-current={onBlog ? 'page' : undefined}>[ blog ]</a>
         <a
             href={onHomepage ? '#contact' : '/#contact'}
             aria-current={onHomepage && Astro.url.hash === '#contact' ? 'page' : undefined}>[ contact ]</a
         >
+        <a href="/blog" aria-current={onBlog ? 'page' : undefined}>[ blog ]</a>
     </nav>
 </header>
