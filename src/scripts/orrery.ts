@@ -30,6 +30,9 @@ const MAX_RENDER_FPS = 120;
 const MIN_RENDER_INTERVAL = 1000 / MAX_RENDER_FPS;
 const MAX_BACKGROUND_FPS = 60;
 const MIN_BACKGROUND_INTERVAL = 1000 / MAX_BACKGROUND_FPS;
+// Let the first lightweight 2D scene settle before fetching and initializing
+// the optional GPU particle layer. Interaction can still promote this sooner.
+const PARTICLE_RENDERER_DELAY = 2200;
 // Rendering at a phone's full 3x/4x DPR multiplies both glyph rasterization and
 // canvas compositing cost without adding useful detail to the pixelated output.
 const MAX_CANVAS_DPR = 2;
@@ -122,11 +125,14 @@ if (canvasElement && systemElement && canvasContext) {
     };
 
     let particleRendererLoadScheduled = false;
-    const scheduleParticleRenderer = () => {
-        if (!gpuCanvasElement || particleRendererLoadScheduled) return;
-        particleRendererLoadScheduled = true;
+    let particleRendererLoadStarted = false;
+    let particleRendererLoadTimer = 0;
+    const scheduleParticleRenderer = (immediate = false) => {
+        if (!gpuCanvasElement || particleRendererLoadStarted) return;
 
         const loadParticleRenderer = () => {
+            if (particleRendererLoadStarted) return;
+            particleRendererLoadStarted = true;
             void import('./orrery/webgl-particle-renderer')
                 .then(({ WebGLParticleRenderer }) => {
                     if (!gpuCanvasElement) return;
@@ -138,14 +144,28 @@ if (canvasElement && systemElement && canvasContext) {
                     // or the deferred renderer chunk is unavailable.
                 });
         };
-        const idleWindow = window as Window & {
-            requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-        };
-        if (idleWindow.requestIdleCallback) {
-            idleWindow.requestIdleCallback(loadParticleRenderer, { timeout: 1800 });
+
+        if (immediate) {
+            if (particleRendererLoadTimer) {
+                window.clearTimeout(particleRendererLoadTimer);
+                particleRendererLoadTimer = 0;
+            }
+            loadParticleRenderer();
             return;
         }
-        window.setTimeout(loadParticleRenderer, 900);
+        if (particleRendererLoadScheduled) return;
+        particleRendererLoadScheduled = true;
+        particleRendererLoadTimer = window.setTimeout(() => {
+            particleRendererLoadTimer = 0;
+            const idleWindow = window as Window & {
+                requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+            };
+            if (idleWindow.requestIdleCallback) {
+                idleWindow.requestIdleCallback(loadParticleRenderer, { timeout: 800 });
+                return;
+            }
+            loadParticleRenderer();
+        }, PARTICLE_RENDERER_DELAY);
     };
 
     const cancelScheduledRender = () => {
@@ -761,6 +781,7 @@ if (canvasElement && systemElement && canvasContext) {
             introController.skip();
             system.classList.remove('is-intro-running');
             solarHeading?.classList.remove('is-intro-running');
+            scheduleParticleRenderer(true);
         },
     });
 
