@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap');
 :root {
     --bg: #1d2021;
     --surface: #282828;
@@ -729,7 +728,7 @@ footer a:hover {
     overflow: hidden;
     --canvas-bleed-x: 0px;
     --canvas-bleed-y: 0px;
-    background: var(--bg);
+    background-color: var(--bg);
 }
 .solar-system:fullscreen canvas,
 .solar-system.is-fullscreen canvas {
@@ -836,10 +835,6 @@ footer a:hover {
         transparent 48%
     );
 }
-.solar-system:fullscreen canvas#solar-canvas,
-.solar-system.is-fullscreen canvas#solar-canvas {
-    background-image: none;
-}
 .solar-static {
     position: absolute;
     inset: 0;
@@ -847,10 +842,6 @@ footer a:hover {
     place-items: center;
     overflow: hidden;
     color: var(--yellow);
-    opacity: 0.72;
-    transition: opacity 0.2s ease;
-}
-.is-hydrating .solar-static {
     visibility: hidden;
     opacity: 0;
 }

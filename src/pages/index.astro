@@ -212,7 +212,22 @@ const profileStructuredData = {
 </Layout>
 
 <script>
-    import '../scripts/orrery.ts';
+    const loadOrrery = () => void import('../scripts/orrery.ts');
+    const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+    };
+    const scheduleOrrery = () => {
+        if (idleWindow.requestIdleCallback) {
+            idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
+            return;
+        }
+        window.setTimeout(loadOrrery, 300);
+    };
+    const startOrreryAfterLoad = () => {
+        requestAnimationFrame(() => requestAnimationFrame(scheduleOrrery));
+    };
+    if (document.readyState === 'complete') startOrreryAfterLoad();
+    else window.addEventListener('load', startOrreryAfterLoad, { once: true });
 
     let arrivalFrame = 0;
     const showSectionArrival = (section: HTMLElement) => {

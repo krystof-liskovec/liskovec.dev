@@ -30,6 +30,7 @@ const MIN_BACKGROUND_INTERVAL = 1000 / MAX_BACKGROUND_FPS;
 // Rendering at a phone's full 3x/4x DPR multiplies both glyph rasterization and
 // canvas compositing cost without adding useful detail to the pixelated output.
 const MAX_CANVAS_DPR = 2;
+const INITIAL_HEADING_ANIMATION_DELAY_MS = 1200;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const gpuCanvasElement = document.querySelector<HTMLCanvasElement>('#solar-gpu-canvas');
@@ -236,12 +237,20 @@ if (canvasElement && systemElement && canvasContext) {
         zoomLocationWriter?.setText(copy);
     };
 
-    if (solarHeadingLead && zoomLocation) {
-        solarHeadingLead.textContent = '';
-        zoomLocation.textContent = '';
-        headingLeadWriter?.setText('somewhere', () => {
-            if (zoomLocationState === 'solar') zoomLocationWriter?.setText('in the solar system.');
-        });
+    if (solarHeadingLead && zoomLocation && !reducedMotion) {
+        window.setTimeout(() => {
+            // Let the server-rendered heading remain the first paint. If the
+            // visitor interacts before the decorative intro starts, leave the
+            // live location copy alone.
+            if (solarHeadingLead.textContent !== 'somewhere' || zoomLocation.textContent !== 'in the solar system.') {
+                return;
+            }
+            solarHeadingLead.textContent = '';
+            zoomLocation.textContent = '';
+            headingLeadWriter?.setText('somewhere', () => {
+                if (zoomLocationState === 'solar') zoomLocationWriter?.setText('in the solar system.');
+            });
+        }, INITIAL_HEADING_ANIMATION_DELAY_MS);
     }
 
     const signedDegrees = (radians: number) => {
