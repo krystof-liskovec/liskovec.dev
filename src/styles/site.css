@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap');
 :root {
     --bg: #1d2021;
     --surface: #282828;
@@ -706,7 +707,8 @@ footer a:hover {
     margin: 0;
     overflow: visible;
     font-family: var(--mono);
-    background: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
+    background-color: var(--bg);
+    background-image: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
 }
 .solar-system:fullscreen,
 .solar-system.is-fullscreen {
@@ -813,7 +815,6 @@ footer a:hover {
     image-rendering: pixelated;
     touch-action: pan-y pinch-zoom;
     user-select: none;
-    background-color: var(--bg);
 }
 .solar-system canvas.solar-gpu-canvas {
     z-index: 0;
@@ -836,6 +837,10 @@ footer a:hover {
     color: var(--yellow);
     opacity: 0.72;
     transition: opacity 0.2s ease;
+}
+.is-hydrating .solar-static {
+    visibility: hidden;
+    opacity: 0;
 }
 .solar-static pre {
     margin: 0;

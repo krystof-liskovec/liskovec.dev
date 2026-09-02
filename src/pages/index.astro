@@ -212,70 +212,7 @@ const profileStructuredData = {
 </Layout>
 
 <script>
-    const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
-    const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const createTypewriter = (element: HTMLElement) => {
-        const TYPE_DELAY_MS = 32;
-        let timer = 0;
-        let run = 0;
-
-        const setText = (target: string, onComplete?: () => void) => {
-            run += 1;
-            const activeRun = run;
-            window.clearTimeout(timer);
-
-            if (reducedMotion) {
-                element.textContent = target;
-                element.classList.remove('is-typing');
-                onComplete?.();
-                return;
-            }
-
-            let visibleLength = 0;
-            element.classList.add('is-typing');
-            const step = () => {
-                if (activeRun !== run) return;
-                if (visibleLength < target.length) {
-                    visibleLength += 1;
-                    element.textContent = target.slice(0, visibleLength);
-                    timer = window.setTimeout(step, TYPE_DELAY_MS);
-                    return;
-                }
-                element.classList.remove('is-typing');
-                onComplete?.();
-            };
-            step();
-        };
-
-        return { setText };
-    };
-
-    document.documentElement.setAttribute('data-orrery-heading-managed', '');
-    const headingLeadWriter = solarHeadingLead ? createTypewriter(solarHeadingLead) : null;
-    const zoomLocationWriter = zoomLocation ? createTypewriter(zoomLocation) : null;
-    if (solarHeadingLead && zoomLocation) {
-        solarHeadingLead.textContent = '';
-        zoomLocation.textContent = '';
-        headingLeadWriter?.setText('somewhere', () => zoomLocationWriter?.setText('in the solar system.'));
-    }
-
-    const loadOrrery = () => void import('../scripts/orrery.ts');
-    const idleWindow = window as Window & {
-        requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
-    };
-    const scheduleOrrery = () => {
-        if (idleWindow.requestIdleCallback) {
-            idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
-            return;
-        }
-        window.setTimeout(loadOrrery, 300);
-    };
-    const startOrreryAfterLoad = () => {
-        requestAnimationFrame(() => requestAnimationFrame(scheduleOrrery));
-    };
-    if (document.readyState === 'complete') startOrreryAfterLoad();
-    else window.addEventListener('load', startOrreryAfterLoad, { once: true });
+    import '../scripts/orrery.ts';
 
     let arrivalFrame = 0;
     const showSectionArrival = (section: HTMLElement) => {
