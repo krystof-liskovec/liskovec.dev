@@ -1,7 +1,7 @@
 import { smoothstep } from './math';
 
 const INTRO_DURATION_MS = 2400;
-const SESSION_KEY = 'liskovec:orrery-intro-seen:v3';
+const STORAGE_KEY = 'liskovec:orrery-intro-seen:v3';
 const ORBIT_START_PROGRESS = 0.34;
 const ORBIT_REVEAL_PROGRESS = 0.5;
 const REPEAT_ORBIT_START_PROGRESS = 0.16;
@@ -80,7 +80,7 @@ export class OrreryIntroController {
         this.complete = true;
         completeState(this.state);
         try {
-            sessionStorage.setItem(SESSION_KEY, '1');
+            localStorage.setItem(STORAGE_KEY, '1');
         } catch {
             // The animation can complete normally without persistent storage.
         }

@@ -217,10 +217,10 @@ const profileStructuredData = {
     const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
     const solarSystem = document.querySelector<HTMLElement>('#solar-system');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const introSessionKey = 'liskovec:orrery-intro-seen:v3';
+    const introStorageKey = 'liskovec:orrery-intro-seen:v3';
     const isRepeatIntro = (() => {
         try {
-            return sessionStorage.getItem(introSessionKey) === '1';
+            return localStorage.getItem(introStorageKey) === '1';
         } catch {
             return false;
         }
