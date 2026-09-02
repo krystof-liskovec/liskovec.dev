@@ -6,6 +6,10 @@ const ORBIT_START_PROGRESS = 0.34;
 const ORBIT_REVEAL_PROGRESS = 0.5;
 const REPEAT_ORBIT_START_PROGRESS = 0.16;
 const REPEAT_ORBIT_REVEAL_PROGRESS = 0.42;
+const BODY_START_PROGRESS = 0.56;
+const BODY_REVEAL_PROGRESS = 0.36;
+const REPEAT_BODY_START_PROGRESS = 0.35;
+const REPEAT_BODY_REVEAL_PROGRESS = 0.36;
 
 export type OrreryIntroState = {
     progress: number;
@@ -32,14 +36,15 @@ export class OrreryIntroController {
     private complete: boolean;
     private readonly orbitStartProgress: number;
     private readonly orbitRevealProgress: number;
+    private readonly bodyStartProgress: number;
+    private readonly bodyRevealProgress: number;
 
     constructor(reducedMotion: boolean) {
-        this.orbitStartProgress = document.documentElement.hasAttribute('data-orrery-intro-repeat')
-            ? REPEAT_ORBIT_START_PROGRESS
-            : ORBIT_START_PROGRESS;
-        this.orbitRevealProgress = document.documentElement.hasAttribute('data-orrery-intro-repeat')
-            ? REPEAT_ORBIT_REVEAL_PROGRESS
-            : ORBIT_REVEAL_PROGRESS;
+        const isRepeatIntro = document.documentElement.hasAttribute('data-orrery-intro-repeat');
+        this.orbitStartProgress = isRepeatIntro ? REPEAT_ORBIT_START_PROGRESS : ORBIT_START_PROGRESS;
+        this.orbitRevealProgress = isRepeatIntro ? REPEAT_ORBIT_REVEAL_PROGRESS : ORBIT_REVEAL_PROGRESS;
+        this.bodyStartProgress = isRepeatIntro ? REPEAT_BODY_START_PROGRESS : BODY_START_PROGRESS;
+        this.bodyRevealProgress = isRepeatIntro ? REPEAT_BODY_REVEAL_PROGRESS : BODY_REVEAL_PROGRESS;
         this.complete = reducedMotion;
         if (this.complete) completeState(this.state);
     }
@@ -61,7 +66,7 @@ export class OrreryIntroController {
         this.state.stars = smoothstep(progress / 0.2);
         this.state.sun = smoothstep((progress - 0.05) / 0.22);
         this.state.orbits = smoothstep((progress - this.orbitStartProgress) / this.orbitRevealProgress);
-        this.state.bodies = smoothstep((progress - 0.56) / 0.36);
+        this.state.bodies = smoothstep((progress - this.bodyStartProgress) / this.bodyRevealProgress);
         this.state.details = smoothstep((progress - 0.8) / 0.2);
         if (progress === 1) this.finish();
         return this.state;
