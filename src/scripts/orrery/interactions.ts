@@ -90,11 +90,13 @@ export const bindOrreryInteractions = ({
     let solarPresetIndex = DEFAULT_ORBIT_SPEED_PRESET;
     let galacticPresetIndex = DEFAULT_GALACTIC_SPEED_PRESET;
     let rotationPresetIndex = DEFAULT_ROTATION_SPEED_PRESET;
+    let fallbackFullscreen = false;
 
-    const isFullscreen = () => document.fullscreenElement === system;
+    const isFullscreen = () => document.fullscreenElement === system || fallbackFullscreen;
     const updateFullscreenControl = () => {
         const active = isFullscreen();
         system.classList.toggle('is-fullscreen', active);
+        document.documentElement.classList.toggle('is-orrery-fullscreen', active);
         if (!mobileFullscreenToggle) return;
         mobileFullscreenToggle.textContent = active ? '[ × exit fullscreen ]' : '[ ⛶ fullscreen ]';
         mobileFullscreenToggle.setAttribute(
@@ -104,33 +106,43 @@ export const bindOrreryInteractions = ({
         mobileFullscreenToggle.setAttribute('aria-pressed', String(active));
     };
 
-    if (!document.fullscreenEnabled || !system.requestFullscreen) {
-        if (mobileFullscreenToggle) mobileFullscreenToggle.hidden = true;
-    } else {
-        mobileFullscreenToggle?.addEventListener('click', async () => {
-            onInteract();
-            if (isFullscreen()) {
-                await document.exitFullscreen();
-                return;
-            }
+    mobileFullscreenToggle?.addEventListener('click', async () => {
+        onInteract();
+        if (document.fullscreenElement === system) {
             try {
-                await system.requestFullscreen({ navigationUI: 'hide' });
-                try {
-                    await screen.orientation.lock('landscape');
-                } catch {
-                    // Orientation locking is unavailable in some mobile browsers;
-                    // fullscreen remains useful and follows the device orientation.
-                }
+                await document.exitFullscreen();
             } catch {
                 updateFullscreenControl();
             }
-        });
-        document.addEventListener('fullscreenchange', () => {
+            return;
+        }
+        if (fallbackFullscreen) {
+            fallbackFullscreen = false;
             updateFullscreenControl();
-            if (!isFullscreen()) screen.orientation?.unlock?.();
-        });
+            return;
+        }
+        try {
+            if (!document.fullscreenEnabled || !system.requestFullscreen) throw new Error('Fullscreen unavailable');
+            await system.requestFullscreen({ navigationUI: 'hide' });
+            try {
+                await screen.orientation.lock('landscape');
+            } catch {
+                // Orientation locking is unavailable in some mobile browsers;
+                // fullscreen remains useful and follows the device orientation.
+            }
+        } catch {
+            // Keep the control useful on browsers that do not expose fullscreen
+            // for arbitrary elements, such as some iOS browser versions.
+            fallbackFullscreen = true;
+            updateFullscreenControl();
+        }
+    });
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement === system) fallbackFullscreen = false;
         updateFullscreenControl();
-    }
+        if (document.fullscreenElement !== system) screen.orientation?.unlock?.();
+    });
+    updateFullscreenControl();
 
     const updateSimulationSpeedControl = (presetIndex: number) => {
         const control =
