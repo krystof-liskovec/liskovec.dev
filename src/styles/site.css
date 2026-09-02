@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap');
 :root {
     --bg: #1d2021;
     --surface: #282828;
@@ -837,10 +836,6 @@ footer a:hover {
     color: var(--yellow);
     opacity: 0.72;
     transition: opacity 0.2s ease;
-}
-.is-hydrating .solar-static {
-    visibility: hidden;
-    opacity: 0;
 }
 .solar-static pre {
     margin: 0;

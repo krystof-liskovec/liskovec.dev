@@ -42,14 +42,42 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1d2021" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            rel="preload"
+            as="style"
+            href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
+        />
+        <link
+            data-web-fonts
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
+            media="print"
+        />
+        <noscript>
+            <link
+                rel="stylesheet"
+                href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
+            />
+        </noscript>
         <style is:inline>
             html,
             body {
                 background: #1d2021;
             }
         </style>
+        <script is:inline>
+            const webFonts = document.querySelector('link[data-web-fonts]');
+            webFonts?.addEventListener(
+                'load',
+                () => {
+                    webFonts.media = 'all';
+                },
+                { once: true },
+            );
+        </script>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" href="/favicon.ico" />
         <link rel="alternate" type="application/rss+xml" title="Kryštof Liskovec’s blog" href={rssUrl} />
         {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
         <meta name="generator" content={Astro.generator} />
@@ -99,10 +127,6 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
                     { once: true },
                 );
             }
-        </script>
-        <script is:inline>
-            document.documentElement.classList.add('is-hydrating');
-            window.setTimeout(() => document.documentElement.classList.remove('is-hydrating'), 2000);
         </script>
     </head>
     <body>
