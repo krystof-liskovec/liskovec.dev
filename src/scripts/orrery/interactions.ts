@@ -39,6 +39,7 @@ type InteractionOptions = {
     galacticClock: GalacticClockState;
     rotationClock: RotationClockState;
     getActiveFocusCandidate: () => FocusTarget | null;
+    getFocusCandidateAt: (clientX: number, clientY: number) => FocusTarget | null;
     getOrbitDate: (frameTime: number) => number;
     getGalacticElapsedYears: (frameTime: number) => number;
     getRotationElapsedHours: (frameTime: number) => number;
@@ -69,6 +70,7 @@ export const bindOrreryInteractions = ({
     galacticClock,
     rotationClock,
     getActiveFocusCandidate,
+    getFocusCandidateAt,
     getOrbitDate,
     getGalacticElapsedYears,
     getRotationElapsedHours,
@@ -341,7 +343,7 @@ export const bindOrreryInteractions = ({
             const travel = Math.hypot(event.clientX - touchGesture.startX, event.clientY - touchGesture.startY);
             touchGesture.pending = false;
             if (event.type === 'pointerup' && travel < 8 && !pressedFocusCandidate) {
-                pressedFocusCandidate = getActiveFocusCandidate();
+                pressedFocusCandidate = getFocusCandidateAt(event.clientX, event.clientY) ?? getActiveFocusCandidate();
             }
             completeInteraction(event, travel, 8);
             pressedFocusCandidate = null;
