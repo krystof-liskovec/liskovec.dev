@@ -98,7 +98,7 @@ export const bindOrreryInteractions = ({
         system.classList.toggle('is-fullscreen', active);
         document.documentElement.classList.toggle('is-orrery-fullscreen', active);
         if (!mobileFullscreenToggle) return;
-        mobileFullscreenToggle.textContent = active ? '[ × exit fullscreen ]' : '[ ⛶ fullscreen ]';
+        mobileFullscreenToggle.textContent = active ? '×' : '⛶';
         mobileFullscreenToggle.setAttribute(
             'aria-label',
             active ? 'Exit fullscreen animation' : 'Open fullscreen animation',
