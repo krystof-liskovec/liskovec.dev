@@ -236,7 +236,7 @@ if (canvasElement && systemElement && canvasContext) {
         zoomLocationWriter?.setText(copy);
     };
 
-    if (solarHeadingLead && zoomLocation) {
+    if (solarHeadingLead && zoomLocation && !document.documentElement.hasAttribute('data-orrery-heading-managed')) {
         solarHeadingLead.textContent = '';
         zoomLocation.textContent = '';
         headingLeadWriter?.setText('somewhere', () => {

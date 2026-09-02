@@ -212,6 +212,67 @@ const profileStructuredData = {
 </Layout>
 
 <script>
+    const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
+    const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
+    const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
+    const solarSystem = document.querySelector<HTMLElement>('#solar-system');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const introSessionKey = 'liskovec:orrery-intro-seen:v3';
+    const isRepeatIntro = (() => {
+        try {
+            return sessionStorage.getItem(introSessionKey) === '1';
+        } catch {
+            return false;
+        }
+    })();
+
+    if (!reducedMotion) {
+        solarHeading?.classList.add('is-intro-running');
+        solarSystem?.classList.add('is-intro-running');
+    }
+    if (isRepeatIntro) document.documentElement.setAttribute('data-orrery-intro-repeat', '');
+    document.documentElement.setAttribute('data-orrery-heading-managed', '');
+
+    const createIntroTypewriter = (element: HTMLElement) => {
+        const TYPE_DELAY_MS = 32;
+        let timer = 0;
+        let run = 0;
+
+        const setText = (target: string, onComplete?: () => void) => {
+            run += 1;
+            const activeRun = run;
+            window.clearTimeout(timer);
+
+            if (reducedMotion) {
+                element.textContent = target;
+                element.classList.remove('is-typing');
+                onComplete?.();
+                return;
+            }
+
+            let visibleLength = 0;
+            element.classList.add('is-typing');
+            const step = () => {
+                if (activeRun !== run) return;
+                if (visibleLength < target.length) {
+                    visibleLength += 1;
+                    element.textContent = target.slice(0, visibleLength);
+                    timer = window.setTimeout(step, TYPE_DELAY_MS);
+                    return;
+                }
+                element.classList.remove('is-typing');
+                onComplete?.();
+            };
+            step();
+        };
+
+        return { setText };
+    };
+
+    let headingLeadFinished = false;
+    let headingFinished = false;
+    const headingLeadWriter = solarHeadingLead ? createIntroTypewriter(solarHeadingLead) : null;
+    const zoomLocationWriter = zoomLocation ? createIntroTypewriter(zoomLocation) : null;
     const loadOrrery = () => void import('../scripts/orrery.ts');
     const idleWindow = window as Window & {
         requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -223,11 +284,39 @@ const profileStructuredData = {
         }
         window.setTimeout(loadOrrery, 300);
     };
-    const startOrreryAfterLoad = () => {
+    let pageLoaded = document.readyState === 'complete';
+    let orreryStarted = false;
+    const maybeStartOrrery = () => {
+        if (!pageLoaded || orreryStarted) return;
+        if (!headingFinished && (!isRepeatIntro || !headingLeadFinished)) return;
+        orreryStarted = true;
         requestAnimationFrame(() => requestAnimationFrame(scheduleOrrery));
     };
-    if (document.readyState === 'complete') startOrreryAfterLoad();
-    else window.addEventListener('load', startOrreryAfterLoad, { once: true });
+    const finishHeading = () => {
+        headingFinished = true;
+        maybeStartOrrery();
+    };
+    window.addEventListener(
+        'load',
+        () => {
+            pageLoaded = true;
+            maybeStartOrrery();
+        },
+        { once: true },
+    );
+
+    if (solarHeadingLead && zoomLocation) {
+        solarHeadingLead.textContent = '';
+        zoomLocation.textContent = '';
+        headingLeadWriter?.setText('somewhere', () => {
+            headingLeadFinished = true;
+            maybeStartOrrery();
+            zoomLocationWriter?.setText('in the solar system.', finishHeading);
+        });
+    } else {
+        headingLeadFinished = true;
+        finishHeading();
+    }
 
     let arrivalFrame = 0;
     const showSectionArrival = (section: HTMLElement) => {
