@@ -749,8 +749,8 @@ footer a:hover {
     position: absolute;
     z-index: 7;
     top: 14px;
-    left: 14px;
-    right: auto;
+    right: 14px;
+    left: auto;
     display: inline-flex;
     align-items: center;
     padding: 8px 10px;
