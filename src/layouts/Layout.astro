@@ -44,8 +44,22 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta name="theme-color" content="#1d2021" />
         <style is:inline>
             html,
-            body {
+            body,
+            .solar-system {
                 background: #1d2021;
+            }
+
+            .solar-system canvas {
+                background-color: transparent;
+                opacity: 0;
+            }
+
+            .solar-system #solar-canvas {
+                background-color: #1d2021;
+            }
+
+            .solar-system.is-canvas-ready canvas {
+                opacity: 1;
             }
         </style>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

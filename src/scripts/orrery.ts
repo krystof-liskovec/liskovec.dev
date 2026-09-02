@@ -57,7 +57,6 @@ if (canvasElement && systemElement && canvasContext) {
     const backgroundCanvas = document.createElement('canvas');
     const backgroundContext = backgroundCanvas.getContext('2d');
     const particleRenderer = gpuCanvasElement ? new WebGLParticleRenderer(gpuCanvasElement) : null;
-    system.classList.add('is-canvas-ready');
     const {
         pointer,
         camera,
@@ -843,6 +842,12 @@ if (canvasElement && systemElement && canvasContext) {
             lastClockSecond = currentSecond;
         }
         activeParticleRenderer?.flush();
+        // Keep the static scene visible until both canvas layers have been
+        // initialized and the first complete frame is on screen. This avoids
+        // exposing an uninitialized WebGL buffer during a refresh.
+        if (!system.classList.contains('is-canvas-ready')) {
+            system.classList.add('is-canvas-ready');
+        }
         scheduleRender();
     }
 

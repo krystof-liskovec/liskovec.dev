@@ -699,6 +699,8 @@ footer a:hover {
 .solar-system {
     --canvas-bleed-x: clamp(72px, 9vw, 132px);
     --canvas-bleed-y: clamp(96px, 14vh, 140px);
+    --scene-glow-x: 52%;
+    --scene-glow-y: 38%;
     position: relative;
     z-index: 1;
     width: 100%;
@@ -708,7 +710,11 @@ footer a:hover {
     overflow: visible;
     font-family: var(--mono);
     background-color: var(--bg);
-    background-image: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
+    background-image: radial-gradient(
+        circle at var(--scene-glow-x) var(--scene-glow-y),
+        rgba(254, 128, 25, 0.045),
+        transparent 48%
+    );
 }
 .solar-system:fullscreen,
 .solar-system.is-fullscreen {
@@ -817,12 +823,18 @@ footer a:hover {
     user-select: none;
 }
 .solar-system canvas.solar-gpu-canvas {
-    z-index: 0;
+    z-index: 2;
+    background-color: transparent;
     pointer-events: none;
 }
 .solar-system canvas#solar-canvas {
     z-index: 1;
-    background-image: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
+    background-color: var(--bg);
+    background-image: radial-gradient(
+        circle at var(--scene-glow-x) var(--scene-glow-y),
+        rgba(254, 128, 25, 0.045),
+        transparent 48%
+    );
 }
 .solar-system:fullscreen canvas#solar-canvas,
 .solar-system.is-fullscreen canvas#solar-canvas {
