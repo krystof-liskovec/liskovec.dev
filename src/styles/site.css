@@ -641,8 +641,7 @@ footer a:hover {
     html {
         scroll-behavior: auto;
     }
-    .content-section.is-arriving .section-label,
-    #zoom-location.is-changing {
+    .content-section.is-arriving .section-label {
         animation: none;
     }
 }
@@ -666,6 +665,9 @@ footer a:hover {
     margin: 14px 0 0;
     font-size: clamp(42px, 5.4vw, 76px);
 }
+.solar-heading-lead {
+    color: inherit;
+}
 .solar-heading.is-intro-running h1 {
     animation: solar-heading-intro 0.8s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -684,29 +686,15 @@ footer a:hover {
 }
 #zoom-location {
     display: inline-block;
-    transform-origin: left center;
-    will-change: opacity, transform;
 }
-#zoom-location.is-changing {
-    animation: zoom-location-swap 0.48s cubic-bezier(0.65, 0, 0.2, 1);
-}
-@keyframes zoom-location-swap {
-    0% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    38% {
-        opacity: 0;
-        transform: translateY(-0.28em);
-    }
-    39% {
-        opacity: 0;
-        transform: translateY(0.28em);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.solar-heading-lead.is-typing::after,
+#zoom-location.is-typing::after {
+    display: inline-block;
+    margin-left: 0.08em;
+    color: currentColor;
+    content: '|';
+    font-size: 0.72em;
+    vertical-align: 0.08em;
 }
 .solar-system {
     --canvas-bleed-x: clamp(72px, 9vw, 132px);
@@ -826,6 +814,7 @@ footer a:hover {
     image-rendering: pixelated;
     touch-action: pan-y pinch-zoom;
     user-select: none;
+    background-color: var(--bg);
 }
 .solar-system canvas.solar-gpu-canvas {
     z-index: 0;
@@ -833,6 +822,11 @@ footer a:hover {
 }
 .solar-system canvas#solar-canvas {
     z-index: 1;
+    background-image: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
+}
+.solar-system:fullscreen canvas#solar-canvas,
+.solar-system.is-fullscreen canvas#solar-canvas {
+    background-image: none;
 }
 .solar-static {
     position: absolute;

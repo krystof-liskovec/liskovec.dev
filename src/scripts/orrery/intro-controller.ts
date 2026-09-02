@@ -1,7 +1,7 @@
 import { smoothstep } from './math';
 
-const INTRO_DURATION_MS = 2000;
-const SESSION_KEY = 'liskovec:orrery-intro-seen:v2';
+const INTRO_DURATION_MS = 2400;
+const SESSION_KEY = 'liskovec:orrery-intro-seen:v3';
 
 export type OrreryIntroState = {
     progress: number;
@@ -54,9 +54,9 @@ export class OrreryIntroController {
         this.state.progress = progress;
         this.state.stars = smoothstep(progress / 0.2);
         this.state.sun = smoothstep((progress - 0.05) / 0.22);
-        this.state.orbits = smoothstep((progress - 0.16) / 0.55);
-        this.state.bodies = smoothstep((progress - 0.34) / 0.48);
-        this.state.details = smoothstep((progress - 0.62) / 0.3);
+        this.state.orbits = smoothstep((progress - 0.34) / 0.5);
+        this.state.bodies = smoothstep((progress - 0.56) / 0.36);
+        this.state.details = smoothstep((progress - 0.8) / 0.2);
         if (progress === 1) this.finish();
         return this.state;
     }

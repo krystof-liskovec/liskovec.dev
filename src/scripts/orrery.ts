@@ -41,6 +41,7 @@ const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-statu
 const solarSimulationSpeed = document.querySelector<HTMLSelectElement>('#solar-simulation-speed');
 const galacticSimulationSpeed = document.querySelector<HTMLSelectElement>('#galactic-simulation-speed');
 const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rotation-simulation-speed');
+const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
 const mobileRotationGrip = document.querySelector<HTMLButtonElement>('#mobile-rotation-grip');
@@ -82,7 +83,6 @@ if (canvasElement && systemElement && canvasContext) {
     let lastCameraStatsTick = -1;
     let lastFrameAt = 0;
     let zoomLocationState = 'solar';
-    let zoomLocationTimer = 0;
     let animationFrame = 0;
     let renderTimer = 0;
     let galaxyBackdropCacheValid = false;
@@ -132,6 +132,71 @@ if (canvasElement && systemElement && canvasContext) {
     let pageVisible = !document.hidden;
     const focusedMoonEpoch = Date.now();
 
+    const createTypewriter = (element: HTMLElement) => {
+        const TYPE_DELAY_MS = 32;
+        const DELETE_DELAY_MS = 18;
+        let timer = 0;
+        let run = 0;
+
+        const setText = (target: string, onComplete?: () => void) => {
+            run += 1;
+            const activeRun = run;
+            window.clearTimeout(timer);
+
+            if (reducedMotion) {
+                element.textContent = target;
+                element.classList.remove('is-typing');
+                onComplete?.();
+                return;
+            }
+
+            const current = element.textContent ?? '';
+            let visibleLength = current.length;
+            let sharedLength = 0;
+            while (
+                sharedLength < visibleLength &&
+                sharedLength < target.length &&
+                current[sharedLength] === target[sharedLength]
+            ) {
+                sharedLength += 1;
+            }
+            let deleting = visibleLength > sharedLength;
+
+            element.classList.add('is-typing');
+
+            const step = () => {
+                if (activeRun !== run) return;
+
+                if (deleting) {
+                    if (visibleLength > sharedLength) {
+                        visibleLength -= 1;
+                        element.textContent = current.slice(0, visibleLength);
+                        timer = window.setTimeout(step, DELETE_DELAY_MS);
+                        return;
+                    }
+                    deleting = false;
+                }
+
+                if (visibleLength < target.length) {
+                    visibleLength += 1;
+                    element.textContent = target.slice(0, visibleLength);
+                    timer = window.setTimeout(step, TYPE_DELAY_MS);
+                    return;
+                }
+
+                element.classList.remove('is-typing');
+                onComplete?.();
+            };
+
+            step();
+        };
+
+        return { setText };
+    };
+
+    const headingLeadWriter = solarHeadingLead ? createTypewriter(solarHeadingLead) : null;
+    const zoomLocationWriter = zoomLocation ? createTypewriter(zoomLocation) : null;
+
     type ProjectedPoint = Vec3 & { scale: number };
     const finalSolOffsetScratch = { x: 0, y: 0 };
     const currentSolOffsetScratch = { x: 0, y: 0 };
@@ -169,18 +234,16 @@ if (canvasElement && systemElement && canvasContext) {
     const setZoomLocation = (state: string, copy: string) => {
         if (!zoomLocation || state === zoomLocationState) return;
         zoomLocationState = state;
-        window.clearTimeout(zoomLocationTimer);
-        if (reducedMotion) {
-            zoomLocation.textContent = copy;
-            return;
-        }
-        zoomLocation.classList.remove('is-changing');
-        void zoomLocation.offsetWidth;
-        zoomLocation.classList.add('is-changing');
-        zoomLocationTimer = window.setTimeout(() => {
-            zoomLocation.textContent = copy;
-        }, 180);
+        zoomLocationWriter?.setText(copy);
     };
+
+    if (solarHeadingLead && zoomLocation) {
+        solarHeadingLead.textContent = '';
+        zoomLocation.textContent = '';
+        headingLeadWriter?.setText('somewhere', () => {
+            if (zoomLocationState === 'solar') zoomLocationWriter?.setText('in the solar system.');
+        });
+    }
 
     const signedDegrees = (radians: number) => {
         const degrees = ((((radians / DEG + 180) % 360) + 360) % 360) - 180;
