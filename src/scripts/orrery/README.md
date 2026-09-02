@@ -31,6 +31,10 @@
 
 Keep metadata and deterministic generated data out of renderers. New input behavior belongs in `interactions.ts`; new compact artwork belongs in `solar-body-renderer.ts`; detailed close-up behavior belongs in `focus-scene.ts` or a specialized renderer.
 
+## Performance boundary
+
+Keep the per-frame `render` loop in `../orrery.ts`. An attempted extraction into a `createSceneFrameRenderer(...)` module lowered Lighthouse performance from 100 to 93 on mobile. Static imports were still bundled, but the factory added startup object and closure setup and changed hot-loop state access. Prefer extracting pure helpers, data, and independently lazy-loaded work; benchmark changes to the frame path with Lighthouse.
+
 ## Milky Way model
 
 The face-on galaxy uses the kinked logarithmic-arm fits in Reid et al. (2019),
