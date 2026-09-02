@@ -10,6 +10,9 @@
 - `runtime-state.ts` — mutable camera/focus/clock state and its defaults
 - `frame-state.ts` — passive camera motion and reset interpolation
 - `intro-controller.ts` — interruptible, session-scoped opening sequence
+- `render-metrics.ts` — canvas bounds, bleed offsets, and resize invalidation
+- `time-formatters.ts` — camera and simulation clock display formatting
+- `typewriter.ts` — interruptible animated labels used by the live scene
 - `focus-controller.ts` — parent/child focus transition lifecycle
 - `interactions.ts` — pointer, touch, drag, reset, and zoom controls
 - `solar-system-model.ts` — pooled orbit/body projection for each frame
@@ -17,7 +20,7 @@
 - `background-renderer.ts` — local stars and the projected Milky Way backdrop
 - `galaxy-object-renderer.ts` — pooled galactic-object projection, hit testing, and sprites
 - `galactic-landmark-renderer.ts` — detailed stellar remnants, clusters, and pulsar artwork
-- `scene-ui.ts` — overlap-aware body hit testing, focus candidates, and readouts
+- `scene-ui.ts` — overlap-aware hit resolution, focus candidates, and readouts
 - `solar-body-renderer.ts` — compact planet sprites used by the orrery
 - `focus-scene.ts` — detailed object views and satellite systems
 - `galactic-renderer.ts` — detailed Milky Way object artwork

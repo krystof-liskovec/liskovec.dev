@@ -58,6 +58,95 @@ export const findHoveredBody = (options: {
 export const findHoveredComet = (comet: ProjectedComet, pointerX: number, pointerY: number): ProjectedComet | null =>
     Math.hypot(comet.x - pointerX, comet.y - pointerY) <= 22 ? comet : null;
 
+export type FocusHit = {
+    hoveredBody: ProjectedBody | null;
+    hoveredComet: ProjectedComet | null;
+    hoveredSun: boolean;
+    hoveredGalacticObject: ProjectedGalacticObject | null;
+};
+
+export const resolveFocusHit = (options: {
+    x: number;
+    y: number;
+    forceActive?: boolean;
+    pointerActive: boolean;
+    cameraDragging: boolean;
+    hasObjectFocus: boolean;
+    bodies: ProjectedBody[];
+    solarSystemScale: number;
+    viewportGlyphScale: number;
+    innerPlanetScale: number;
+    localDetailOpacity: number;
+    introDetailOpacity: number;
+    galaxyObjectOpacity: number;
+    projectedComet: ProjectedComet;
+    centerX: number;
+    centerY: number;
+    renderedSunScale: number;
+    introSunOpacity: number;
+    findHoveredGalacticObject: (x: number, y: number) => ProjectedGalacticObject | null;
+}): FocusHit => {
+    const {
+        x,
+        y,
+        forceActive = false,
+        pointerActive,
+        cameraDragging,
+        hasObjectFocus,
+        bodies,
+        solarSystemScale,
+        viewportGlyphScale,
+        innerPlanetScale,
+        localDetailOpacity,
+        introDetailOpacity,
+        galaxyObjectOpacity,
+        projectedComet,
+        centerX,
+        centerY,
+        renderedSunScale,
+        introSunOpacity,
+        findHoveredGalacticObject,
+    } = options;
+    const pointerInsideSun = Math.hypot(centerX - x, centerY - y) < 48 * Math.max(0.55, Math.sqrt(renderedSunScale));
+    const canHit = (pointerActive || forceActive) && !cameraDragging && !hasObjectFocus;
+    const rawBodyHoverCandidate =
+        canHit && localDetailOpacity > 0.45
+            ? findHoveredBody({
+                  bodies,
+                  pointerX: x,
+                  pointerY: y,
+                  solarSystemScale,
+                  viewportGlyphScale,
+                  innerPlanetScale,
+              })
+            : null;
+    const bodyHoverCandidate =
+        rawBodyHoverCandidate && (rawBodyHoverCandidate.z >= 0 || !pointerInsideSun) ? rawBodyHoverCandidate : null;
+    const rawCometHoverCandidate =
+        canHit && localDetailOpacity > 0.45 && introDetailOpacity > 0.4 ? findHoveredComet(projectedComet, x, y) : null;
+    const cometHoverCandidate =
+        rawCometHoverCandidate && (projectedComet.z >= 0 || !pointerInsideSun) ? rawCometHoverCandidate : null;
+    const hoveredGalacticObject = canHit && galaxyObjectOpacity > 0.35 ? findHoveredGalacticObject(x, y) : null;
+    // Galactic objects are painted last. Within the local scene, the comet
+    // and planets compete by depth; the Sun only wins uncovered pixels.
+    const hoveredComet =
+        !hoveredGalacticObject &&
+        cometHoverCandidate &&
+        (!bodyHoverCandidate || projectedComet.z >= bodyHoverCandidate.z)
+            ? cometHoverCandidate
+            : null;
+    const hoveredBody = hoveredGalacticObject || hoveredComet ? null : bodyHoverCandidate;
+    const hoveredSun =
+        !hoveredGalacticObject &&
+        !hoveredComet &&
+        !hoveredBody &&
+        canHit &&
+        localDetailOpacity > 0.45 &&
+        introSunOpacity > 0.55 &&
+        pointerInsideSun;
+    return { hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject };
+};
+
 export const createFocusCandidate = (options: {
     hoveredBody: ProjectedBody | null;
     hoveredComet: ProjectedComet | null;

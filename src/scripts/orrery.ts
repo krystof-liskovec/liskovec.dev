@@ -15,12 +15,15 @@ import {
     getOrbitDate as resolveOrbitDate,
     getRotationElapsedHours as resolveRotationElapsedHours,
 } from './orrery/runtime-state';
-import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
+import { createFocusCandidate, drawHoverReadouts, resolveFocusHit } from './orrery/scene-ui';
 import { GALACTIC_SOL } from './orrery/scene-data';
-import { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
+import { createRenderMetrics } from './orrery/render-metrics';
 import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
+import { formatGalacticEpoch, formatLocalDateTime, signedDegrees } from './orrery/time-formatters';
+import { createTypewriter } from './orrery/typewriter';
 import type { FocusTarget, Vec3 } from './orrery/types';
+import type { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
 
 // Keep the scene fluid on high-refresh displays while bounding work above 120Hz.
 const MAX_RENDER_FPS = 120;
@@ -41,7 +44,6 @@ const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-statu
 const solarSimulationSpeed = document.querySelector<HTMLSelectElement>('#solar-simulation-speed');
 const galacticSimulationSpeed = document.querySelector<HTMLSelectElement>('#galactic-simulation-speed');
 const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rotation-simulation-speed');
-const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
 const mobileRotationGrip = document.querySelector<HTMLButtonElement>('#mobile-rotation-grip');
@@ -56,7 +58,7 @@ if (canvasElement && systemElement && canvasContext) {
     const context = canvasContext;
     const backgroundCanvas = document.createElement('canvas');
     const backgroundContext = backgroundCanvas.getContext('2d');
-    const particleRenderer = gpuCanvasElement ? new WebGLParticleRenderer(gpuCanvasElement) : null;
+    let particleRenderer: WebGLParticleRenderer | null = null;
     const {
         pointer,
         camera,
@@ -86,115 +88,15 @@ if (canvasElement && systemElement && canvasContext) {
     let renderTimer = 0;
     let galaxyBackdropCacheValid = false;
     let lastGalaxyBackdropAt = -Infinity;
-    const renderMetrics = {
-        width: 0,
-        height: 0,
-        renderWidth: 0,
-        renderHeight: 0,
-        systemLeft: 0,
-        systemTop: 0,
-        canvasOriginX: 0,
-        canvasOriginY: 0,
-        renderLeft: 0,
-        renderTop: 0,
-        renderRight: 0,
-        renderBottom: 0,
-        dirty: true,
-    };
-    const invalidateRenderMetrics = () => {
-        renderMetrics.dirty = true;
+    const renderMetricsController = createRenderMetrics(canvas, system, () => {
         galaxyBackdropCacheValid = false;
-    };
-    const updateRenderMetrics = () => {
-        const canvasBounds = canvas.getBoundingClientRect();
-        const systemBounds = system.getBoundingClientRect();
-        renderMetrics.width = system.clientWidth;
-        renderMetrics.height = system.clientHeight;
-        renderMetrics.renderWidth = canvas.clientWidth;
-        renderMetrics.renderHeight = canvas.clientHeight;
-        renderMetrics.systemLeft = systemBounds.left;
-        renderMetrics.systemTop = systemBounds.top;
-        renderMetrics.canvasOriginX = systemBounds.left - canvasBounds.left;
-        renderMetrics.canvasOriginY = systemBounds.top - canvasBounds.top;
-        renderMetrics.renderLeft = -renderMetrics.canvasOriginX;
-        renderMetrics.renderTop = -renderMetrics.canvasOriginY;
-        renderMetrics.renderRight = renderMetrics.renderWidth - renderMetrics.canvasOriginX;
-        renderMetrics.renderBottom = renderMetrics.renderHeight - renderMetrics.canvasOriginY;
-        renderMetrics.dirty = false;
-    };
-    const renderMetricsObserver = new ResizeObserver(invalidateRenderMetrics);
-    renderMetricsObserver.observe(system);
-    renderMetricsObserver.observe(canvas);
-    window.addEventListener('resize', invalidateRenderMetrics, { passive: true });
-    window.addEventListener('scroll', invalidateRenderMetrics, { passive: true });
+    });
+    const { metrics: renderMetrics, update: updateRenderMetrics } = renderMetricsController;
     let systemVisible = true;
     let pageVisible = !document.hidden;
     const focusedMoonEpoch = Date.now();
 
-    const createTypewriter = (element: HTMLElement) => {
-        const TYPE_DELAY_MS = 32;
-        const DELETE_DELAY_MS = 18;
-        let timer = 0;
-        let run = 0;
-
-        const setText = (target: string, onComplete?: () => void) => {
-            run += 1;
-            const activeRun = run;
-            window.clearTimeout(timer);
-
-            if (reducedMotion) {
-                element.textContent = target;
-                element.classList.remove('is-typing');
-                onComplete?.();
-                return;
-            }
-
-            const current = element.textContent ?? '';
-            let visibleLength = current.length;
-            let sharedLength = 0;
-            while (
-                sharedLength < visibleLength &&
-                sharedLength < target.length &&
-                current[sharedLength] === target[sharedLength]
-            ) {
-                sharedLength += 1;
-            }
-            let deleting = visibleLength > sharedLength;
-
-            element.classList.add('is-typing');
-
-            const step = () => {
-                if (activeRun !== run) return;
-
-                if (deleting) {
-                    if (visibleLength > sharedLength) {
-                        visibleLength -= 1;
-                        element.textContent = current.slice(0, visibleLength);
-                        timer = window.setTimeout(step, DELETE_DELAY_MS);
-                        return;
-                    }
-                    deleting = false;
-                }
-
-                if (visibleLength < target.length) {
-                    visibleLength += 1;
-                    element.textContent = target.slice(0, visibleLength);
-                    timer = window.setTimeout(step, TYPE_DELAY_MS);
-                    return;
-                }
-
-                element.classList.remove('is-typing');
-                onComplete?.();
-            };
-
-            step();
-        };
-
-        return { setText };
-    };
-
-    const headingLeadWriter = solarHeadingLead ? createTypewriter(solarHeadingLead) : null;
-    const zoomLocationWriter = zoomLocation ? createTypewriter(zoomLocation) : null;
+    const zoomLocationWriter = zoomLocation ? createTypewriter(zoomLocation, () => reducedMotion) : null;
 
     type ProjectedPoint = Vec3 & { scale: number };
     const finalSolOffsetScratch = { x: 0, y: 0 };
@@ -219,6 +121,33 @@ if (canvasElement && systemElement && canvasContext) {
         animationFrame = requestAnimationFrame(render);
     };
 
+    let particleRendererLoadScheduled = false;
+    const scheduleParticleRenderer = () => {
+        if (!gpuCanvasElement || particleRendererLoadScheduled) return;
+        particleRendererLoadScheduled = true;
+
+        const loadParticleRenderer = () => {
+            void import('./orrery/webgl-particle-renderer')
+                .then(({ WebGLParticleRenderer }) => {
+                    if (!gpuCanvasElement) return;
+                    particleRenderer = new WebGLParticleRenderer(gpuCanvasElement);
+                    scheduleRender();
+                })
+                .catch(() => {
+                    // The 2D renderer remains a complete fallback when WebGL2
+                    // or the deferred renderer chunk is unavailable.
+                });
+        };
+        const idleWindow = window as Window & {
+            requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+        };
+        if (idleWindow.requestIdleCallback) {
+            idleWindow.requestIdleCallback(loadParticleRenderer, { timeout: 1800 });
+            return;
+        }
+        window.setTimeout(loadParticleRenderer, 900);
+    };
+
     const cancelScheduledRender = () => {
         if (animationFrame) {
             cancelAnimationFrame(animationFrame);
@@ -234,20 +163,6 @@ if (canvasElement && systemElement && canvasContext) {
         if (!zoomLocation || state === zoomLocationState) return;
         zoomLocationState = state;
         zoomLocationWriter?.setText(copy);
-    };
-
-    if (solarHeadingLead && zoomLocation && !document.documentElement.hasAttribute('data-orrery-heading-managed')) {
-        solarHeadingLead.textContent = '';
-        zoomLocation.textContent = '';
-        headingLeadWriter?.setText('somewhere', () => {
-            if (zoomLocationState === 'solar') zoomLocationWriter?.setText('in the solar system.');
-        });
-    }
-
-    const signedDegrees = (radians: number) => {
-        const degrees = ((((radians / DEG + 180) % 360) + 360) % 360) - 180;
-        const sign = degrees >= 0 ? '+' : '−';
-        return `${sign}${Math.abs(degrees).toFixed(1)}°`;
     };
 
     const updateCameraStats = () => {
@@ -318,21 +233,6 @@ if (canvasElement && systemElement && canvasContext) {
     function getRotationElapsedHours(frameTime: number) {
         return resolveRotationElapsedHours(rotationClock, frameTime);
     }
-
-    const formatGalacticEpoch = (elapsedYears: number) => {
-        const absoluteYears = Math.abs(elapsedYears);
-        if (absoluteYears < 5_000) return 'PRESENT';
-        const direction = elapsedYears < 0 ? '−' : '+';
-        if (absoluteYears < 1_000_000_000) return `T${direction}${(absoluteYears / 1_000_000).toFixed(2)} MY`;
-        if (absoluteYears < 1_000_000_000_000) return `T${direction}${(absoluteYears / 1_000_000_000).toFixed(2)} GY`;
-        return `T${direction}${(absoluteYears / 1_000_000_000_000).toFixed(2)} TY`;
-    };
-
-    const padTimePart = (value: number) => String(value).padStart(2, '0');
-    const formatLocalDateTime = (timestamp: number) => {
-        const date = new Date(timestamp);
-        return `${date.getFullYear()}-${padTimePart(date.getMonth() + 1)}-${padTimePart(date.getDate())} / ${padTimePart(date.getHours())}:${padTimePart(date.getMinutes())}:${padTimePart(date.getSeconds())}`;
-    };
 
     function render(frameTime: number) {
         animationFrame = 0;
@@ -663,59 +563,35 @@ if (canvasElement && systemElement && canvasContext) {
                 objectFocus.target.originY = liveFocusedObject.y;
             }
         }
-        const resolveFocusHit = (x: number, y: number, forceActive = false) => {
-            const pointerInsideSun =
-                Math.hypot(centerX - x, centerY - y) < 48 * Math.max(0.55, Math.sqrt(renderedSunScale));
-            const canHit = (pointer.active || forceActive) && !camera.dragging && !objectFocus.target;
-            const rawBodyHoverCandidate =
-                canHit && localDetailOpacity > 0.45
-                    ? findHoveredBody({
-                          bodies,
-                          pointerX: x,
-                          pointerY: y,
-                          solarSystemScale,
-                          viewportGlyphScale,
-                          innerPlanetScale,
-                      })
-                    : null;
-            const bodyHoverCandidate =
-                rawBodyHoverCandidate && (rawBodyHoverCandidate.z >= 0 || !pointerInsideSun)
-                    ? rawBodyHoverCandidate
-                    : null;
-            const rawCometHoverCandidate =
-                canHit && localDetailOpacity > 0.45 && intro.details > 0.4
-                    ? findHoveredComet(projectedHalley, x, y)
-                    : null;
-            const cometHoverCandidate =
-                rawCometHoverCandidate && (projectedHalley.z >= 0 || !pointerInsideSun) ? rawCometHoverCandidate : null;
-            const hoveredGalacticObject =
-                canHit && galaxyObjectOpacity > 0.35 ? galaxyObjectRenderer.findHovered(x, y) : null;
-            // Galactic objects are painted last. Within the local scene, the comet
-            // and planets compete by depth; the Sun only wins uncovered pixels.
-            const hoveredComet =
-                !hoveredGalacticObject &&
-                cometHoverCandidate &&
-                (!bodyHoverCandidate || projectedHalley.z >= bodyHoverCandidate.z)
-                    ? cometHoverCandidate
-                    : null;
-            const hoveredBody = hoveredGalacticObject || hoveredComet ? null : bodyHoverCandidate;
-            const hoveredSun =
-                !hoveredGalacticObject &&
-                !hoveredComet &&
-                !hoveredBody &&
-                canHit &&
-                localDetailOpacity > 0.45 &&
-                intro.sun > 0.55 &&
-                pointerInsideSun;
-            return { hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject };
-        };
-        const currentFocusHit = resolveFocusHit(localPointerX, localPointerY);
+        const resolveHitAt = (x: number, y: number, forceActive = false) =>
+            resolveFocusHit({
+                x,
+                y,
+                forceActive,
+                pointerActive: pointer.active,
+                cameraDragging: camera.dragging,
+                hasObjectFocus: Boolean(objectFocus.target),
+                bodies,
+                solarSystemScale,
+                viewportGlyphScale,
+                innerPlanetScale,
+                localDetailOpacity,
+                introDetailOpacity: intro.details,
+                galaxyObjectOpacity,
+                projectedComet: projectedHalley,
+                centerX,
+                centerY,
+                renderedSunScale,
+                introSunOpacity: intro.sun,
+                findHoveredGalacticObject: (pointerX, pointerY) => galaxyObjectRenderer.findHovered(pointerX, pointerY),
+            });
+        const currentFocusHit = resolveHitAt(localPointerX, localPointerY);
         const hoveredBody = currentFocusHit.hoveredBody;
         const hoveredComet = currentFocusHit.hoveredComet;
         const hoveredSun = currentFocusHit.hoveredSun;
         const hoveredGalacticObject = currentFocusHit.hoveredGalacticObject;
         getFocusCandidateAt = (clientX, clientY) => {
-            const hit = resolveFocusHit(clientX - systemLeft, clientY - systemTop, true);
+            const hit = resolveHitAt(clientX - systemLeft, clientY - systemTop, true);
             return createFocusCandidate({
                 hoveredBody: hit.hoveredBody,
                 hoveredComet: hit.hoveredComet,
@@ -847,6 +723,7 @@ if (canvasElement && systemElement && canvasContext) {
         // exposing an uninitialized WebGL buffer during a refresh.
         if (!system.classList.contains('is-canvas-ready')) {
             system.classList.add('is-canvas-ready');
+            scheduleParticleRenderer();
         }
         scheduleRender();
     }

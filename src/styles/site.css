@@ -668,7 +668,7 @@ footer a:hover {
     color: inherit;
 }
 .solar-heading.is-intro-running h1 {
-    animation: solar-heading-intro 0.8s 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: solar-heading-intro 0.55s 0s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes solar-heading-intro {
     from {
