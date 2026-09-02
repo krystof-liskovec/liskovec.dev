@@ -2,6 +2,7 @@ import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
+import { getGlyphDrawer } from './glyph-atlas';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
 import type { Planet, ProjectedBody, Vec3 } from './types';
@@ -131,22 +132,23 @@ export class SolarSystemSceneRenderer {
             planetSceneFocus: number;
             introSunOpacity: number;
             introDetailOpacity: number;
+            pixelRatio: number;
         },
     ) {
-        this.drawOrbitMarks(context, options.farMarks);
-        this.drawOrbitMarks(context, options.nearMarks);
+        this.drawOrbitMarks(context, options.farMarks, options.pixelRatio);
+        this.drawOrbitMarks(context, options.nearMarks, options.pixelRatio);
         this.drawSmallBodyFields(context, options);
         this.drawTrojanClouds(context, options);
         this.drawComet(context, options);
         this.drawBodies(context, options);
     }
 
-    private drawOrbitMarks(context: CanvasRenderingContext2D, marks: OrbitMark[]) {
-        context.font = '9px "DM Mono", monospace';
-        context.fillStyle = '#7c6f64';
+    private drawOrbitMarks(context: CanvasRenderingContext2D, marks: OrbitMark[], pixelRatio: number) {
+        const font = '9px "DM Mono", monospace';
+        const drawOrbitGlyph = getGlyphDrawer(font, '#7c6f64', pixelRatio);
         for (const mark of marks) {
             context.globalAlpha = mark.alpha * mark.reveal;
-            context.fillText(mark.glyph, mark.x, mark.y);
+            drawOrbitGlyph(context, mark.glyph, mark.x, mark.y);
         }
         context.globalAlpha = 1;
     }
@@ -162,6 +164,7 @@ export class SolarSystemSceneRenderer {
             cameraTransform: CameraTransform;
             introDetailOpacity: number;
             compact: boolean;
+            pixelRatio: number;
         },
     ) {
         const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform, compact } = options;
@@ -179,6 +182,7 @@ export class SolarSystemSceneRenderer {
             Math.max(5, 6.5 * scaleRoot),
             ZODIACAL_DUST_STYLE,
             compact,
+            options.pixelRatio,
         );
         this.drawParticleField(
             context,
@@ -189,6 +193,7 @@ export class SolarSystemSceneRenderer {
             Math.max(5.5, 7.5 * scaleRoot),
             ASTEROID_BELT_STYLE,
             compact,
+            options.pixelRatio,
         );
         this.drawParticleField(
             context,
@@ -199,6 +204,7 @@ export class SolarSystemSceneRenderer {
             Math.max(6.5, 8.35 * scaleRoot),
             KUIPER_BELT_STYLE,
             compact,
+            options.pixelRatio,
         );
         context.globalAlpha = 1;
     }
@@ -212,9 +218,10 @@ export class SolarSystemSceneRenderer {
         fontSize: number,
         style: ParticleFieldStyle,
         compact: boolean,
+        pixelRatio: number,
     ) {
-        context.font = `${fontSize}px "DM Mono", monospace`;
-        context.fillStyle = style.color;
+        const font = `${fontSize}px "DM Mono", monospace`;
+        const drawParticleGlyph = getGlyphDrawer(font, style.color, pixelRatio);
         for (let index = 0; index < particles.length; index++) {
             if (compact && index % 2 !== 0) continue;
             const particle = particles[index];
@@ -237,7 +244,7 @@ export class SolarSystemSceneRenderer {
             this.asteroidPoint.z = orbitalY * particle.inclinationSine;
             const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
             context.globalAlpha = opacity * (style.baseAlpha + particle.phase * style.alphaVariation);
-            context.fillText(particle.glyph, projected.x, projected.y);
+            drawParticleGlyph(context, particle.glyph, projected.x, projected.y);
         }
     }
 
@@ -253,6 +260,7 @@ export class SolarSystemSceneRenderer {
             planetSceneFocus: number;
             introDetailOpacity: number;
             compact: boolean;
+            pixelRatio: number;
         },
     ) {
         let jupiter: ProjectedBody | null = null;
@@ -267,8 +275,8 @@ export class SolarSystemSceneRenderer {
         const baseAngle = Math.atan2(jupiter.world.y, jupiter.world.x);
         const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
         if (opacity <= 0.001) return;
-        context.fillStyle = '#d79921';
-        context.font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
+        const font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
+        const drawTrojanGlyph = getGlyphDrawer(font, '#d79921', options.pixelRatio);
         const elapsedDays = (options.now - J2000) / 86400000;
         for (let index = 0; index < JUPITER_TROJANS.length; index++) {
             if (options.compact && index % 2 !== 0) continue;
@@ -283,7 +291,7 @@ export class SolarSystemSceneRenderer {
             this.asteroidPoint.z = jupiter.world.z + trojan.z;
             const projected = options.cameraTransform(this.asteroidPoint, this.asteroidProjection);
             context.globalAlpha = opacity * (0.11 + trojan.phase * 0.22);
-            context.fillText(trojan.glyph, projected.x, projected.y);
+            drawTrojanGlyph(context, trojan.glyph, projected.x, projected.y);
         }
         context.globalAlpha = 1;
     }

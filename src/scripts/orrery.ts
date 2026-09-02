@@ -315,6 +315,7 @@ if (canvasElement && systemElement && canvasContext) {
         // fractional dimensions, and a nominal DPR transform leaves that bitmap
         // fractionally stretched by the browser, softening small ASCII glyphs.
         context.setTransform(pixelWidth / renderWidth, 0, 0, pixelHeight / renderHeight, 0, 0);
+        context.imageSmoothingEnabled = false;
         context.clearRect(0, 0, renderWidth, renderHeight);
         context.translate(canvasOriginX, canvasOriginY);
         context.textAlign = 'center';
@@ -473,6 +474,7 @@ if (canvasElement && systemElement && canvasContext) {
                 renderTop,
                 renderRight,
                 renderBottom,
+                pixelRatio: pixelWidth / renderWidth,
             });
         };
 
@@ -488,6 +490,7 @@ if (canvasElement && systemElement && canvasContext) {
             renderTop,
             renderRight,
             renderBottom,
+            pixelRatio: pixelWidth / renderWidth,
         });
         const canCacheGalaxyBackdrop =
             Boolean(backgroundContext) &&
@@ -498,6 +501,7 @@ if (canvasElement && systemElement && canvasContext) {
         if (canCacheGalaxyBackdrop && backgroundContext) {
             if (!galaxyBackdropCacheValid || frameTime - lastGalaxyBackdropAt >= MIN_BACKGROUND_INTERVAL) {
                 backgroundContext.setTransform(pixelWidth / renderWidth, 0, 0, pixelHeight / renderHeight, 0, 0);
+                backgroundContext.imageSmoothingEnabled = false;
                 backgroundContext.clearRect(0, 0, renderWidth, renderHeight);
                 backgroundContext.translate(canvasOriginX, canvasOriginY);
                 backgroundContext.textAlign = 'center';
@@ -637,6 +641,7 @@ if (canvasElement && systemElement && canvasContext) {
             planetSceneFocus,
             introSunOpacity: intro.sun,
             introDetailOpacity: intro.details,
+            pixelRatio: pixelWidth / renderWidth,
         });
         galaxyObjectRenderer.draw(context, {
             width,

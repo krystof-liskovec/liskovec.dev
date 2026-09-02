@@ -7,6 +7,7 @@ import {
     STARS,
 } from './scene-data';
 import { galacticPatternPhase, moveGalacticMaterial } from './galactic-simulation';
+import { getGlyphDrawer, type GlyphDrawer } from './glyph-atlas';
 
 type Offset = { x: number; y: number };
 type GalacticOffset = (x: number, y: number, radius: number, target: Offset) => Offset;
@@ -52,6 +53,7 @@ export const drawLocalStarfield = (
         renderTop: number;
         renderRight: number;
         renderBottom: number;
+        pixelRatio: number;
     },
 ) => {
     const {
@@ -66,13 +68,15 @@ export const drawLocalStarfield = (
         renderTop,
         renderRight,
         renderBottom,
+        pixelRatio,
     } = options;
     const parallaxX = pointerX * 8;
     const parallaxY = pointerY * 5;
 
     for (const glyph of STAR_GLYPHS) {
-        context.fillStyle = glyph === '+' ? '#fabd2f' : '#928374';
-        context.font = `${glyph === '+' ? 14 : 11}px "DM Mono", monospace`;
+        const color = glyph === '+' ? '#fabd2f' : '#928374';
+        const font = `${glyph === '+' ? 14 : 11}px "DM Mono", monospace`;
+        const drawStarGlyph = getGlyphDrawer(font, color, pixelRatio);
         for (const star of STARS) {
             if (star.glyph !== glyph) continue;
             const pulse = reducedMotion ? 0.45 : 0.5 + 0.5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
@@ -85,7 +89,7 @@ export const drawLocalStarfield = (
                 for (let tileX = -1; tileX <= 1; tileX++) {
                     const x = baseX + tileX * width;
                     if (x < renderLeft - 12 || x > renderRight + 12) continue;
-                    context.fillText(glyph, x, y);
+                    drawStarGlyph(context, glyph, x, y);
                 }
             }
         }
@@ -110,6 +114,7 @@ export const drawGalaxyBackdrop = (
         renderTop: number;
         renderRight: number;
         renderBottom: number;
+        pixelRatio: number;
     },
 ) => {
     const {
@@ -126,6 +131,7 @@ export const drawGalaxyBackdrop = (
         renderTop,
         renderRight,
         renderBottom,
+        pixelRatio,
     } = options;
     if (alpha <= 0.001) return;
 
@@ -133,18 +139,19 @@ export const drawGalaxyBackdrop = (
     const patternCosine = Math.cos(patternPhase);
     const patternSine = Math.sin(patternPhase);
 
-    context.font = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
-    context.fillStyle = '#665c54';
+    const diskFont = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
+    const drawDiskGlyph = getGlyphDrawer(diskFont, '#665c54', pixelRatio);
     for (const particle of GALACTIC_DISK) {
         const offset = projectMaterialPoint(particle.x, particle.y, elapsedGalacticYears, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
         context.globalAlpha = alpha * particle.opacity;
-        context.fillText(particle.glyph, x, y);
+        drawDiskGlyph(context, particle.glyph, x, y);
     }
 
-    context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+    const nebulaFont = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+    const nebulaDrawers = new Map<string, GlyphDrawer>();
     for (const particle of GALACTIC_NEBULAE) {
         const offset = projectPatternPoint(particle.x, particle.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
@@ -152,11 +159,16 @@ export const drawGalaxyBackdrop = (
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const pulse = reducedMotion ? 0.82 : 0.8 + Math.sin(seconds * 0.34 + particle.phase) * 0.12;
         context.globalAlpha = alpha * particle.opacity * pulse;
-        context.fillStyle = particle.color;
-        context.fillText(particle.glyph, x, y);
+        let drawNebulaGlyph = nebulaDrawers.get(particle.color);
+        if (!drawNebulaGlyph) {
+            drawNebulaGlyph = getGlyphDrawer(nebulaFont, particle.color, pixelRatio);
+            nebulaDrawers.set(particle.color, drawNebulaGlyph);
+        }
+        drawNebulaGlyph(context, particle.glyph, x, y);
     }
 
-    context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+    const starFont = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+    const starDrawers = new Map<string, GlyphDrawer>();
     const compact = width < 600;
     for (let index = 0; index < GALAXY_STARS.length; index++) {
         const star = GALAXY_STARS[index];
@@ -167,22 +179,28 @@ export const drawGalaxyBackdrop = (
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const twinkle = reducedMotion ? 0.7 : 0.68 + Math.sin(seconds * 0.9 + star.phase) * 0.22;
         context.globalAlpha = alpha * star.opacity * twinkle * (0.5 + (1 - star.radius) * 0.42 + star.strength * 0.16);
-        context.fillStyle =
+        const color =
             star.radius < 0.2 ? '#ebdbb2' : star.glyph === '+' ? '#d3869b' : star.glyph === '*' ? '#b8bb26' : '#928374';
-        context.fillText(star.glyph, x, y);
+        let drawStarGlyph = starDrawers.get(color);
+        if (!drawStarGlyph) {
+            drawStarGlyph = getGlyphDrawer(starFont, color, pixelRatio);
+            starDrawers.set(color, drawStarGlyph);
+        }
+        drawStarGlyph(context, star.glyph, x, y);
     }
 
-    context.font = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
-    context.fillStyle = '#1d2021';
+    const dustFont = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+    const drawDustGlyph = getGlyphDrawer(dustFont, '#1d2021', pixelRatio);
     for (const dust of GALACTIC_DUST_LANES) {
         const offset = projectPatternPoint(dust.x, dust.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
         const y = coreY + offset.y;
         if (x < renderLeft - 10 || x > renderRight + 10 || y < renderTop - 10 || y > renderBottom + 10) continue;
         context.globalAlpha = alpha * dust.opacity;
-        context.fillText(dust.glyph, x, y);
+        drawDustGlyph(context, dust.glyph, x, y);
     }
 
+    const localArmDrawers = new Map<string, GlyphDrawer>();
     for (const star of LOCAL_ARM_STARS) {
         const offset = projectPatternPoint(star.x, star.y, patternCosine, patternSine, radius, projectOffset);
         const x = coreX + offset.x;
@@ -190,8 +208,13 @@ export const drawGalaxyBackdrop = (
         if (x < renderLeft - 12 || x > renderRight + 12 || y < renderTop - 12 || y > renderBottom + 12) continue;
         const twinkle = reducedMotion ? 0.72 : 0.72 + Math.sin(seconds + star.phase) * 0.18;
         context.globalAlpha = alpha * twinkle * 0.92;
-        context.fillStyle = star.glyph === '*' ? '#b8bb26' : '#a89984';
-        context.fillText(star.glyph, x, y);
+        const color = star.glyph === '*' ? '#b8bb26' : '#a89984';
+        let drawLocalArmGlyph = localArmDrawers.get(color);
+        if (!drawLocalArmGlyph) {
+            drawLocalArmGlyph = getGlyphDrawer(dustFont, color, pixelRatio);
+            localArmDrawers.set(color, drawLocalArmGlyph);
+        }
+        drawLocalArmGlyph(context, star.glyph, x, y);
     }
 
     context.globalAlpha = alpha;
