@@ -13,7 +13,7 @@ const SURFACE_COLUMNS = 17;
 const SURFACE_ROW_WIDTHS = [7, 13, 15, 17, 17, 17, 15, 13, 7];
 // Match the center of the scene's subtle orange glow. The fill still acts as
 // an opaque occlusion mask, but no longer reads as a darker patch behind Sol.
-const SUN_MASK_COLOR = '#272421';
+const SUN_MASK_COLOR = '#2b2621';
 
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
     const { x, y, scale, opacity, seconds, reducedMotion } = options;
