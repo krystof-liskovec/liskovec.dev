@@ -24,6 +24,7 @@ type InteractionOptions = {
     system: HTMLElement;
     focusReturn: HTMLButtonElement | null;
     mobileRotationGrip: HTMLButtonElement | null;
+    mobileFullscreenToggle: HTMLButtonElement | null;
     zoomInput: HTMLInputElement | null;
     zoomStatus: HTMLOutputElement | null;
     solarSimulationSpeed: HTMLSelectElement | null;
@@ -55,6 +56,7 @@ export const bindOrreryInteractions = ({
     system,
     focusReturn,
     mobileRotationGrip,
+    mobileFullscreenToggle,
     zoomInput,
     zoomStatus,
     solarSimulationSpeed,
@@ -88,6 +90,47 @@ export const bindOrreryInteractions = ({
     let solarPresetIndex = DEFAULT_ORBIT_SPEED_PRESET;
     let galacticPresetIndex = DEFAULT_GALACTIC_SPEED_PRESET;
     let rotationPresetIndex = DEFAULT_ROTATION_SPEED_PRESET;
+
+    const isFullscreen = () => document.fullscreenElement === system;
+    const updateFullscreenControl = () => {
+        const active = isFullscreen();
+        system.classList.toggle('is-fullscreen', active);
+        if (!mobileFullscreenToggle) return;
+        mobileFullscreenToggle.textContent = active ? '[ × exit fullscreen ]' : '[ ⛶ fullscreen ]';
+        mobileFullscreenToggle.setAttribute(
+            'aria-label',
+            active ? 'Exit fullscreen animation' : 'Open fullscreen animation',
+        );
+        mobileFullscreenToggle.setAttribute('aria-pressed', String(active));
+    };
+
+    if (!document.fullscreenEnabled || !system.requestFullscreen) {
+        if (mobileFullscreenToggle) mobileFullscreenToggle.hidden = true;
+    } else {
+        mobileFullscreenToggle?.addEventListener('click', async () => {
+            onInteract();
+            if (isFullscreen()) {
+                await document.exitFullscreen();
+                return;
+            }
+            try {
+                await system.requestFullscreen({ navigationUI: 'hide' });
+                try {
+                    await screen.orientation.lock('landscape');
+                } catch {
+                    // Orientation locking is unavailable in some mobile browsers;
+                    // fullscreen remains useful and follows the device orientation.
+                }
+            } catch {
+                updateFullscreenControl();
+            }
+        });
+        document.addEventListener('fullscreenchange', () => {
+            updateFullscreenControl();
+            if (!isFullscreen()) screen.orientation?.unlock?.();
+        });
+        updateFullscreenControl();
+    }
 
     const updateSimulationSpeedControl = (presetIndex: number) => {
         const control =
@@ -222,7 +265,7 @@ export const bindOrreryInteractions = ({
             const travelY = event.clientY - touchGesture.startY;
             if (Math.hypot(travelX, travelY) < 8) return;
 
-            if (Math.abs(travelY) >= Math.abs(travelX) * 0.85) {
+            if (!isFullscreen() && Math.abs(travelY) >= Math.abs(travelX) * 0.85) {
                 touchGesture.pending = false;
                 pressedFocusCandidate = null;
                 return;

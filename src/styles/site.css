@@ -717,6 +717,29 @@ footer a:hover {
     font-family: var(--mono);
     background: radial-gradient(ellipse at 52% 52%, rgba(254, 128, 25, 0.045), transparent 48%);
 }
+.solar-system:fullscreen,
+.solar-system.is-fullscreen {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    --canvas-bleed-x: 0px;
+    --canvas-bleed-y: 0px;
+    background: var(--bg);
+}
+.solar-system:fullscreen canvas,
+.solar-system.is-fullscreen canvas {
+    touch-action: none;
+}
+.solar-system:fullscreen .mobile-rotation-grip,
+.solar-system.is-fullscreen .mobile-rotation-grip {
+    display: none;
+}
 .solar-system canvas {
     position: absolute;
     z-index: 1;
@@ -765,7 +788,8 @@ footer a:hover {
 }
 .solar-system:not(.is-canvas-ready) .cosmic-zoom-control,
 .solar-system:not(.is-canvas-ready) .solar-caption,
-.solar-system:not(.is-canvas-ready) .mobile-rotation-grip {
+.solar-system:not(.is-canvas-ready) .mobile-rotation-grip,
+.solar-system:not(.is-canvas-ready) .mobile-fullscreen-toggle {
     visibility: hidden;
 }
 .solar-system.is-dragging canvas {
@@ -775,6 +799,9 @@ footer a:hover {
     animation: solar-interface-opacity-intro 0.5s 1.25s ease-out both;
 }
 .solar-system.is-intro-running .mobile-rotation-grip {
+    animation: solar-interface-opacity-intro 0.5s 1.25s ease-out both;
+}
+.solar-system.is-intro-running .mobile-fullscreen-toggle {
     animation: solar-interface-opacity-intro 0.5s 1.25s ease-out both;
 }
 .solar-system.is-intro-running .solar-caption {
@@ -836,6 +863,12 @@ footer a:hover {
     display: none;
 }
 .mobile-rotation-grip {
+    display: none;
+}
+.mobile-fullscreen-toggle {
+    display: none;
+}
+.mobile-fullscreen-toggle[hidden] {
     display: none;
 }
 .solar-system.is-object-focus .cosmic-zoom-scale > span:not(.sr-only),
@@ -1029,6 +1062,35 @@ footer a:hover {
         border-color: var(--orange);
     }
     .mobile-rotation-grip:focus-visible {
+        color: var(--orange);
+        border-color: var(--orange);
+        outline: none;
+    }
+    .mobile-fullscreen-toggle {
+        position: absolute;
+        z-index: 7;
+        top: 52px;
+        right: 0;
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 10px;
+        border: 1px solid #665c54;
+        color: var(--yellow);
+        background: rgba(29, 32, 33, 0.9);
+        font: 10px/1 var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+    .solar-system:fullscreen .mobile-fullscreen-toggle,
+    .solar-system.is-fullscreen .mobile-fullscreen-toggle {
+        top: max(14px, env(safe-area-inset-top));
+        right: max(14px, env(safe-area-inset-right));
+    }
+    .mobile-fullscreen-toggle:hover,
+    .mobile-fullscreen-toggle:focus-visible {
         color: var(--orange);
         border-color: var(--orange);
         outline: none;

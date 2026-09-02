@@ -44,6 +44,7 @@ const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rota
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
 const mobileRotationGrip = document.querySelector<HTMLButtonElement>('#mobile-rotation-grip');
+const mobileFullscreenToggle = document.querySelector<HTMLButtonElement>('#mobile-fullscreen-toggle');
 const canvasContext = canvasElement?.getContext('2d');
 
 if (canvasElement && systemElement && canvasContext) {
@@ -787,6 +788,7 @@ if (canvasElement && systemElement && canvasContext) {
         system,
         focusReturn,
         mobileRotationGrip,
+        mobileFullscreenToggle,
         zoomInput,
         zoomStatus,
         solarSimulationSpeed,
