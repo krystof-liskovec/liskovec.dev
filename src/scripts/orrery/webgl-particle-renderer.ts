@@ -71,6 +71,7 @@ type SolarParticleBatch = {
     data: Float32Array;
     instanceCount: number;
     bufferOffset: number;
+    bufferGeneration: number;
     active: boolean;
     settings: SolarBatchSettings;
 };
@@ -87,6 +88,7 @@ type GalaxyParticleBatch = {
     floatCount: number;
     instanceCount: number;
     bufferOffset: number;
+    bufferGeneration: number;
     initialized: boolean;
     active: boolean;
     settings: GalaxyBatchSettings;
@@ -443,6 +445,8 @@ export class WebGLParticleRenderer {
     private galaxyAttributeLocations: number[] = [];
     private galaxyColorLocation = -1;
     private galaxyStaticBufferDirty = true;
+    private solarBufferGeneration = 0;
+    private galaxyBufferGeneration = 0;
     private readonly atlases = new Map<string, TextureAtlas>();
     private readonly batches = new Map<string, InstanceBatch>();
     private readonly solarBatches = new Map<string, SolarParticleBatch>();
@@ -579,6 +583,7 @@ export class WebGLParticleRenderer {
                 data: new Float32Array(0),
                 instanceCount: 0,
                 bufferOffset: 0,
+                bufferGeneration: -1,
                 active: true,
                 settings: {
                     elapsedDays: 0,
@@ -595,6 +600,7 @@ export class WebGLParticleRenderer {
             };
             this.solarBatches.set(batchKey, batch);
         }
+        if (batch.bufferGeneration !== this.solarBufferGeneration) this.solarStaticBufferDirty = true;
         batch.active = true;
         batch.settings = {
             elapsedDays: options.elapsedDays,
@@ -652,6 +658,7 @@ export class WebGLParticleRenderer {
                 floatCount: 0,
                 instanceCount: 0,
                 bufferOffset: 0,
+                bufferGeneration: -1,
                 initialized: false,
                 active: true,
                 settings: {
@@ -663,6 +670,7 @@ export class WebGLParticleRenderer {
             this.galaxyBatches.set(batchKey, batch);
             this.galaxyStaticBufferDirty = true;
         }
+        if (batch.bufferGeneration !== this.galaxyBufferGeneration) this.galaxyStaticBufferDirty = true;
         batch.active = true;
         batch.settings = {
             kind: options.kind,
@@ -1064,6 +1072,10 @@ export class WebGLParticleRenderer {
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.solarInstanceBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        this.solarBufferGeneration++;
+        for (const batch of this.solarBatches.values()) {
+            if (batch.active) batch.bufferGeneration = this.solarBufferGeneration;
+        }
         this.solarStaticBufferDirty = false;
     }
 
@@ -1086,6 +1098,10 @@ export class WebGLParticleRenderer {
         }
         gl.bindBuffer(gl.ARRAY_BUFFER, this.galaxyInstanceBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        this.galaxyBufferGeneration++;
+        for (const batch of this.galaxyBatches.values()) {
+            if (batch.active) batch.bufferGeneration = this.galaxyBufferGeneration;
+        }
         this.galaxyStaticBufferDirty = false;
     }
 
