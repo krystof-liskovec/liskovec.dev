@@ -2,7 +2,8 @@ import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
-import { getGlyphDrawer } from './glyph-atlas';
+import { createParticleGlyphDrawer } from './particle-glyph';
+import type { SolarParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
 import type { Planet, ProjectedBody, Vec3 } from './types';
@@ -133,22 +134,28 @@ export class SolarSystemSceneRenderer {
             introSunOpacity: number;
             introDetailOpacity: number;
             pixelRatio: number;
+            particleRenderer?: WebGLParticleRenderer | null;
+            particleTransform?: SolarParticleTransform;
         },
     ) {
-        this.drawOrbitMarks(context, options.farMarks, options.pixelRatio);
-        this.drawOrbitMarks(context, options.nearMarks, options.pixelRatio);
+        this.drawOrbitMarks(context, options.farMarks, options.pixelRatio, options.particleRenderer);
+        this.drawOrbitMarks(context, options.nearMarks, options.pixelRatio, options.particleRenderer);
         this.drawSmallBodyFields(context, options);
         this.drawTrojanClouds(context, options);
         this.drawComet(context, options);
         this.drawBodies(context, options);
     }
 
-    private drawOrbitMarks(context: CanvasRenderingContext2D, marks: OrbitMark[], pixelRatio: number) {
+    private drawOrbitMarks(
+        context: CanvasRenderingContext2D,
+        marks: OrbitMark[],
+        pixelRatio: number,
+        particleRenderer?: WebGLParticleRenderer | null,
+    ) {
         const font = '9px "DM Mono", monospace';
-        const drawOrbitGlyph = getGlyphDrawer(font, '#7c6f64', pixelRatio);
+        const drawOrbitGlyph = createParticleGlyphDrawer(context, particleRenderer, font, '#7c6f64', pixelRatio);
         for (const mark of marks) {
-            context.globalAlpha = mark.alpha * mark.reveal;
-            drawOrbitGlyph(context, mark.glyph, mark.x, mark.y);
+            drawOrbitGlyph(mark.glyph, mark.x, mark.y, mark.alpha * mark.reveal);
         }
         context.globalAlpha = 1;
     }
@@ -165,6 +172,8 @@ export class SolarSystemSceneRenderer {
             introDetailOpacity: number;
             compact: boolean;
             pixelRatio: number;
+            particleRenderer?: WebGLParticleRenderer | null;
+            particleTransform?: SolarParticleTransform;
         },
     ) {
         const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform, compact } = options;
@@ -175,6 +184,7 @@ export class SolarSystemSceneRenderer {
 
         this.drawParticleField(
             context,
+            'zodiacal-dust',
             ZODIACAL_DUST,
             cameraTransform,
             elapsedDays,
@@ -183,9 +193,12 @@ export class SolarSystemSceneRenderer {
             ZODIACAL_DUST_STYLE,
             compact,
             options.pixelRatio,
+            options.particleRenderer,
+            options.particleTransform,
         );
         this.drawParticleField(
             context,
+            'asteroid-belt',
             ASTEROID_BELT,
             cameraTransform,
             elapsedDays,
@@ -194,9 +207,12 @@ export class SolarSystemSceneRenderer {
             ASTEROID_BELT_STYLE,
             compact,
             options.pixelRatio,
+            options.particleRenderer,
+            options.particleTransform,
         );
         this.drawParticleField(
             context,
+            'kuiper-belt',
             KUIPER_BELT,
             cameraTransform,
             elapsedDays,
@@ -205,12 +221,15 @@ export class SolarSystemSceneRenderer {
             KUIPER_BELT_STYLE,
             compact,
             options.pixelRatio,
+            options.particleRenderer,
+            options.particleTransform,
         );
         context.globalAlpha = 1;
     }
 
     private drawParticleField(
         context: CanvasRenderingContext2D,
+        fieldKey: string,
         particles: SolarParticle[],
         cameraTransform: CameraTransform,
         elapsedDays: number,
@@ -219,9 +238,33 @@ export class SolarSystemSceneRenderer {
         style: ParticleFieldStyle,
         compact: boolean,
         pixelRatio: number,
+        particleRenderer?: WebGLParticleRenderer | null,
+        particleTransform?: SolarParticleTransform,
     ) {
         const font = `${fontSize}px "DM Mono", monospace`;
-        const drawParticleGlyph = getGlyphDrawer(font, style.color, pixelRatio);
+        if (
+            particleRenderer &&
+            particleTransform &&
+            particleRenderer.drawSolarParticleField({
+                fieldKey,
+                particles,
+                font,
+                color: style.color,
+                compact,
+                elapsedDays,
+                opacity,
+                baseAlpha: style.baseAlpha,
+                alphaVariation: style.alphaVariation,
+                innerRadius: style.innerRadius,
+                outerRadius: style.outerRadius,
+                innerPeriodDays: style.innerPeriodDays,
+                outerPeriodDays: style.outerPeriodDays,
+                transform: particleTransform,
+            })
+        ) {
+            return;
+        }
+        const drawParticleGlyph = createParticleGlyphDrawer(context, particleRenderer, font, style.color, pixelRatio);
         for (let index = 0; index < particles.length; index++) {
             if (compact && index % 2 !== 0) continue;
             const particle = particles[index];
@@ -243,8 +286,12 @@ export class SolarSystemSceneRenderer {
                 orbitalX * particle.nodeSine + orbitalY * particle.inclinationCosine * particle.nodeCosine;
             this.asteroidPoint.z = orbitalY * particle.inclinationSine;
             const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
-            context.globalAlpha = opacity * (style.baseAlpha + particle.phase * style.alphaVariation);
-            drawParticleGlyph(context, particle.glyph, projected.x, projected.y);
+            drawParticleGlyph(
+                particle.glyph,
+                projected.x,
+                projected.y,
+                opacity * (style.baseAlpha + particle.phase * style.alphaVariation),
+            );
         }
     }
 
@@ -261,6 +308,7 @@ export class SolarSystemSceneRenderer {
             introDetailOpacity: number;
             compact: boolean;
             pixelRatio: number;
+            particleRenderer?: WebGLParticleRenderer | null;
         },
     ) {
         let jupiter: ProjectedBody | null = null;
@@ -276,7 +324,13 @@ export class SolarSystemSceneRenderer {
         const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * options.introDetailOpacity;
         if (opacity <= 0.001) return;
         const font = `${Math.max(5.5, 7 * Math.sqrt(options.solarSystemScale))}px "DM Mono", monospace`;
-        const drawTrojanGlyph = getGlyphDrawer(font, '#d79921', options.pixelRatio);
+        const drawTrojanGlyph = createParticleGlyphDrawer(
+            context,
+            options.particleRenderer,
+            font,
+            '#d79921',
+            options.pixelRatio,
+        );
         const elapsedDays = (options.now - J2000) / 86400000;
         for (let index = 0; index < JUPITER_TROJANS.length; index++) {
             if (options.compact && index % 2 !== 0) continue;
@@ -290,8 +344,7 @@ export class SolarSystemSceneRenderer {
             this.asteroidPoint.y = Math.sin(angle) * trojan.radius;
             this.asteroidPoint.z = jupiter.world.z + trojan.z;
             const projected = options.cameraTransform(this.asteroidPoint, this.asteroidProjection);
-            context.globalAlpha = opacity * (0.11 + trojan.phase * 0.22);
-            drawTrojanGlyph(context, trojan.glyph, projected.x, projected.y);
+            drawTrojanGlyph(trojan.glyph, projected.x, projected.y, opacity * (0.11 + trojan.phase * 0.22));
         }
         context.globalAlpha = 1;
     }

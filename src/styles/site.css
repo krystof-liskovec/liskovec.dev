@@ -730,6 +730,13 @@ footer a:hover {
     touch-action: pan-y pinch-zoom;
     user-select: none;
 }
+.solar-system canvas.solar-gpu-canvas {
+    z-index: 0;
+    pointer-events: none;
+}
+.solar-system canvas#solar-canvas {
+    z-index: 1;
+}
 .solar-static {
     position: absolute;
     inset: 0;

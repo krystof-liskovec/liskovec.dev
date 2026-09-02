@@ -4,7 +4,7 @@ import { drawGalaxyBackdrop, drawLocalStarfield } from './orrery/background-rend
 import { drawFocusScene } from './orrery/focus-scene';
 import { FocusController } from './orrery/focus-controller';
 import { updateFocusRotation, updateGalaxyCamera, updateSolarCamera } from './orrery/frame-state';
-import { moveGalacticMaterial } from './orrery/galactic-simulation';
+import { galacticPatternPhase, moveGalacticMaterial } from './orrery/galactic-simulation';
 import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-renderer';
 import { bindOrreryInteractions } from './orrery/interactions';
 import { OrreryIntroController } from './orrery/intro-controller';
@@ -17,6 +17,7 @@ import {
 } from './orrery/runtime-state';
 import { createFocusCandidate, drawHoverReadouts, findHoveredBody, findHoveredComet } from './orrery/scene-ui';
 import { GALACTIC_SOL } from './orrery/scene-data';
+import { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
 import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
 import type { FocusTarget, Vec3 } from './orrery/types';
@@ -31,6 +32,7 @@ const MIN_BACKGROUND_INTERVAL = 1000 / MAX_BACKGROUND_FPS;
 const MAX_CANVAS_DPR = 2;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
+const gpuCanvasElement = document.querySelector<HTMLCanvasElement>('#solar-gpu-canvas');
 const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
 const cameraStats = document.querySelector<HTMLElement>('#camera-stats');
@@ -52,6 +54,7 @@ if (canvasElement && systemElement && canvasContext) {
     const context = canvasContext;
     const backgroundCanvas = document.createElement('canvas');
     const backgroundContext = backgroundCanvas.getContext('2d');
+    const particleRenderer = gpuCanvasElement ? new WebGLParticleRenderer(gpuCanvasElement) : null;
     system.classList.add('is-canvas-ready');
     const {
         pointer,
@@ -311,6 +314,16 @@ if (canvasElement && systemElement && canvasContext) {
             backgroundCanvas.height = pixelHeight;
             galaxyBackdropCacheValid = false;
         }
+        const activeParticleRenderer = particleRenderer?.available ? particleRenderer : null;
+        activeParticleRenderer?.begin({
+            renderWidth,
+            renderHeight,
+            pixelWidth,
+            pixelHeight,
+            pixelRatio: pixelWidth / renderWidth,
+            originX: canvasOriginX,
+            originY: canvasOriginY,
+        });
         // Use the canvas's real backing-store ratio. CSS grid sizing can produce
         // fractional dimensions, and a nominal DPR transform leaves that bitmap
         // fractionally stretched by the browser, softening small ASCII glyphs.
@@ -388,6 +401,9 @@ if (canvasElement && systemElement && canvasContext) {
         const galacticRotationCosine = Math.cos(galaxyCamera.rotation);
         const galacticRotationSine = Math.sin(galaxyCamera.rotation);
         const galacticProjectedTilt = 0.58 * galaxyCamera.tilt;
+        const patternPhase = galacticPatternPhase(elapsedGalacticYears);
+        const galacticPatternCosine = Math.cos(patternPhase);
+        const galacticPatternSine = Math.sin(patternPhase);
         const galacticOffset = (x: number, y: number, radius: number, target: { x: number; y: number }) => {
             // Spin within the galactic plane first, then project that plane toward
             // the viewer. Flattening first would rotate the projected ellipse itself.
@@ -457,6 +473,32 @@ if (canvasElement && systemElement && canvasContext) {
             target.y += centerY;
             return target;
         };
+        const particleTransform = {
+            centerX: centerX + canvasOriginX,
+            centerY: centerY + canvasOriginY,
+            worldScale,
+            cameraDistance,
+            rollCosine: cameraRollCosine,
+            rollSine: cameraRollSine,
+            pitchCosine: cameraPitchCosine,
+            pitchSine: cameraPitchSine,
+            yawCosine: cameraYawCosine,
+            yawSine: cameraYawSine,
+        };
+        const galaxyParticleTransform = {
+            coreX: galaxyCoreX + canvasOriginX,
+            coreY: galaxyCoreY + canvasOriginY,
+            radius: galaxyRadius,
+            verticalProjection: galacticProjectedTilt,
+            rotationCosine: galacticRotationCosine,
+            rotationSine: galacticRotationSine,
+            patternCosine: galacticPatternCosine,
+            patternSine: galacticPatternSine,
+            elapsedGalacticYears,
+            seconds,
+            reducedMotion,
+            alpha: galaxyAlpha,
+        };
 
         const drawGalaxy = (targetContext: CanvasRenderingContext2D) => {
             drawGalaxyBackdrop(targetContext, {
@@ -475,6 +517,8 @@ if (canvasElement && systemElement && canvasContext) {
                 renderRight,
                 renderBottom,
                 pixelRatio: pixelWidth / renderWidth,
+                particleRenderer: activeParticleRenderer,
+                galaxyTransform: galaxyParticleTransform,
             });
         };
 
@@ -491,9 +535,11 @@ if (canvasElement && systemElement && canvasContext) {
             renderRight,
             renderBottom,
             pixelRatio: pixelWidth / renderWidth,
+            particleRenderer: activeParticleRenderer,
         });
         const canCacheGalaxyBackdrop =
             Boolean(backgroundContext) &&
+            !activeParticleRenderer &&
             galaxyProgress > 0.98 &&
             !objectFocus.target &&
             !camera.dragging &&
@@ -642,6 +688,8 @@ if (canvasElement && systemElement && canvasContext) {
             introSunOpacity: intro.sun,
             introDetailOpacity: intro.details,
             pixelRatio: pixelWidth / renderWidth,
+            particleRenderer: activeParticleRenderer,
+            particleTransform,
         });
         galaxyObjectRenderer.draw(context, {
             width,
@@ -716,6 +764,7 @@ if (canvasElement && systemElement && canvasContext) {
             }
             lastClockSecond = currentSecond;
         }
+        activeParticleRenderer?.flush();
         scheduleRender();
     }
 

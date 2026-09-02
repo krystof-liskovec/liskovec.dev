@@ -1,4 +1,4 @@
-const ATLAS_GLYPHS = [
+export const ATLAS_GLYPHS = [
     '.',
     ':',
     '*',
@@ -38,7 +38,7 @@ const atlasCache = new Map<string, GlyphAtlasEntry>();
 const drawerCache = new Map<string, GlyphDrawer>();
 let fontReadyInvalidationScheduled = false;
 
-const quantizeFont = (font: string) =>
+export const normalizeGlyphFont = (font: string) =>
     font.replace(/(\d+(?:\.\d+)?)px/, (_, size: string) => `${Math.round(Number(size) * 2) / 2}px`);
 
 const fontSizeFrom = (font: string) => {
@@ -102,7 +102,7 @@ export const getGlyphDrawer = (font: string, color: string, pixelRatio: number):
     }
 
     scheduleFontReadyInvalidation();
-    const normalizedFont = quantizeFont(font);
+    const normalizedFont = normalizeGlyphFont(font);
     const normalizedPixelRatio = Math.round(pixelRatio * 100) / 100;
     const key = `${normalizedFont}|${color}|${normalizedPixelRatio}`;
     const cachedDrawer = drawerCache.get(key);
