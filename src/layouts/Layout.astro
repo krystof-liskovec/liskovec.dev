@@ -45,20 +45,14 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
-            rel="preload"
-            as="style"
-            href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
-        />
-        <link
             data-web-fonts
             rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
-            media="print"
+            data-href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=optional"
         />
         <noscript>
             <link
                 rel="stylesheet"
-                href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
+                href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=optional"
             />
         </noscript>
         <style is:inline>
@@ -83,13 +77,24 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         </style>
         <script is:inline>
             const webFonts = document.querySelector('link[data-web-fonts]');
-            webFonts?.addEventListener(
-                'load',
-                () => {
-                    webFonts.media = 'all';
-                },
-                { once: true },
-            );
+            const loadWebFonts = () => {
+                const fontHref = webFonts?.getAttribute('data-href');
+                if (!webFonts || !fontHref) return;
+                webFonts.setAttribute('href', fontHref);
+            };
+            const scheduleWebFonts = () => {
+                const idleWindow = window;
+                if ('requestIdleCallback' in idleWindow) {
+                    idleWindow.requestIdleCallback(loadWebFonts, { timeout: 2000 });
+                    return;
+                }
+                window.setTimeout(loadWebFonts, 900);
+            };
+            if (document.readyState === 'complete') {
+                scheduleWebFonts();
+            } else {
+                window.addEventListener('load', scheduleWebFonts, { once: true });
+            }
         </script>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" href="/favicon.ico" />
