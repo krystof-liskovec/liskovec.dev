@@ -46,10 +46,20 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta name="theme-color" content="#1d2021" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link rel="preload" as="style" href={webFontHref} onload="this.onload=null;this.rel='stylesheet'" />
+        <link rel="preload" as="style" href={webFontHref} data-web-font-preload />
         <noscript>
             <link rel="stylesheet" href={webFontHref} />
         </noscript>
+        <script is:inline>
+            const webFontPreload = document.querySelector('link[data-web-font-preload]');
+            webFontPreload?.addEventListener(
+                'load',
+                () => {
+                    if (webFontPreload) webFontPreload.rel = 'stylesheet';
+                },
+                { once: true },
+            );
+        </script>
         <style is:inline>
             html,
             body,

@@ -1187,14 +1187,19 @@ footer a:hover {
         font-size: clamp(32px, 9.6vw, 42px);
     }
     .solar-system {
-        /* Keep the layout box inside the shell. The absolutely positioned
-           canvas provides wider artwork without widening iOS's page area. */
+        /* Let the normal phone scene use the complete viewport width. Keep the
+           additional canvas bleed so the galactic artwork can still breathe at
+           the edges without widening the page itself. */
         --canvas-bleed-x: 64px;
         --canvas-bleed-y: 90px;
         width: 100%;
         height: 100%;
         min-height: 360px;
         margin: 0;
+    }
+    .solar-system:not(:fullscreen):not(.is-fullscreen) {
+        width: auto;
+        margin-inline: calc(-1 * max(16px, env(safe-area-inset-left))) calc(-1 * max(16px, env(safe-area-inset-right)));
     }
     .object-focus-return {
         left: 0;
@@ -1220,6 +1225,10 @@ footer a:hover {
         touch-action: manipulation;
         user-select: none;
         -webkit-touch-callout: none;
+    }
+    .solar-system:not(:fullscreen):not(.is-fullscreen) .mobile-fullscreen-toggle,
+    .solar-system:not(:fullscreen):not(.is-fullscreen) .cosmic-zoom-switch {
+        right: max(16px, env(safe-area-inset-right));
     }
     .mobile-fullscreen-icon {
         display: grid;
