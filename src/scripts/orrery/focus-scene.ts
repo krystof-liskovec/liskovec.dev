@@ -606,7 +606,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         context.fillText(`[ ${target.name.toUpperCase()} ]`, viewportCenterX, infoY);
         if (!hideCompactDetails) {
             context.fillStyle = '#a89984';
-            context.font = `${compact ? 8 : 10}px "DM Mono", monospace`;
+            context.font = '12px "DM Mono", monospace';
             context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
             if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
         }
@@ -702,7 +702,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             context.font = `bold ${width < 600 ? 11 : 13}px "DM Mono", monospace`;
             context.fillText(`[ ${child.name.toUpperCase()} ]`, viewportCenterX, childInfoY);
             context.fillStyle = '#a89984';
-            context.font = `${compact ? 8 : 10}px "DM Mono", monospace`;
+            context.font = '12px "DM Mono", monospace';
             context.fillText(`${child.subtitle} · ${child.detail}`, viewportCenterX, childInfoY + 21);
         }
         context.globalAlpha = 1;

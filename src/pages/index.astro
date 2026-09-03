@@ -97,41 +97,123 @@ const profileStructuredData = {
                         <output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
                         <div class="simulation-speed-control">
                             <span class="sr-only" id="simulation-speed-label">Simulation speed</span>
-                            <select
-                                class="simulation-speed"
-                                id="solar-simulation-speed"
-                                aria-labelledby="simulation-speed-label"
-                            >
-                                <option value="0">1×</option>
-                                <option value="1" selected>1h/s</option>
-                                <option value="2">12h/s</option>
-                                <option value="3">7d/s</option>
-                                <option value="4">30d/s</option>
-                                <option value="5">1y/s</option>
-                            </select>
-                            <select
-                                class="simulation-speed"
-                                id="galactic-simulation-speed"
-                                aria-labelledby="simulation-speed-label"
-                                hidden
-                            >
-                                <option value="0">1×</option>
-                                <option value="1" selected>1My/s</option>
-                                <option value="2">5My/s</option>
-                                <option value="3">10My/s</option>
-                            </select>
-                            <select
-                                class="simulation-speed"
-                                id="rotation-simulation-speed"
-                                aria-labelledby="simulation-speed-label"
-                                hidden
-                            >
-                                <option value="0">1×</option>
-                                <option value="1" selected>1h/s</option>
-                                <option value="2">6h/s</option>
-                                <option value="3">12h/s</option>
-                                <option value="4">1d/s</option>
-                            </select>
+                            <div class="simulation-speed-picker" data-speed-mode="solar">
+                                <button
+                                    class="simulation-speed"
+                                    id="solar-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="solar-simulation-speed-menu"
+                                    data-value="1">1h/s</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="solar-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">1h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >12h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >7d/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="4"
+                                        >30d/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="5"
+                                        >1y/s</button
+                                    >
+                                </div>
+                            </div>
+                            <div class="simulation-speed-picker" data-speed-mode="galactic" hidden>
+                                <button
+                                    class="simulation-speed"
+                                    id="galactic-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="galactic-simulation-speed-menu"
+                                    data-value="1">1My/s</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="galactic-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">1My/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >5My/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >10My/s</button
+                                    >
+                                </div>
+                            </div>
+                            <div class="simulation-speed-picker" data-speed-mode="rotation" hidden>
+                                <button
+                                    class="simulation-speed"
+                                    id="rotation-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="rotation-simulation-speed-menu"
+                                    data-value="1">1h/s</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="rotation-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">1h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >6h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >12h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="4"
+                                        >1d/s</button
+                                    >
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

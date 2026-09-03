@@ -27,9 +27,9 @@ type InteractionOptions = {
     zoomInput: HTMLInputElement | null;
     zoomSwitch: HTMLInputElement | null;
     zoomStatus: HTMLOutputElement | null;
-    solarSimulationSpeed: HTMLSelectElement | null;
-    galacticSimulationSpeed: HTMLSelectElement | null;
-    rotationSimulationSpeed: HTMLSelectElement | null;
+    solarSimulationSpeed: HTMLButtonElement | null;
+    galacticSimulationSpeed: HTMLButtonElement | null;
+    rotationSimulationSpeed: HTMLButtonElement | null;
     pointer: PointerState;
     camera: CameraState;
     galaxyCamera: GalaxyCameraState;
@@ -158,16 +158,101 @@ export const bindOrreryInteractions = ({
                 : simulationControlMode === 'galactic'
                   ? GALACTIC_SPEED_PRESETS[presetIndex]
                   : ROTATION_SPEED_PRESETS[presetIndex];
-        control.value = String(presetIndex);
+        control.dataset.value = String(presetIndex);
+        control.textContent = preset.label;
         control.setAttribute('aria-label', `Simulation speed: ${preset.description}`);
+        const options = control.parentElement?.querySelectorAll<HTMLButtonElement>('.simulation-speed-option') ?? [];
+        options.forEach((option) => {
+            option.toggleAttribute('aria-selected', Number(option.dataset.value) === presetIndex);
+        });
     };
+
+    const speedControls = [solarSimulationSpeed, galacticSimulationSpeed, rotationSimulationSpeed].filter(
+        (control): control is HTMLButtonElement => Boolean(control),
+    );
+    const getSpeedMenu = (control: HTMLButtonElement) =>
+        control.parentElement?.querySelector<HTMLElement>('.simulation-speed-menu') ?? null;
+    const closeSpeedMenu = (control: HTMLButtonElement, returnFocus = false) => {
+        const menu = getSpeedMenu(control);
+        if (!menu) return;
+        menu.hidden = true;
+        control.setAttribute('aria-expanded', 'false');
+        if (returnFocus) control.focus();
+    };
+    const closeSpeedMenus = () => speedControls.forEach((control) => closeSpeedMenu(control));
+    const openSpeedMenu = (control: HTMLButtonElement, focusSelected = false) => {
+        speedControls.forEach((otherControl) => {
+            if (otherControl !== control) closeSpeedMenu(otherControl);
+        });
+        const menu = getSpeedMenu(control);
+        if (!menu) return;
+        menu.hidden = false;
+        control.setAttribute('aria-expanded', 'true');
+        if (focusSelected) {
+            menu.querySelector<HTMLButtonElement>('[aria-selected="true"]')?.focus();
+        }
+    };
+    const chooseSpeedOption = (control: HTMLButtonElement, option: HTMLButtonElement) => {
+        const presetIndex = Number(option.dataset.value);
+        onInteract();
+        if (control === solarSimulationSpeed) setSimulationSpeed(presetIndex);
+        else if (control === galacticSimulationSpeed) setGalacticSimulationSpeed(presetIndex);
+        else setRotationSimulationSpeed(presetIndex);
+        closeSpeedMenu(control, true);
+    };
+
+    speedControls.forEach((control) => {
+        control.addEventListener('click', () => {
+            const menu = getSpeedMenu(control);
+            if (!menu) return;
+            if (menu.hidden) openSpeedMenu(control);
+            else closeSpeedMenu(control);
+        });
+        control.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                openSpeedMenu(control, true);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                closeSpeedMenu(control);
+            }
+        });
+        getSpeedMenu(control)
+            ?.querySelectorAll<HTMLButtonElement>('.simulation-speed-option')
+            .forEach((option) => {
+                option.addEventListener('click', () => chooseSpeedOption(control, option));
+                option.addEventListener('keydown', (event) => {
+                    const options = Array.from(
+                        getSpeedMenu(control)?.querySelectorAll<HTMLButtonElement>('.simulation-speed-option') ?? [],
+                    );
+                    const currentIndex = options.indexOf(option);
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        const direction = event.key === 'ArrowDown' ? 1 : -1;
+                        options[(currentIndex + direction + options.length) % options.length]?.focus();
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeSpeedMenu(control, true);
+                    }
+                });
+            });
+    });
+    document.addEventListener('pointerdown', (event) => {
+        if (!(event.target instanceof Element) || !event.target.closest('.simulation-speed-picker')) closeSpeedMenus();
+    });
+    document.addEventListener('focusin', (event) => {
+        if (!(event.target instanceof Element) || !event.target.closest('.simulation-speed-picker')) closeSpeedMenus();
+    });
 
     const setSimulationControlMode = (mode: 'solar' | 'galactic' | 'rotation') => {
         if (mode === simulationControlMode) return;
         simulationControlMode = mode;
-        if (solarSimulationSpeed) solarSimulationSpeed.hidden = mode !== 'solar';
-        if (galacticSimulationSpeed) galacticSimulationSpeed.hidden = mode !== 'galactic';
-        if (rotationSimulationSpeed) rotationSimulationSpeed.hidden = mode !== 'rotation';
+        if (solarSimulationSpeed) solarSimulationSpeed.parentElement?.toggleAttribute('hidden', mode !== 'solar');
+        if (galacticSimulationSpeed)
+            galacticSimulationSpeed.parentElement?.toggleAttribute('hidden', mode !== 'galactic');
+        if (rotationSimulationSpeed)
+            rotationSimulationSpeed.parentElement?.toggleAttribute('hidden', mode !== 'rotation');
+        closeSpeedMenus();
         if (mode === 'galactic' && !galacticClock.started) {
             galacticClock.started = true;
             galacticClock.startedAt = performance.now();
@@ -441,18 +526,6 @@ export const bindOrreryInteractions = ({
         const leavingChild = Boolean(objectFocus.child);
         leaveObjectFocus();
         if (!leavingChild) setSimulationControlMode(cosmicZoom.target < 0.5 ? 'solar' : 'galactic');
-    });
-    solarSimulationSpeed?.addEventListener('change', () => {
-        onInteract();
-        setSimulationSpeed(Number(solarSimulationSpeed.value));
-    });
-    galacticSimulationSpeed?.addEventListener('change', () => {
-        onInteract();
-        setGalacticSimulationSpeed(Number(galacticSimulationSpeed.value));
-    });
-    rotationSimulationSpeed?.addEventListener('change', () => {
-        onInteract();
-        setRotationSimulationSpeed(Number(rotationSimulationSpeed.value));
     });
     const setZoomTarget = (target: number) => {
         cosmicZoom.target = target;

@@ -918,7 +918,7 @@ footer a:hover {
     border: 1px solid #665c54;
     color: var(--yellow);
     background: rgba(29, 32, 33, 0.9);
-    font: 10px/1 var(--mono);
+    font: 12px/1 var(--mono);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
@@ -979,7 +979,7 @@ footer a:hover {
     gap: 9px;
     transform: translateY(-50%);
     color: var(--muted);
-    font-size: 8px;
+    font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     transition: opacity 0.3s;
@@ -1008,6 +1008,7 @@ footer a:hover {
     direction: rtl;
     accent-color: var(--orange);
     cursor: ns-resize;
+    -webkit-tap-highlight-color: transparent;
 }
 .cosmic-zoom-control output {
     width: 78px;
@@ -1037,6 +1038,7 @@ footer a:hover {
 }
 #camera-stats {
     color: var(--muted);
+    font-size: 10px;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
@@ -1048,10 +1050,12 @@ footer a:hover {
     min-width: 0;
     overflow: hidden;
     flex: 0 1 auto;
+    font-size: 10px;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 .simulation-speed-control {
+    position: relative;
     display: inline-flex;
     flex: 0 0 auto;
     align-items: center;
@@ -1060,19 +1064,39 @@ footer a:hover {
     color: var(--yellow);
     text-transform: uppercase;
 }
+.simulation-speed-picker {
+    position: relative;
+    width: 74px;
+}
 .simulation-speed {
+    display: block;
     width: 74px;
     padding: 1px 14px 1px 4px;
     border: 0;
     border-bottom: 1px solid #665c54;
     border-radius: 0;
-    appearance: auto;
+    appearance: none;
+    -webkit-appearance: none;
     color: var(--yellow);
     background-color: transparent;
     font: inherit;
+    font-size: 10px;
     letter-spacing: inherit;
     text-transform: uppercase;
+    text-align: left;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.simulation-speed-picker::after {
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    color: currentColor;
+    content: '⌄';
+    font-size: 10px;
+    line-height: 1;
+    pointer-events: none;
+    transform: translateY(-58%);
 }
 .simulation-speed:hover,
 .simulation-speed:focus-visible {
@@ -1080,11 +1104,47 @@ footer a:hover {
     border-color: var(--orange);
     outline: none;
 }
-.simulation-speed option {
-    color: var(--text);
-    background: var(--bg);
+.cosmic-zoom-control input:focus,
+.simulation-speed:focus {
+    outline: 1px solid var(--orange);
+    outline-offset: 2px;
 }
-.simulation-speed[hidden] {
+.simulation-speed-menu {
+    position: absolute;
+    z-index: 8;
+    right: 0;
+    bottom: calc(100% + 6px);
+    display: grid;
+    min-width: 78px;
+    padding: 3px;
+    border: 1px solid #665c54;
+    background: var(--bg);
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.35);
+}
+.simulation-speed-option {
+    display: block;
+    width: 100%;
+    padding: 4px 6px;
+    border: 0;
+    color: var(--yellow);
+    background: transparent;
+    font: inherit;
+    font-size: 10px;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.simulation-speed-option[aria-selected='true'] {
+    color: var(--orange);
+}
+.simulation-speed-option:hover,
+.simulation-speed-option:focus-visible {
+    color: var(--bg);
+    background: var(--orange);
+    outline: none;
+}
+.simulation-speed-picker[hidden],
+.simulation-speed-menu[hidden] {
     display: none;
 }
 .hero-footer {
@@ -1315,6 +1375,12 @@ footer a:hover {
     .solar-caption {
         right: 0;
         left: 0;
+        font-size: 8px;
+    }
+    #camera-stats {
+        font-size: 8px;
+    }
+    #solar-time {
         font-size: 8px;
     }
     .solar-caption-primary,
