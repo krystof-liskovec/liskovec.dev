@@ -269,7 +269,6 @@ const profileStructuredData = {
         return { setText };
     };
 
-    let headingLeadFinished = false;
     let headingFinished = false;
     const headingLeadWriter = solarHeadingLead ? createIntroTypewriter(solarHeadingLead) : null;
     const zoomLocationWriter = zoomLocation ? createIntroTypewriter(zoomLocation) : null;
@@ -293,7 +292,7 @@ const profileStructuredData = {
     let orreryStarted = false;
     const maybeStartOrrery = () => {
         if (!pageLoaded || orreryStarted) return;
-        if (!headingFinished && (!isRepeatIntro || !headingLeadFinished)) return;
+        if (!headingFinished) return;
         orreryStarted = true;
         requestAnimationFrame(() => requestAnimationFrame(scheduleOrrery));
     };
@@ -314,12 +313,9 @@ const profileStructuredData = {
         solarHeadingLead.textContent = '';
         zoomLocation.textContent = '';
         headingLeadWriter?.setText('somewhere', () => {
-            headingLeadFinished = true;
-            maybeStartOrrery();
             zoomLocationWriter?.setText('in the solar system.', finishHeading);
         });
     } else {
-        headingLeadFinished = true;
         finishHeading();
     }
 
