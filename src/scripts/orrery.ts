@@ -658,6 +658,7 @@ if (canvasElement && systemElement && canvasContext) {
         const hoveredComet = currentFocusHit.hoveredComet;
         const hoveredSun = currentFocusHit.hoveredSun;
         const hoveredGalacticObject = currentFocusHit.hoveredGalacticObject;
+        const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
         getFocusCandidateAt = (clientX, clientY) => {
             const hit = resolveHitAt(clientX - systemLeft, clientY - systemTop, true);
             return createFocusCandidate({
@@ -744,7 +745,7 @@ if (canvasElement && systemElement && canvasContext) {
                 hoveredGalacticObject,
                 sunX: centerX,
                 sunY: centerY,
-                compact: width < 600,
+                compact: width < 600 && !isFullscreen,
             });
         }
 
@@ -765,6 +766,7 @@ if (canvasElement && systemElement && canvasContext) {
                     reducedMotion,
                     pointer,
                     camera,
+                    isFullscreen,
                     localPointerX,
                     localPointerY,
                     showHoverVisuals,

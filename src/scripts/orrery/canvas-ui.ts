@@ -40,7 +40,7 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     const y = Math.min(viewportHeight - height - 8, Math.max(8, anchorY - height / 2));
 
     context.save();
-    context.globalAlpha = 0.94 * opacity;
+    context.globalAlpha = opacity;
     context.fillStyle = '#1d2021';
     context.fillRect(x, y, width, height);
     context.strokeStyle = '#665c54';
@@ -51,7 +51,7 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     context.textBaseline = 'top';
     context.font = '12px "DM Mono", monospace';
     lines.forEach((line, index) => {
-        context.fillStyle = index === 0 ? titleColor : index === lines.length - 1 ? '#fabd2f' : '#a89984';
+        context.fillStyle = index === 0 ? titleColor : '#ebdbb2';
         context.fillText(line, x + 11, y + 10 + index * 16);
     });
     context.restore();

@@ -234,7 +234,6 @@ export const drawHoverReadouts = (
                 `lon  ${hoveredBody.position.longitude.toFixed(2).padStart(6)} deg`,
                 `lat  ${`${hoveredBody.position.latitude >= 0 ? '+' : '-'}${Math.abs(hoveredBody.position.latitude).toFixed(2)}`.padStart(6)} deg`,
                 `r    ${hoveredBody.position.distance.toFixed(3).padStart(6)} au`,
-                '[ click to zoom ]',
             ],
             anchorX: hoveredBody.x,
             anchorY: hoveredBody.y,
@@ -252,7 +251,6 @@ export const drawHoverReadouts = (
                 `r    ${hoveredComet.distanceAu.toFixed(2).padStart(6)} au`,
                 'retrograde orbit / ~75.3-year period',
                 'next perihelion: 2061',
-                '[ click to zoom ]',
             ],
             anchorX: hoveredComet.x,
             anchorY: hoveredComet.y,
@@ -264,14 +262,15 @@ export const drawHoverReadouts = (
     }
     if (hoveredSun) {
         drawReadout(context, {
-            lines: [
-                '[ SOL ]',
-                'G-type main-sequence star',
-                'mass  1.000 M☉',
-                'age   ~4.6 billion years',
-                'contains 99.8% of system mass',
-                '[ click to zoom ]',
-            ],
+            lines: compact
+                ? ['[ SOL ]']
+                : [
+                      '[ SOL ]',
+                      'G-type main-sequence star',
+                      'contains 99.8% of system mass',
+                      'mass  1.000 M☉',
+                      'age   ~4.6 billion years',
+                  ],
             anchorX: sunX,
             anchorY: sunY,
             viewportWidth: width,
@@ -288,7 +287,6 @@ export const drawHoverReadouts = (
                 `dist  ${hoveredGalacticObject.object.distance}`,
                 hoveredGalacticObject.object.detail,
                 hoveredGalacticObject.object.fact,
-                '[ click to zoom ]',
             ],
             anchorX: hoveredGalacticObject.x,
             anchorY: hoveredGalacticObject.y,

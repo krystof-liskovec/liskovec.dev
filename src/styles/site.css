@@ -812,10 +812,6 @@ footer a:hover {
 .solar-system.is-fullscreen .cosmic-zoom-control output {
     width: auto;
 }
-.solar-system:fullscreen .solar-caption > span:last-child,
-.solar-system.is-fullscreen .solar-caption > span:last-child {
-    display: none;
-}
 .solar-system:fullscreen .solar-caption,
 .solar-system.is-fullscreen .solar-caption {
     right: max(14px, env(safe-area-inset-right));
@@ -840,7 +836,7 @@ footer a:hover {
     pointer-events: none;
 }
 .solar-system canvas#solar-canvas {
-    z-index: 1;
+    z-index: 3;
     /* Keep the glow on the scene box. The canvas is larger than the box to
        provide artwork bleed, so it must remain transparent behind the glow. */
     background-color: transparent;
@@ -1324,9 +1320,6 @@ footer a:hover {
     .solar-caption-primary,
     .solar-time-controls {
         width: 100%;
-    }
-    .solar-caption > span:last-child {
-        display: none;
     }
     .hero-footer {
         font-size: 9px;

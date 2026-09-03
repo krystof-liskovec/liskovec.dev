@@ -48,6 +48,7 @@ type FocusSceneOptions = {
     reducedMotion: boolean;
     pointer: PointerState;
     camera: CameraState;
+    isFullscreen: boolean;
     localPointerX: number;
     localPointerY: number;
     showHoverVisuals: boolean;
@@ -71,6 +72,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         reducedMotion,
         pointer,
         camera,
+        isFullscreen,
         localPointerX,
         localPointerY,
         showHoverVisuals,
@@ -562,7 +564,6 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     majorMoonSystem.subtitle,
                     `mean r  ${hoveredMajorMoon.distance}`,
                     `period  ${hoveredMajorMoon.period}`,
-                    '[ click to zoom ]',
                 ],
                 anchorX: hoveredMajorMoon.x,
                 anchorY: hoveredMajorMoon.y,
@@ -579,8 +580,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             const isMoon = hoveredFocusedEarthObject.id === 'moon';
             drawReadout(context, {
                 lines: isMoon
-                    ? ['[ MOON ]', 'natural satellite', 'mean r  384,400 km', 'sidereal 27.3 days', '[ click to zoom ]']
-                    : ['[ ISS ]', 'orbital laboratory', 'alt     ~400 km', 'period  ~90 min', '[ click to zoom ]'],
+                    ? ['[ MOON ]', 'natural satellite', 'mean r  384,400 km', 'sidereal 27.3 days']
+                    : ['[ ISS ]', 'orbital laboratory', 'alt     ~400 km', 'period  ~90 min'],
                 anchorX: hoveredFocusedEarthObject.x,
                 anchorY: hoveredFocusedEarthObject.y,
                 viewportWidth: width,
@@ -592,28 +593,23 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             });
         }
 
-        const hidePlanetDetails = width < 600 && target.kind === 'planet';
+        const compact = width < 600;
+        const hideCompactDetails = compact && !isFullscreen && (target.kind === 'planet' || target.kind === 'star');
         const infoY = Math.min(
-            height - (hidePlanetDetails ? 51 : target.fact ? 93 : 72),
-            focusCenterY + (width < 600 ? 150 : 205) * focusScale,
+            height - (hideCompactDetails ? 30 : target.fact ? 93 : 72),
+            focusCenterY + (compact ? 150 : 205) * focusScale,
         );
         const infoReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.45) / 0.4) : focusEase;
         context.globalAlpha = infoReveal;
         context.fillStyle = target.color;
-        context.font = `bold ${width < 600 ? 11 : 13}px "DM Mono", monospace`;
+        context.font = `bold ${compact ? 11 : 13}px "DM Mono", monospace`;
         context.fillText(`[ ${target.name.toUpperCase()} ]`, viewportCenterX, infoY);
-        if (!hidePlanetDetails) {
+        if (!hideCompactDetails) {
             context.fillStyle = '#a89984';
-            context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+            context.font = `${compact ? 8 : 10}px "DM Mono", monospace`;
             context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
             if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
         }
-        context.fillText(
-            'drag to inspect · double-click to reset orientation',
-            viewportCenterX,
-            infoY + (hidePlanetDetails ? 21 : target.fact ? 63 : 42),
-        );
-
         if (objectFocus.child && objectFocus.childProgress > 0.001) {
             const child = objectFocus.child;
             const childVisualProgress = visualTransitionProgress(objectFocus.childProgress, objectFocus.childExiting);
@@ -706,9 +702,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             context.font = `bold ${width < 600 ? 11 : 13}px "DM Mono", monospace`;
             context.fillText(`[ ${child.name.toUpperCase()} ]`, viewportCenterX, childInfoY);
             context.fillStyle = '#a89984';
-            context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+            context.font = `${compact ? 8 : 10}px "DM Mono", monospace`;
             context.fillText(`${child.subtitle} · ${child.detail}`, viewportCenterX, childInfoY + 21);
-            context.fillText('drag to inspect · double-click to reset orientation', viewportCenterX, childInfoY + 42);
         }
         context.globalAlpha = 1;
     }
