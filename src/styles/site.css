@@ -1346,7 +1346,7 @@ footer a:hover {
     .solar-system:not(:fullscreen):not(.is-fullscreen) .cosmic-zoom-switch {
         position: absolute;
         z-index: 5;
-        right: 0;
+        right: max(16px, env(safe-area-inset-right));
         bottom: 42px;
         display: inline-flex;
         min-height: 36px;
@@ -1442,8 +1442,8 @@ footer a:hover {
         width: auto;
     }
     .solar-caption {
-        right: 0;
-        left: 0;
+        right: max(16px, env(safe-area-inset-right));
+        left: max(16px, env(safe-area-inset-left));
         font-size: 8px;
     }
     #camera-stats {
