@@ -709,11 +709,23 @@ footer a:hover {
     overflow: visible;
     font-family: var(--mono);
     background-color: var(--bg);
+}
+.solar-system::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    pointer-events: none;
+    content: '';
     background-image: radial-gradient(
         circle at var(--scene-glow-x) var(--scene-glow-y),
         rgba(254, 128, 25, 0.06),
         transparent 48%
     );
+    opacity: 0;
+    transition: opacity 0.35s ease-out;
+}
+.solar-system.is-sun-visible::before {
+    opacity: 1;
 }
 .solar-system:fullscreen,
 .solar-system.is-fullscreen {
@@ -828,12 +840,10 @@ footer a:hover {
 }
 .solar-system canvas#solar-canvas {
     z-index: 1;
-    background-color: var(--bg);
-    background-image: radial-gradient(
-        circle at var(--scene-glow-x) var(--scene-glow-y),
-        rgba(254, 128, 25, 0.06),
-        transparent 48%
-    );
+    /* Keep the glow on the scene box. The canvas is larger than the box to
+       provide artwork bleed, so it must remain transparent behind the glow. */
+    background-color: transparent;
+    background-image: none;
 }
 .solar-static {
     position: absolute;

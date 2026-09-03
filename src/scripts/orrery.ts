@@ -319,6 +319,9 @@ if (canvasElement && systemElement && canvasContext) {
         context.textBaseline = 'middle';
 
         const intro = introController.update(frameTime, reducedMotion);
+        if (intro.sun > 0.001 && !system.classList.contains('is-sun-visible')) {
+            system.classList.add('is-sun-visible');
+        }
         if (!introController.running) {
             system.classList.remove('is-intro-running');
             solarHeading?.classList.remove('is-intro-running');

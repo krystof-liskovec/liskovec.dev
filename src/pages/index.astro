@@ -274,15 +274,20 @@ const profileStructuredData = {
     const headingLeadWriter = solarHeadingLead ? createIntroTypewriter(solarHeadingLead) : null;
     const zoomLocationWriter = zoomLocation ? createIntroTypewriter(zoomLocation) : null;
     const loadOrrery = () => void import('../scripts/orrery.ts');
+    // Give the completed heading a real paint opportunity before the heavy
+    // interactive scene module begins evaluating on throttled devices.
+    const ORRERY_BOOT_DELAY_MS = 320;
     const idleWindow = window as Window & {
         requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
     };
     const scheduleOrrery = () => {
-        if (idleWindow.requestIdleCallback) {
-            idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
-            return;
-        }
-        window.setTimeout(loadOrrery, 300);
+        window.setTimeout(() => {
+            if (idleWindow.requestIdleCallback) {
+                idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
+                return;
+            }
+            loadOrrery();
+        }, ORRERY_BOOT_DELAY_MS);
     };
     let pageLoaded = document.readyState === 'complete';
     let orreryStarted = false;
