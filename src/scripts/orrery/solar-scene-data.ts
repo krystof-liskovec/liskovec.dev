@@ -2,10 +2,12 @@ import { PLANETS } from './catalog';
 import { DEG, orbitalPoint, randomUnit } from './math';
 
 export const STARS = Array.from({ length: 90 }, (_, index) => ({
-    x: ((index * 47) % 131) / 131,
-    y: ((index * 83) % 127) / 127,
-    phase: (index * 1.618) % (Math.PI * 2),
-    speed: 0.55 + (index % 9) * 0.09,
+    // Use independent seeded coordinates. Advancing x/y with separate modular
+    // sequences created visible diagonal rows on narrow, expanded canvases.
+    x: 0.03 + randomUnit(index * 2 + 401) * 0.94,
+    y: 0.03 + randomUnit(index * 2 + 1201) * 0.94,
+    phase: randomUnit(index * 2 + 2001) * Math.PI * 2,
+    speed: 0.55 + randomUnit(index * 2 + 2801) * 0.72,
     glyph: index % 17 === 0 ? '+' : index % 7 === 0 ? '*' : '.',
 }));
 

@@ -79,17 +79,11 @@ const profileStructuredData = {
                     aria-label="ASCII solar system with live approximate planetary positions"></canvas>
                 <button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return ]</button>
                 <button
-                    class="mobile-rotation-grip"
-                    id="mobile-rotation-grip"
-                    type="button"
-                    aria-label="Hold and drag to rotate the scene">[ ⠿ rotate ]</button
-                >
-                <button
                     class="mobile-fullscreen-toggle"
                     id="mobile-fullscreen-toggle"
                     type="button"
                     aria-label="Open fullscreen animation"
-                    aria-pressed="false">⛶</button
+                    aria-pressed="false"><span class="mobile-fullscreen-icon" aria-hidden="true">⛶</span></button
                 >
                 <div class="mobile-orientation-hint" role="status" aria-live="polite">
                     <span aria-hidden="true">↔</span> tilt phone sideways <span aria-hidden="true">↔</span>
@@ -141,6 +135,17 @@ const profileStructuredData = {
                         </div>
                     </div>
                 </div>
+                <label class="cosmic-zoom-switch">
+                    <span class="cosmic-zoom-switch-label cosmic-zoom-switch-solar">SOL</span>
+                    <input
+                        id="cosmic-zoom-switch"
+                        type="checkbox"
+                        role="switch"
+                        aria-label="Switch between the Solar System and the Milky Way"
+                    />
+                    <span class="cosmic-zoom-switch-track" aria-hidden="true"><span></span></span>
+                    <span class="cosmic-zoom-switch-label cosmic-zoom-switch-galaxy">GALAXY</span>
+                </label>
                 <div class="solar-caption">
                     <div class="solar-caption-primary">
                         <span id="camera-stats">PITCH +58.0° · YAW +0.0° · ROLL −12.0°</span>

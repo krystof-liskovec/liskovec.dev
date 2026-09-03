@@ -45,13 +45,13 @@ const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
 const cameraStats = document.querySelector<HTMLElement>('#camera-stats');
 const zoomInput = document.querySelector<HTMLInputElement>('#cosmic-zoom');
+const zoomSwitch = document.querySelector<HTMLInputElement>('#cosmic-zoom-switch');
 const zoomStatus = document.querySelector<HTMLOutputElement>('#cosmic-zoom-status');
 const solarSimulationSpeed = document.querySelector<HTMLSelectElement>('#solar-simulation-speed');
 const galacticSimulationSpeed = document.querySelector<HTMLSelectElement>('#galactic-simulation-speed');
 const rotationSimulationSpeed = document.querySelector<HTMLSelectElement>('#rotation-simulation-speed');
 const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
 const focusReturn = document.querySelector<HTMLButtonElement>('#object-focus-return');
-const mobileRotationGrip = document.querySelector<HTMLButtonElement>('#mobile-rotation-grip');
 const mobileFullscreenToggle = document.querySelector<HTMLButtonElement>('#mobile-fullscreen-toggle');
 const canvasContext = canvasElement?.getContext('2d');
 
@@ -243,6 +243,7 @@ if (canvasElement && systemElement && canvasContext) {
         system,
         focusReturn,
         zoomInput,
+        zoomSwitch,
         cosmicZoom,
         camera,
         setZoomLocation,
@@ -411,8 +412,11 @@ if (canvasElement && systemElement && canvasContext) {
             solveMoonOrbitAtDate(moon, focusedMoonElapsedDays, target);
         const viewportCenterX = width * 0.52;
         const viewportCenterY = height * 0.38;
-        const finalGalaxyRadius = Math.min(width * 0.48, height * 0.62);
-        const distantGalaxyRadius = Math.max(width, height) * 2.2;
+        const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
+        const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
+        const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
+        const finalGalaxyRadius = Math.min(galaxyViewportWidth * 0.48, galaxyViewportHeight * 0.62);
+        const distantGalaxyRadius = Math.max(galaxyViewportWidth, galaxyViewportHeight) * 2.2;
         const galaxyRadius = finalGalaxyRadius + (distantGalaxyRadius - finalGalaxyRadius) * (1 - galaxyProgress) ** 2;
         updateGalaxyCamera({ galaxyCamera, solarCamera: camera, frameTime, frameDelta, reducedMotion });
         updateFocusRotation(objectFocus, frameTime);
@@ -802,9 +806,9 @@ if (canvasElement && systemElement && canvasContext) {
         canvas,
         system,
         focusReturn,
-        mobileRotationGrip,
         mobileFullscreenToggle,
         zoomInput,
+        zoomSwitch,
         zoomStatus,
         solarSimulationSpeed,
         galacticSimulationSpeed,

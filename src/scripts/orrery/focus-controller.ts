@@ -9,6 +9,7 @@ export class FocusController {
         private readonly system: HTMLElement,
         private readonly returnButton: HTMLButtonElement | null,
         private readonly zoomInput: HTMLInputElement | null,
+        private readonly zoomSwitch: HTMLInputElement | null,
         private readonly cosmicZoom: CosmicZoomState,
         private readonly camera: CameraState,
         private readonly setZoomLocation: SetZoomLocation,
@@ -33,6 +34,7 @@ export class FocusController {
             this.returnButton.textContent = '[ ← return ]';
         }
         if (this.zoomInput) this.zoomInput.disabled = true;
+        if (this.zoomSwitch) this.zoomSwitch.disabled = true;
         this.setZoomLocation(
             `focus:${target.id}`,
             target.name === 'Earth' ? 'on planet Earth.' : target.kind === 'star' ? 'at Sol.' : `near ${target.name}.`,
@@ -94,6 +96,7 @@ export class FocusController {
             this.returnButton.disabled = false;
         }
         if (this.zoomInput) this.zoomInput.disabled = false;
+        if (this.zoomSwitch) this.zoomSwitch.disabled = false;
         if (this.cosmicZoom.target >= 0.5) this.setZoomLocation('milky-way', 'in the Milky Way.');
         else this.setZoomLocation('solar', 'in the solar system.');
     }

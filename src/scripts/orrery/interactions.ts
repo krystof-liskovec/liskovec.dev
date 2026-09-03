@@ -23,9 +23,9 @@ type InteractionOptions = {
     canvas: HTMLCanvasElement;
     system: HTMLElement;
     focusReturn: HTMLButtonElement | null;
-    mobileRotationGrip: HTMLButtonElement | null;
     mobileFullscreenToggle: HTMLButtonElement | null;
     zoomInput: HTMLInputElement | null;
+    zoomSwitch: HTMLInputElement | null;
     zoomStatus: HTMLOutputElement | null;
     solarSimulationSpeed: HTMLSelectElement | null;
     galacticSimulationSpeed: HTMLSelectElement | null;
@@ -55,9 +55,9 @@ export const bindOrreryInteractions = ({
     canvas,
     system,
     focusReturn,
-    mobileRotationGrip,
     mobileFullscreenToggle,
     zoomInput,
+    zoomSwitch,
     zoomStatus,
     solarSimulationSpeed,
     galacticSimulationSpeed,
@@ -85,7 +85,6 @@ export const bindOrreryInteractions = ({
     let pressedFocusCandidate: FocusTarget | null = null;
     const touchGesture = { pending: false, pointerId: -1, startX: 0, startY: 0 };
     let dragCaptureTarget: HTMLElement = canvas;
-    let draggingFromGrip = false;
     let simulationControlMode: 'solar' | 'galactic' | 'rotation' = 'solar';
     let solarPresetIndex = DEFAULT_ORBIT_SPEED_PRESET;
     let galacticPresetIndex = DEFAULT_GALACTIC_SPEED_PRESET;
@@ -98,7 +97,8 @@ export const bindOrreryInteractions = ({
         system.classList.toggle('is-fullscreen', active);
         document.documentElement.classList.toggle('is-orrery-fullscreen', active);
         if (!mobileFullscreenToggle) return;
-        mobileFullscreenToggle.textContent = active ? '×' : '⛶';
+        const fullscreenIcon = mobileFullscreenToggle.querySelector<HTMLElement>('.mobile-fullscreen-icon');
+        if (fullscreenIcon) fullscreenIcon.textContent = active ? '×' : '⛶';
         mobileFullscreenToggle.setAttribute(
             'aria-label',
             active ? 'Exit fullscreen animation' : 'Open fullscreen animation',
@@ -250,23 +250,6 @@ export const bindOrreryInteractions = ({
         if (event.pointerType !== 'touch') event.preventDefault();
     };
 
-    mobileRotationGrip?.addEventListener('pointerdown', (event) => {
-        if (event.button !== 0) return;
-        event.preventDefault();
-        event.stopPropagation();
-        onInteract();
-        touchGesture.pending = false;
-        pressedFocusCandidate = null;
-        draggingFromGrip = true;
-        pointer.clientX = event.clientX;
-        pointer.clientY = event.clientY;
-        pointer.active = true;
-        pointer.showsHover = false;
-        camera.dragMode = objectFocus.target ? 'focus' : cosmicZoom.current > 0.55 ? 'galaxy' : 'solar';
-        mobileRotationGrip.classList.add('is-active');
-        startCameraDrag(event, event.clientX, event.clientY, mobileRotationGrip);
-    });
-
     window.addEventListener('pointermove', (event) => {
         pointer.clientX = event.clientX;
         pointer.clientY = event.clientY;
@@ -405,12 +388,9 @@ export const bindOrreryInteractions = ({
             return;
         }
         if (!camera.dragging || event.pointerId !== camera.pointerId) return;
-        const completedGripDrag = draggingFromGrip;
         camera.dragging = false;
-        draggingFromGrip = false;
         system.classList.remove('is-dragging');
-        mobileRotationGrip?.classList.remove('is-active');
-        if (!completedGripDrag) completeInteraction(event, camera.dragDistance, 3);
+        completeInteraction(event, camera.dragDistance, 3);
         pressedFocusCandidate = null;
         if (dragCaptureTarget.hasPointerCapture(event.pointerId))
             dragCaptureTarget.releasePointerCapture(event.pointerId);
@@ -474,17 +454,28 @@ export const bindOrreryInteractions = ({
         onInteract();
         setRotationSimulationSpeed(Number(rotationSimulationSpeed.value));
     });
+    const setZoomTarget = (target: number) => {
+        cosmicZoom.target = target;
+        setSimulationControlMode(target < 0.5 ? 'solar' : 'galactic');
+        const location = target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];
+        setZoomLocation(location[0], location[1]);
+        const status = target < 0.3 ? 'LOCAL SYSTEM' : target < 0.72 ? 'INTERSTELLAR' : 'MILKY WAY';
+        if (zoomStatus) zoomStatus.value = status;
+        if (zoomInput) {
+            zoomInput.value = String(Math.round(target * 100));
+            zoomInput.setAttribute('aria-valuetext', status);
+        }
+        if (zoomSwitch) zoomSwitch.checked = target >= 0.5;
+    };
+
     zoomInput?.addEventListener('input', () => {
         onInteract();
-        cosmicZoom.target = Number(zoomInput.value) / 100;
-        setSimulationControlMode(cosmicZoom.target < 0.5 ? 'solar' : 'galactic');
-        const location =
-            cosmicZoom.target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];
-        setZoomLocation(location[0], location[1]);
-        const status =
-            cosmicZoom.target < 0.3 ? 'LOCAL SYSTEM' : cosmicZoom.target < 0.72 ? 'INTERSTELLAR' : 'MILKY WAY';
-        if (zoomStatus) zoomStatus.value = status;
-        zoomInput.setAttribute('aria-valuetext', status);
+        setZoomTarget(Number(zoomInput.value) / 100);
     });
+    zoomSwitch?.addEventListener('change', () => {
+        onInteract();
+        setZoomTarget(zoomSwitch.checked ? 1 : 0);
+    });
+    setZoomTarget(cosmicZoom.target);
     updateSimulationSpeedControl(solarPresetIndex);
 };
