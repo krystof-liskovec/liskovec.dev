@@ -33,6 +33,8 @@ const siteUrl = Astro.site ?? Astro.url;
 const rssUrl = new URL('/rss.xml', siteUrl);
 const canonicalUrl = canonical === false ? null : new URL(canonical, siteUrl);
 const socialImageUrl = new URL(image, siteUrl);
+const webFontHref =
+    'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap';
 const serializedStructuredData = structuredData ? JSON.stringify(structuredData).replaceAll('<', '\\u003c') : null;
 ---
 
@@ -44,16 +46,9 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta name="theme-color" content="#1d2021" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            data-web-fonts
-            rel="stylesheet"
-            data-href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
-        />
+        <link rel="preload" as="style" href={webFontHref} onload="this.onload=null;this.rel='stylesheet'" />
         <noscript>
-            <link
-                rel="stylesheet"
-                href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap"
-            />
+            <link rel="stylesheet" href={webFontHref} />
         </noscript>
         <style is:inline>
             html,
@@ -75,27 +70,6 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
                 opacity: 1;
             }
         </style>
-        <script is:inline>
-            const webFonts = document.querySelector('link[data-web-fonts]');
-            const loadWebFonts = () => {
-                const fontHref = webFonts?.getAttribute('data-href');
-                if (!webFonts || !fontHref) return;
-                webFonts.setAttribute('href', fontHref);
-            };
-            const scheduleWebFonts = () => {
-                const idleWindow = window;
-                if ('requestIdleCallback' in idleWindow) {
-                    idleWindow.requestIdleCallback(loadWebFonts, { timeout: 2000 });
-                    return;
-                }
-                window.setTimeout(loadWebFonts, 900);
-            };
-            if (document.readyState === 'complete') {
-                scheduleWebFonts();
-            } else {
-                window.addEventListener('load', scheduleWebFonts, { once: true });
-            }
-        </script>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="alternate" type="application/rss+xml" title="Kryštof Liskovec’s blog" href={rssUrl} />
