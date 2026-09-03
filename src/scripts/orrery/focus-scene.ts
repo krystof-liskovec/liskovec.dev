@@ -592,20 +592,26 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             });
         }
 
-        const infoY = Math.min(height - (target.fact ? 93 : 72), focusCenterY + (width < 600 ? 150 : 205) * focusScale);
+        const hidePlanetDetails = width < 600 && target.kind === 'planet';
+        const infoY = Math.min(
+            height - (hidePlanetDetails ? 51 : target.fact ? 93 : 72),
+            focusCenterY + (width < 600 ? 150 : 205) * focusScale,
+        );
         const infoReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.45) / 0.4) : focusEase;
         context.globalAlpha = infoReveal;
         context.fillStyle = target.color;
         context.font = `bold ${width < 600 ? 11 : 13}px "DM Mono", monospace`;
         context.fillText(`[ ${target.name.toUpperCase()} ]`, viewportCenterX, infoY);
-        context.fillStyle = '#a89984';
-        context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
-        context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
-        if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
+        if (!hidePlanetDetails) {
+            context.fillStyle = '#a89984';
+            context.font = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
+            context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
+            if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
+        }
         context.fillText(
             'drag to inspect · double-click to reset orientation',
             viewportCenterX,
-            infoY + (target.fact ? 63 : 42),
+            infoY + (hidePlanetDetails ? 21 : target.fact ? 63 : 42),
         );
 
         if (objectFocus.child && objectFocus.childProgress > 0.001) {

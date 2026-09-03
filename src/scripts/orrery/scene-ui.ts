@@ -221,16 +221,16 @@ export const drawHoverReadouts = (
         hoveredGalacticObject: ProjectedGalacticObject | null;
         sunX: number;
         sunY: number;
+        compact: boolean;
     },
 ) => {
-    const { width, height, hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject, sunX, sunY } = options;
+    const { width, height, hoveredBody, hoveredComet, hoveredSun, hoveredGalacticObject, sunX, sunY, compact } =
+        options;
     if (hoveredBody) {
         drawReadout(context, {
             lines: [
                 `[ ${hoveredBody.planet.name.toUpperCase()} ]`,
-                hoveredBody.planet.kind,
-                hoveredBody.planet.detail,
-                hoveredBody.planet.fact,
+                ...(compact ? [] : [hoveredBody.planet.kind, hoveredBody.planet.detail, hoveredBody.planet.fact]),
                 `lon  ${hoveredBody.position.longitude.toFixed(2).padStart(6)} deg`,
                 `lat  ${`${hoveredBody.position.latitude >= 0 ? '+' : '-'}${Math.abs(hoveredBody.position.latitude).toFixed(2)}`.padStart(6)} deg`,
                 `r    ${hoveredBody.position.distance.toFixed(3).padStart(6)} au`,

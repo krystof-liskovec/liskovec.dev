@@ -740,6 +740,7 @@ if (canvasElement && systemElement && canvasContext) {
                 hoveredGalacticObject,
                 sunX: centerX,
                 sunY: centerY,
+                compact: width < 600,
             });
         }
 
