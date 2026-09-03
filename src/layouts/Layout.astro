@@ -33,8 +33,6 @@ const siteUrl = Astro.site ?? Astro.url;
 const rssUrl = new URL('/rss.xml', siteUrl);
 const canonicalUrl = canonical === false ? null : new URL(canonical, siteUrl);
 const socialImageUrl = new URL(image, siteUrl);
-const webFontHref =
-    'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap';
 const serializedStructuredData = structuredData ? JSON.stringify(structuredData).replaceAll('<', '\\u003c') : null;
 ---
 
@@ -44,22 +42,9 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1d2021" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link rel="preload" as="style" href={webFontHref} data-web-font-preload />
-        <noscript>
-            <link rel="stylesheet" href={webFontHref} />
-        </noscript>
-        <script is:inline>
-            const webFontPreload = document.querySelector('link[data-web-font-preload]');
-            webFontPreload?.addEventListener(
-                'load',
-                () => {
-                    if (webFontPreload) webFontPreload.rel = 'stylesheet';
-                },
-                { once: true },
-            );
-        </script>
+        <link rel="preload" href="/fonts/dm-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/dm-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin />
+        <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
         <style is:inline>
             html,
             body,
