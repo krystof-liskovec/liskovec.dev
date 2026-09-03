@@ -1,7 +1,6 @@
 import { PLANETS } from './orrery/catalog';
 import type { MajorMoon } from './orrery/catalog';
-import { drawGalaxyBackdrop, drawLocalStarfield } from './orrery/background-renderer';
-import { drawFocusScene } from './orrery/focus-scene';
+import { drawLocalStarfield } from './orrery/local-background-renderer';
 import { FocusController } from './orrery/focus-controller';
 import { updateFocusRotation, updateGalaxyCamera, updateSolarCamera } from './orrery/frame-state';
 import { galacticPatternPhase, moveGalacticMaterial } from './orrery/galactic-simulation';
@@ -16,7 +15,7 @@ import {
     getRotationElapsedHours as resolveRotationElapsedHours,
 } from './orrery/runtime-state';
 import { createFocusCandidate, drawHoverReadouts, resolveFocusHit } from './orrery/scene-ui';
-import { GALACTIC_SOL } from './orrery/scene-data';
+import { GALACTIC_SOL } from './orrery/galaxy-model';
 import { createRenderMetrics } from './orrery/render-metrics';
 import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
@@ -24,6 +23,9 @@ import { formatGalacticEpoch, formatLocalDateTime, signedDegrees } from './orrer
 import { createTypewriter } from './orrery/typewriter';
 import type { FocusTarget, Vec3 } from './orrery/types';
 import type { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
+
+type DrawGalaxyBackdrop = typeof import('./orrery/background-renderer').drawGalaxyBackdrop;
+type DrawFocusScene = typeof import('./orrery/focus-scene').drawFocusScene;
 
 // Keep the scene fluid on high-refresh displays while bounding work above 120Hz.
 const MAX_RENDER_FPS = 120;
@@ -122,6 +124,38 @@ if (canvasElement && systemElement && canvasContext) {
             return;
         }
         animationFrame = requestAnimationFrame(render);
+    };
+
+    let galaxyBackdropRenderer: DrawGalaxyBackdrop | null = null;
+    let galaxyBackdropLoadPromise: Promise<DrawGalaxyBackdrop | null> | null = null;
+    const loadGalaxyBackdrop = () => {
+        if (galaxyBackdropRenderer) return Promise.resolve(galaxyBackdropRenderer);
+        if (!galaxyBackdropLoadPromise) {
+            galaxyBackdropLoadPromise = import('./orrery/background-renderer')
+                .then(({ drawGalaxyBackdrop }) => {
+                    galaxyBackdropRenderer = drawGalaxyBackdrop;
+                    scheduleRender();
+                    return drawGalaxyBackdrop;
+                })
+                .catch(() => null);
+        }
+        return galaxyBackdropLoadPromise;
+    };
+
+    let focusSceneRenderer: DrawFocusScene | null = null;
+    let focusSceneLoadPromise: Promise<DrawFocusScene | null> | null = null;
+    const loadFocusScene = () => {
+        if (focusSceneRenderer) return Promise.resolve(focusSceneRenderer);
+        if (!focusSceneLoadPromise) {
+            focusSceneLoadPromise = import('./orrery/focus-scene')
+                .then(({ drawFocusScene }) => {
+                    focusSceneRenderer = drawFocusScene;
+                    scheduleRender();
+                    return drawFocusScene;
+                })
+                .catch(() => null);
+        }
+        return focusSceneLoadPromise;
     };
 
     let particleRendererLoadScheduled = false;
@@ -422,6 +456,12 @@ if (canvasElement && systemElement && canvasContext) {
             objectFocus.target?.kind === 'galactic' ? 1 - smoothstep((visualFocusProgress - 0.04) / 0.42) : 1;
         const galaxyAlpha = galaxyVisibility * backgroundSceneOpacity;
         const localSkyOpacity = (1 - smoothstep((cosmicZoom.current - 0.06) / 0.24)) * backgroundSceneOpacity;
+        if (
+            !galaxyBackdropRenderer &&
+            (cosmicZoom.current > 0.05 || cosmicZoom.target > 0.05 || objectFocus.target?.kind === 'galactic')
+        ) {
+            void loadGalaxyBackdrop();
+        }
         // Leave enough room for Neptune even at the nearest point in the projection.
         const baseWorldScale = width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50);
         const focusedSceneScale = 1 + planetSceneFocus * 13;
@@ -488,7 +528,7 @@ if (canvasElement && systemElement && canvasContext) {
         };
 
         const drawGalaxy = (targetContext: CanvasRenderingContext2D) => {
-            drawGalaxyBackdrop(targetContext, {
+            galaxyBackdropRenderer?.(targetContext, {
                 width,
                 height,
                 seconds,
@@ -526,6 +566,7 @@ if (canvasElement && systemElement && canvasContext) {
         });
         const canCacheGalaxyBackdrop =
             Boolean(backgroundContext) &&
+            Boolean(galaxyBackdropRenderer) &&
             !activeParticleRenderer &&
             galaxyProgress > 0.98 &&
             !objectFocus.target &&
@@ -703,27 +744,32 @@ if (canvasElement && systemElement && canvasContext) {
         }
 
         if (objectFocus.target && objectFocus.progress > 0.001) {
-            activeFocusCandidate = drawFocusScene(context, {
-                width,
-                height,
-                objectFocus,
-                focusedPlanet,
-                bodies,
-                viewportCenterX,
-                viewportCenterY,
-                localSphereGrowth,
-                planetSceneFocus,
-                seconds,
-                rotationHours: elapsedRotationHours,
-                reducedMotion,
-                pointer,
-                camera,
-                localPointerX,
-                localPointerY,
-                showHoverVisuals,
-                solveMoonOrbit: solveFocusedMoonOrbit,
-                moonElapsedDays: focusedMoonElapsedDays,
-            });
+            if (focusSceneRenderer) {
+                activeFocusCandidate = focusSceneRenderer(context, {
+                    width,
+                    height,
+                    objectFocus,
+                    focusedPlanet,
+                    bodies,
+                    viewportCenterX,
+                    viewportCenterY,
+                    localSphereGrowth,
+                    planetSceneFocus,
+                    seconds,
+                    rotationHours: elapsedRotationHours,
+                    reducedMotion,
+                    pointer,
+                    camera,
+                    localPointerX,
+                    localPointerY,
+                    showHoverVisuals,
+                    solveMoonOrbit: solveFocusedMoonOrbit,
+                    moonElapsedDays: focusedMoonElapsedDays,
+                });
+            } else {
+                activeFocusCandidate = null;
+                void loadFocusScene();
+            }
         }
         const currentSecond = Math.floor(frameTime / 1000);
         const cameraStatsTick = Math.floor(frameTime / 100);

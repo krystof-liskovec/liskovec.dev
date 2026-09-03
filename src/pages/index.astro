@@ -213,6 +213,7 @@ const profileStructuredData = {
 
 <script>
     const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
+    const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
     const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
     const solarSystem = document.querySelector<HTMLElement>('#solar-system');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -270,6 +271,7 @@ const profileStructuredData = {
 
     let headingFinished = false;
     const headingLeadWriter = solarHeadingLead ? createIntroTypewriter(solarHeadingLead) : null;
+    const zoomLocationWriter = zoomLocation ? createIntroTypewriter(zoomLocation) : null;
     const loadOrrery = () => void import('../scripts/orrery.ts');
     // Give the completed heading a real paint opportunity before the heavy
     // interactive scene module begins evaluating on throttled devices.
@@ -307,11 +309,11 @@ const profileStructuredData = {
         { once: true },
     );
 
-    if (solarHeadingLead) {
-        // Keep the measured second line server-rendered so it can paint as the LCP candidate.
+    if (solarHeadingLead && zoomLocation) {
         solarHeadingLead.textContent = '';
+        zoomLocation.textContent = '';
         headingLeadWriter?.setText('somewhere', () => {
-            finishHeading();
+            zoomLocationWriter?.setText('in the solar system.', finishHeading);
         });
     } else {
         finishHeading();

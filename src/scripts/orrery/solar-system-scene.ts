@@ -1,7 +1,7 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
-import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './scene-data';
+import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
 import type { SolarParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';

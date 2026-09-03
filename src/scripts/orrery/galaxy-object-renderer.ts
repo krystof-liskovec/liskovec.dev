@@ -1,6 +1,6 @@
 import { GALACTIC_OBJECTS } from './catalog';
 import { smoothstep } from './math';
-import { galacticPositionFromSun } from './scene-data';
+import { galacticPositionFromSun } from './galaxy-model';
 import { galacticPatternPhase, moveGalacticMaterial, rotateGalacticPoint } from './galactic-simulation';
 
 export type ProjectedGalacticObject = {

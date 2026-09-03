@@ -1,6 +1,6 @@
 import { PLANETS } from './catalog';
 import { heliocentricPosition, orbitalPoint, smoothstep, solveOrbit } from './math';
-import { ORBIT_POINTS, ORBIT_SAMPLES } from './scene-data';
+import { ORBIT_POINTS, ORBIT_SAMPLES } from './solar-scene-data';
 import type { Planet, ProjectedBody, Vec3 } from './types';
 
 export type ProjectedPoint = Vec3 & { scale: number };

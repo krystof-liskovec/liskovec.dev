@@ -4,8 +4,8 @@ import {
     GALACTIC_NEBULAE,
     GALAXY_STARS,
     LOCAL_ARM_STARS,
-    STARS,
-} from './scene-data';
+} from './galaxy-scene-data';
+import { STARS } from './solar-scene-data';
 import { galacticPatternPhase, moveGalacticMaterial } from './galactic-simulation';
 import { createParticleGlyphDrawer, type ParticleGlyphDrawer } from './particle-glyph';
 import type { GalaxyParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';

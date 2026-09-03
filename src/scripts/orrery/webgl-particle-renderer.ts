@@ -1,6 +1,6 @@
 import { ATLAS_GLYPHS, normalizeGlyphFont } from './glyph-atlas';
 import { GALACTIC_CENTER_DISTANCE_KPC, GALACTIC_SCENE_UNITS_PER_KPC } from './galaxy-model';
-import type { SolarParticle } from './scene-data';
+import type { SolarParticle } from './solar-scene-data';
 
 const FLOATS_PER_INSTANCE = 12;
 const SOLAR_FLOATS_PER_INSTANCE = 8;
