@@ -1154,6 +1154,11 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
 }
 .cosmic-zoom-control output {
     width: 78px;
+    min-height: 2.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.4;
     color: var(--yellow);
     text-align: center;
     transition: opacity 0.3s;
