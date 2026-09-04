@@ -536,6 +536,7 @@ export const bindOrreryInteractions = ({
         if (zoomStatus) zoomStatus.value = status;
         if (zoomInput) {
             zoomInput.value = String(Math.round(target * 100));
+            zoomInput.style.setProperty('--zoom-progress', `${Math.round(target * 100)}%`);
             zoomInput.setAttribute('aria-valuetext', status);
         }
         if (zoomSwitch) zoomSwitch.checked = target >= 0.5;

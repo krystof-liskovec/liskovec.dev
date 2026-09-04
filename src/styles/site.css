@@ -1064,14 +1064,65 @@ footer a:hover {
     transition: opacity 0.3s;
 }
 .cosmic-zoom-control input {
+    --zoom-progress: 0%;
     width: 18px;
     height: 220px;
     margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
     writing-mode: vertical-lr;
     direction: rtl;
-    accent-color: var(--orange);
+    border: 0;
+    border-radius: 0;
+    background: linear-gradient(to top, var(--orange) 0 var(--zoom-progress), #665c54 var(--zoom-progress) 100%)
+        center / 4px 100% no-repeat;
     cursor: ns-resize;
     -webkit-tap-highlight-color: transparent;
+}
+.cosmic-zoom-control input::-webkit-slider-runnable-track {
+    width: 4px;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.cosmic-zoom-control input::-moz-range-track {
+    width: 2px;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.cosmic-zoom-control input::-moz-range-progress {
+    background: transparent;
+}
+.cosmic-zoom-control input::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+    margin-left: -5px;
+    border: 1px solid var(--yellow);
+    border-radius: 0;
+    background: var(--orange);
+    box-shadow: none;
+    -webkit-appearance: none;
+}
+.cosmic-zoom-control input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--yellow);
+    border-radius: 0;
+    background: var(--orange);
+    box-shadow: none;
+}
+.cosmic-zoom-control input:hover::-webkit-slider-thumb,
+.cosmic-zoom-control input:focus-visible::-webkit-slider-thumb {
+    background: var(--yellow);
+    border-color: var(--orange);
+}
+.cosmic-zoom-control input:hover::-moz-range-thumb,
+.cosmic-zoom-control input:focus-visible::-moz-range-thumb {
+    background: var(--yellow);
+    border-color: var(--orange);
 }
 .cosmic-zoom-control output {
     width: 78px;
@@ -1439,7 +1490,24 @@ footer a:hover {
         height: 18px;
         writing-mode: horizontal-tb;
         direction: rtl;
+        background: linear-gradient(to left, var(--orange) 0 var(--zoom-progress), #665c54 var(--zoom-progress) 100%)
+            center / 100% 4px no-repeat;
         cursor: ew-resize;
+    }
+    .cosmic-zoom-control input::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+    }
+    .cosmic-zoom-control input::-moz-range-track {
+        width: 100%;
+        height: 2px;
+    }
+    .cosmic-zoom-control input::-moz-range-progress {
+        background: transparent;
+    }
+    .cosmic-zoom-control input::-webkit-slider-thumb {
+        margin-top: -5px;
+        margin-left: 0;
     }
     .cosmic-zoom-control output {
         width: auto;
