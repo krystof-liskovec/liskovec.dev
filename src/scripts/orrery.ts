@@ -69,6 +69,7 @@ if (canvasElement && systemElement && canvasContext) {
         camera,
         galaxyCamera,
         objectFocus,
+        keyboardNavigation,
         easterEgg,
         cosmicZoom,
         orbitClock,
@@ -616,7 +617,7 @@ if (canvasElement && systemElement && canvasContext) {
 
         const localPointerX = pointer.clientX - systemLeft;
         const localPointerY = pointer.clientY - systemTop;
-        const showHoverVisuals = pointer.showsHover;
+        const showHoverVisuals = pointer.showsHover || keyboardNavigation.mode !== 'camera';
         const galaxyObjectOpacity = galaxyAlpha * smoothstep((galaxyProgress - 0.42) / 0.35);
         galaxyObjectRenderer.project({
             radius: galaxyRadius,
@@ -656,10 +657,16 @@ if (canvasElement && systemElement && canvasContext) {
                 findHoveredGalacticObject: (pointerX, pointerY) => galaxyObjectRenderer.findHovered(pointerX, pointerY),
             });
         const currentFocusHit = resolveHitAt(localPointerX, localPointerY);
-        const hoveredBody = currentFocusHit.hoveredBody;
-        const hoveredComet = currentFocusHit.hoveredComet;
-        const hoveredSun = currentFocusHit.hoveredSun;
-        const hoveredGalacticObject = currentFocusHit.hoveredGalacticObject;
+        const keyboardSelectedBody =
+            keyboardNavigation.mode === 'planet-selection'
+                ? (bodies.find((body) => body.planet.name === keyboardNavigation.selectedId) ?? null)
+                : null;
+        const hoveredBody =
+            keyboardNavigation.mode === 'planet-selection' ? keyboardSelectedBody : currentFocusHit.hoveredBody;
+        const hoveredComet = keyboardNavigation.mode === 'planet-selection' ? null : currentFocusHit.hoveredComet;
+        const hoveredSun = keyboardNavigation.mode === 'planet-selection' ? false : currentFocusHit.hoveredSun;
+        const hoveredGalacticObject =
+            keyboardNavigation.mode === 'planet-selection' ? null : currentFocusHit.hoveredGalacticObject;
         const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
         getFocusCandidateAt = (clientX, clientY) => {
             const hit = resolveHitAt(clientX - systemLeft, clientY - systemTop, true);
@@ -774,6 +781,8 @@ if (canvasElement && systemElement && canvasContext) {
                     localPointerX,
                     localPointerY,
                     showHoverVisuals,
+                    keyboardSelectionId:
+                        keyboardNavigation.mode === 'child-selection' ? keyboardNavigation.selectedId : null,
                     solveMoonOrbit: solveFocusedMoonOrbit,
                     moonElapsedDays: focusedMoonElapsedDays,
                 });
@@ -827,6 +836,7 @@ if (canvasElement && systemElement && canvasContext) {
         camera,
         galaxyCamera,
         objectFocus,
+        keyboardNavigation,
         easterEgg,
         cosmicZoom,
         orbitClock,

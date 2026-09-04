@@ -41,11 +41,12 @@ export class OrreryIntroController {
 
     constructor(reducedMotion: boolean) {
         const isRepeatIntro = document.documentElement.hasAttribute('data-orrery-intro-repeat');
+        const skipIntro = document.documentElement.hasAttribute('data-orrery-anchor-entry');
         this.orbitStartProgress = isRepeatIntro ? REPEAT_ORBIT_START_PROGRESS : ORBIT_START_PROGRESS;
         this.orbitRevealProgress = isRepeatIntro ? REPEAT_ORBIT_REVEAL_PROGRESS : ORBIT_REVEAL_PROGRESS;
         this.bodyStartProgress = isRepeatIntro ? REPEAT_BODY_START_PROGRESS : BODY_START_PROGRESS;
         this.bodyRevealProgress = isRepeatIntro ? REPEAT_BODY_REVEAL_PROGRESS : BODY_REVEAL_PROGRESS;
-        this.complete = reducedMotion;
+        this.complete = reducedMotion || skipIntro;
         if (this.complete) completeState(this.state);
     }
 

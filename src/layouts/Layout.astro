@@ -99,7 +99,7 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <script is:inline>
             const resetHomepageReload = document.documentElement.hasAttribute('data-reset-scroll-on-reload');
             const navigation = performance.getEntriesByType('navigation')[0];
-            if (resetHomepageReload && navigation?.type === 'reload') {
+            if (resetHomepageReload && navigation?.type === 'reload' && !location.hash) {
                 history.scrollRestoration = 'manual';
                 history.replaceState(history.state, '', location.pathname + location.search);
                 const resetReloadScroll = () => window.scrollTo(0, 0);

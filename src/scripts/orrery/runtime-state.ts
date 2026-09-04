@@ -108,6 +108,11 @@ export type EasterEggState = {
 
 export type CosmicZoomState = { current: number; target: number };
 
+export type KeyboardNavigationState = {
+    mode: 'camera' | 'planet-selection' | 'child-selection';
+    selectedId: string | null;
+};
+
 export const createRuntimeState = () => {
     const startedAt = performance.now();
     const anchorDate = Date.now();
@@ -171,6 +176,7 @@ export const createRuntimeState = () => {
         camera,
         galaxyCamera,
         objectFocus,
+        keyboardNavigation: { mode: 'camera', selectedId: null } as KeyboardNavigationState,
         easterEgg: { clicks: 0, lastClickAt: 0, unlocked: false, revealedAt: 0 } as EasterEggState,
         cosmicZoom: { current: 0, target: 0 } as CosmicZoomState,
         orbitClock: {

@@ -73,8 +73,9 @@ const profileStructuredData = {
                     development work, technical skills, blog posts, and contact details.
                 </p>
                 <p class="sr-only" id="solar-canvas-help">
-                    Focus the animation with Tab, then use the arrow keys to turn the camera. Shift plus an arrow key
-                    turns faster.
+                    Focus the animation with Tab. Press Enter to choose a planet, use the arrow keys to move between
+                    planets, and press Enter again to zoom in. In a focused planetary scene, use Tab or the arrow keys
+                    to choose a moon or station. Press Escape to zoom out and Space to return to camera controls.
                 </p>
                 <canvas class="solar-gpu-canvas" id="solar-gpu-canvas" aria-hidden="true"></canvas>
                 <canvas
@@ -82,7 +83,7 @@ const profileStructuredData = {
                     role="img"
                     aria-label="Interactive ASCII solar system with live approximate planetary positions"
                     aria-describedby="solar-canvas-help"
-                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+                    aria-keyshortcuts="Enter Escape Space Tab Shift+Tab ArrowLeft ArrowRight ArrowUp ArrowDown"
                     tabindex="0"></canvas>
                 <button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return ]</button>
                 <button
@@ -262,7 +263,9 @@ const profileStructuredData = {
         <div class="profile-layout">
             <section class="content-section" id="about">
                 <div class="section-label">
-                    <span>01 / about me</span><span>devops + software development</span>
+                    <a class="section-label-anchor" href="#about">01 / about me</a><span
+                        >devops + software development</span
+                    >
                 </div><div class="about-grid">
                     <h2>i build reliable software and the systems it runs on.</h2>
                     <div class="about-copy">
@@ -281,9 +284,9 @@ const profileStructuredData = {
             </section>
             <div class="utility-grid">
                 <section class="about-toolbox" id="skills">
-                    <div class="section-label"><span>02 / toolbox</span><span>tools &amp; tech</span></div><div
-                        class="skill-groups"
-                    >
+                    <div class="section-label">
+                        <a class="section-label-anchor" href="#skills">02 / toolbox</a><span>tools &amp; tech</span>
+                    </div><div class="skill-groups">
                         <div>
                             <span>operations</span><p>
                                 Linux &lt;3&nbsp;· Docker&nbsp;· GitLab CI/CD&nbsp;· IaC&nbsp;· Nginx&nbsp;·
@@ -299,7 +302,9 @@ const profileStructuredData = {
                     </div>
                 </section>
                 <section class="about-contact" id="contact">
-                    <div class="section-label"><span>03 / contact</span><span>get in touch</span></div>
+                    <div class="section-label">
+                        <a class="section-label-anchor" href="#contact">03 / contact</a><span>get in touch</span>
+                    </div>
                     <div class="contact-links">
                         <a href="mailto:krystof@liskovec.dev">email <span>↗</span></a>
                     </div>
@@ -309,7 +314,9 @@ const profileStructuredData = {
 
         <section class="content-section" id="blog">
             <div class="section-label">
-                <span>04 / featured posts</span><span>sometimes with opinions included</span>
+                <a class="section-label-anchor" href="#blog">04 / featured posts</a><span
+                    >sometimes with opinions included</span
+                >
             </div><PostList posts={featuredPosts} /><div class="blog-actions">
                 <a class="blog-link" href="/blog">[ visit the blog → ]</a>
             </div>
@@ -323,6 +330,8 @@ const profileStructuredData = {
     const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
     const solarSystem = document.querySelector<HTMLElement>('#solar-system');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const initialHashTarget = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
+    const isAnchorEntry = Boolean(initialHashTarget);
     const introStorageKey = 'liskovec:orrery-intro-seen:v3';
     const isRepeatIntro = (() => {
         try {
@@ -332,7 +341,8 @@ const profileStructuredData = {
         }
     })();
 
-    if (!reducedMotion) {
+    if (isAnchorEntry) document.documentElement.setAttribute('data-orrery-anchor-entry', '');
+    if (!reducedMotion && !isAnchorEntry) {
         solarHeading?.classList.add('is-intro-running');
         solarSystem?.classList.add('is-intro-running');
     }
@@ -386,6 +396,10 @@ const profileStructuredData = {
         requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
     };
     const scheduleOrrery = () => {
+        if (isAnchorEntry) {
+            loadOrrery();
+            return;
+        }
         window.setTimeout(() => {
             if (idleWindow.requestIdleCallback) {
                 idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
@@ -415,7 +429,11 @@ const profileStructuredData = {
         { once: true },
     );
 
-    if (solarHeadingLead && zoomLocation) {
+    if (isAnchorEntry) {
+        if (solarHeadingLead) solarHeadingLead.textContent = 'somewhere';
+        if (zoomLocation) zoomLocation.textContent = 'in the solar system.';
+        finishHeading();
+    } else if (solarHeadingLead && zoomLocation) {
         solarHeadingLead.textContent = '';
         zoomLocation.textContent = '';
         headingLeadWriter?.setText('somewhere', () => {
@@ -465,16 +483,18 @@ const profileStructuredData = {
         arrivalFrame = requestAnimationFrame(check);
     };
 
+    const getAnchorSection = (hash: string) => {
+        const section = document.getElementById(hash.slice(1));
+        return section?.classList.contains('content-section') || section?.id === 'contact' || section?.id === 'skills'
+            ? section
+            : null;
+    };
+
     document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
         link.addEventListener('click', () => {
-            const id = link.hash.slice(1);
-            const section = document.getElementById(id);
-            if (
-                section?.classList.contains('content-section') ||
-                section?.id === 'contact' ||
-                section?.id === 'skills'
-            ) {
-                waitForScrollEnd(section);
+            if (window.location.hash === link.hash) {
+                const section = getAnchorSection(link.hash);
+                if (section) waitForScrollEnd(section);
             }
         });
     });
@@ -488,16 +508,16 @@ const profileStructuredData = {
         });
     };
 
-    window.addEventListener('hashchange', updateNavigationState);
+    window.addEventListener('hashchange', () => {
+        updateNavigationState();
+        const section = getAnchorSection(window.location.hash);
+        if (section) waitForScrollEnd(section);
+    });
     updateNavigationState();
 
     if (window.location.hash) {
-        const initialSection = document.getElementById(window.location.hash.slice(1));
-        if (
-            initialSection?.classList.contains('content-section') ||
-            initialSection?.id === 'contact' ||
-            initialSection?.id === 'skills'
-        ) {
+        const initialSection = getAnchorSection(window.location.hash);
+        if (initialSection) {
             waitForScrollEnd(initialSection);
         }
     }

@@ -52,6 +52,7 @@ type FocusSceneOptions = {
     localPointerX: number;
     localPointerY: number;
     showHoverVisuals: boolean;
+    keyboardSelectionId: string | null;
     solveMoonOrbit: (moon: MajorMoon, target?: MoonOrbit) => MoonOrbit;
 };
 
@@ -76,6 +77,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         localPointerX,
         localPointerY,
         showHoverVisuals,
+        keyboardSelectionId,
         solveMoonOrbit,
     } = options;
     let activeFocusCandidate: FocusTarget | null = null;
@@ -263,18 +265,26 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         );
         const focusedMoonPosition = { x: focusCenterX + focusedMoonOffset.x, y: focusCenterY + focusedMoonOffset.y };
         const focusedIssPosition = { x: focusCenterX + focusedIssOffset.x, y: focusCenterY + focusedIssOffset.y };
+        const earthSatelliteObjects = [
+            { id: 'moon' as const, ...focusedMoonPosition },
+            { id: 'iss' as const, ...focusedIssPosition },
+        ];
         const hoveredFocusedEarthObject =
-            earthSatelliteReveal > 0.35 && pointer.active && !camera.dragging && !objectFocus.child
-                ? [
-                      { id: 'moon' as const, ...focusedMoonPosition },
-                      { id: 'iss' as const, ...focusedIssPosition },
-                  ].reduce<{ id: 'moon' | 'iss'; x: number; y: number } | null>((closest, object) => {
-                      const distance = Math.hypot(object.x - localPointerX, object.y - localPointerY);
-                      const closestDistance = closest
-                          ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY)
-                          : Infinity;
-                      return distance < 30 && distance < closestDistance ? object : closest;
-                  }, null)
+            earthSatelliteReveal > 0.35 && !camera.dragging && !objectFocus.child
+                ? keyboardSelectionId
+                    ? (earthSatelliteObjects.find((object) => object.id === keyboardSelectionId) ?? null)
+                    : pointer.active
+                      ? earthSatelliteObjects.reduce<{ id: 'moon' | 'iss'; x: number; y: number } | null>(
+                            (closest, object) => {
+                                const distance = Math.hypot(object.x - localPointerX, object.y - localPointerY);
+                                const closestDistance = closest
+                                    ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY)
+                                    : Infinity;
+                                return distance < 30 && distance < closestDistance ? object : closest;
+                            },
+                            null,
+                        )
+                      : null
                 : null;
         if (hoveredFocusedEarthObject) {
             const isMoon = hoveredFocusedEarthObject.id === 'moon';
@@ -391,14 +401,18 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             return { ...moon, offset, x: focusCenterX + offset.x, y: focusCenterY + offset.y };
         });
         const hoveredMajorMoon =
-            majorMoonReveal > 0.35 && pointer.active && !camera.dragging && !objectFocus.child
-                ? majorMoons.reduce<(typeof majorMoons)[number] | null>((closest, moon) => {
-                      const distance = Math.hypot(moon.x - localPointerX, moon.y - localPointerY);
-                      const closestDistance = closest
-                          ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY)
-                          : Infinity;
-                      return distance < 26 && distance < closestDistance ? moon : closest;
-                  }, null)
+            majorMoonReveal > 0.35 && !camera.dragging && !objectFocus.child
+                ? keyboardSelectionId
+                    ? (majorMoons.find((moon) => `moon:${target.name}:${moon.name}` === keyboardSelectionId) ?? null)
+                    : pointer.active
+                      ? majorMoons.reduce<(typeof majorMoons)[number] | null>((closest, moon) => {
+                            const distance = Math.hypot(moon.x - localPointerX, moon.y - localPointerY);
+                            const closestDistance = closest
+                                ? Math.hypot(closest.x - localPointerX, closest.y - localPointerY)
+                                : Infinity;
+                            return distance < 26 && distance < closestDistance ? moon : closest;
+                        }, null)
+                      : null
                 : null;
         if (hoveredMajorMoon && majorMoonSystem) {
             activeFocusCandidate = {

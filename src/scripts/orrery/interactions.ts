@@ -1,10 +1,12 @@
 import { DEG } from './math';
+import { MAJOR_MOON_SYSTEMS, PLANETS } from './catalog';
 import type {
     CameraState,
     CosmicZoomState,
     EasterEggState,
     GalacticClockState,
     GalaxyCameraState,
+    KeyboardNavigationState,
     OrbitClockState,
     PointerState,
     RotationClockState,
@@ -34,6 +36,7 @@ type InteractionOptions = {
     camera: CameraState;
     galaxyCamera: GalaxyCameraState;
     objectFocus: FocusState;
+    keyboardNavigation: KeyboardNavigationState;
     easterEgg: EasterEggState;
     cosmicZoom: CosmicZoomState;
     orbitClock: OrbitClockState;
@@ -66,6 +69,7 @@ export const bindOrreryInteractions = ({
     camera,
     galaxyCamera,
     objectFocus,
+    keyboardNavigation,
     easterEgg,
     cosmicZoom,
     orbitClock,
@@ -323,6 +327,52 @@ export const bindOrreryInteractions = ({
         pointer.targetY = pointer.y;
     };
 
+    const selectablePlanetNames = () =>
+        PLANETS.filter((planet) => !planet.easterEgg || easterEgg.unlocked).map((planet) => planet.name);
+    const selectableChildIds = () => {
+        const target = objectFocus.target;
+        if (!target || target.kind !== 'planet' || objectFocus.child) return [];
+        if (target.name === 'Earth') return ['moon', 'iss'];
+        return (MAJOR_MOON_SYSTEMS[target.name]?.moons ?? []).map((moon) => `moon:${target.name}:${moon.name}`);
+    };
+    const updateCanvasKeyboardLabel = () => {
+        if (keyboardNavigation.mode === 'planet-selection' && keyboardNavigation.selectedId) {
+            canvas.setAttribute(
+                'aria-label',
+                `${keyboardNavigation.selectedId} selected. Use arrow keys to choose a planet, then press Enter to zoom in.`,
+            );
+        } else if (keyboardNavigation.mode === 'child-selection' && keyboardNavigation.selectedId) {
+            const selectedName =
+                keyboardNavigation.selectedId === 'iss'
+                    ? 'International Space Station'
+                    : keyboardNavigation.selectedId === 'moon'
+                      ? 'Moon'
+                      : (keyboardNavigation.selectedId.split(':').at(-1) ?? 'moon');
+            canvas.setAttribute(
+                'aria-label',
+                `${selectedName} selected. Use Tab or arrow keys to choose a nearby object, then press Enter to zoom in.`,
+            );
+        } else {
+            canvas.setAttribute(
+                'aria-label',
+                'Interactive ASCII solar system with live approximate planetary positions',
+            );
+        }
+    };
+    const setKeyboardNavigation = (mode: KeyboardNavigationState['mode'], selectedId: string | null = null) => {
+        keyboardNavigation.mode = mode;
+        keyboardNavigation.selectedId = selectedId;
+        updateCanvasKeyboardLabel();
+    };
+    const directionForSelection = (key: string) => (key === 'ArrowRight' || key === 'ArrowDown' ? 1 : -1);
+    const cycleKeyboardSelection = (items: string[], direction: number) => {
+        if (!items.length) return;
+        const currentIndex = keyboardNavigation.selectedId ? items.indexOf(keyboardNavigation.selectedId) : -1;
+        const nextIndex = (currentIndex + direction + items.length) % items.length;
+        setKeyboardNavigation(keyboardNavigation.mode, items[nextIndex] ?? null);
+        onInteract();
+    };
+
     type KeyboardDirection = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
     const keyboardDirections = new Set<KeyboardDirection>();
     let keyboardFast = false;
@@ -432,7 +482,85 @@ export const bindOrreryInteractions = ({
         stopKeyboardTurn();
     });
     canvas.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            if (event.repeat) return;
+            event.preventDefault();
+            stopKeyboardTurn();
+            if (!objectFocus.target && keyboardNavigation.mode === 'camera') {
+                const selectedPlanet =
+                    getActiveFocusCandidate()?.kind === 'planet' ? getActiveFocusCandidate()?.name : null;
+                const firstPlanet = selectablePlanetNames()[0] ?? null;
+                setKeyboardNavigation('planet-selection', selectedPlanet ?? firstPlanet);
+                onInteract();
+            } else if (!objectFocus.target && keyboardNavigation.mode === 'planet-selection') {
+                const candidate = getActiveFocusCandidate();
+                if (candidate?.kind === 'planet') {
+                    setKeyboardNavigation('camera');
+                    setSimulationControlMode('rotation');
+                    beginObjectFocus(candidate);
+                    onInteract();
+                }
+            } else if (objectFocus.target && keyboardNavigation.mode === 'child-selection') {
+                const candidate = getActiveFocusCandidate();
+                if (candidate?.kind === 'moon' || candidate?.kind === 'station') {
+                    setKeyboardNavigation('camera');
+                    beginChildFocus(candidate);
+                    onInteract();
+                }
+            }
+            return;
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            stopKeyboardTurn();
+            if (objectFocus.child) {
+                const returningChildId = objectFocus.child.id;
+                leaveObjectFocus();
+                setKeyboardNavigation('child-selection', returningChildId);
+            } else if (objectFocus.target) {
+                leaveObjectFocus();
+                setKeyboardNavigation('camera');
+            } else if (keyboardNavigation.mode !== 'camera') {
+                setKeyboardNavigation('camera');
+                onInteract();
+            }
+            return;
+        }
+        if (event.code === 'Space') {
+            event.preventDefault();
+            stopKeyboardTurn();
+            if (keyboardNavigation.mode !== 'camera') {
+                setKeyboardNavigation('camera');
+                onInteract();
+            }
+            return;
+        }
+        if (event.key === 'Tab') {
+            const childIds = selectableChildIds();
+            if (childIds.length) {
+                event.preventDefault();
+                stopKeyboardTurn();
+                if (keyboardNavigation.mode !== 'child-selection') setKeyboardNavigation('child-selection');
+                cycleKeyboardSelection(childIds, event.shiftKey ? -1 : 1);
+            }
+            return;
+        }
         if (!isKeyboardDirection(event.key)) return;
+
+        if (keyboardNavigation.mode === 'planet-selection') {
+            event.preventDefault();
+            stopKeyboardTurn();
+            cycleKeyboardSelection(selectablePlanetNames(), directionForSelection(event.key));
+            return;
+        }
+        if (keyboardNavigation.mode === 'child-selection') {
+            const childIds = selectableChildIds();
+            if (!childIds.length) return;
+            event.preventDefault();
+            stopKeyboardTurn();
+            cycleKeyboardSelection(childIds, directionForSelection(event.key));
+            return;
+        }
 
         event.preventDefault();
         if (!keyboardDirections.has(event.key)) {
@@ -516,11 +644,13 @@ export const bindOrreryInteractions = ({
     canvas.addEventListener('pointerdown', (event) => {
         if (event.button !== 0) return;
         onInteract();
+        const leavingKeyboardSelection = keyboardNavigation.mode !== 'camera';
+        if (leavingKeyboardSelection) setKeyboardNavigation('camera');
         pointer.clientX = event.clientX;
         pointer.clientY = event.clientY;
         pointer.active = true;
         pointer.showsHover = event.pointerType !== 'touch';
-        pressedFocusCandidate = getActiveFocusCandidate();
+        pressedFocusCandidate = leavingKeyboardSelection ? null : getActiveFocusCandidate();
         camera.dragMode = objectFocus.target ? 'focus' : cosmicZoom.current > 0.55 ? 'galaxy' : 'solar';
         if (event.pointerType === 'touch') {
             pressedFocusCandidate = null;
@@ -597,6 +727,9 @@ export const bindOrreryInteractions = ({
         if (!camera.dragging || event.pointerId !== camera.pointerId) return;
         camera.dragging = false;
         system.classList.remove('is-dragging');
+        if (event.type === 'pointerup' && camera.dragDistance < 3 && !pressedFocusCandidate) {
+            pressedFocusCandidate = getFocusCandidateAt(event.clientX, event.clientY) ?? getActiveFocusCandidate();
+        }
         completeInteraction(event, camera.dragDistance, 3);
         pressedFocusCandidate = null;
         if (dragCaptureTarget.hasPointerCapture(event.pointerId))
@@ -647,6 +780,7 @@ export const bindOrreryInteractions = ({
     focusReturn?.addEventListener('click', () => {
         const leavingChild = Boolean(objectFocus.child);
         leaveObjectFocus();
+        setKeyboardNavigation('camera');
         if (!leavingChild) setSimulationControlMode(cosmicZoom.target < 0.5 ? 'solar' : 'galactic');
     });
     const setZoomTarget = (target: number) => {
