@@ -477,6 +477,8 @@ if (canvasElement && systemElement && canvasContext) {
         const cameraPitchSine = Math.sin(camera.renderedPitch);
         const cameraYawCosine = Math.cos(camera.renderedYaw);
         const cameraYawSine = Math.sin(camera.renderedYaw);
+        const planetRotationOffset = camera.renderedRoll + 12 * DEG;
+        const planetTiltOffset = camera.renderedPitch - 58 * DEG;
 
         const cameraProjection = (world: Vec3, target: ProjectedPoint): ProjectedPoint => {
             const rolledX = world.x * cameraRollCosine - world.y * cameraRollSine;
@@ -712,6 +714,8 @@ if (canvasElement && systemElement && canvasContext) {
             pixelRatio: pixelWidth / renderWidth,
             particleRenderer: activeParticleRenderer,
             particleTransform,
+            planetRotationOffset,
+            planetTiltOffset,
         });
         galaxyObjectRenderer.draw(context, {
             width,

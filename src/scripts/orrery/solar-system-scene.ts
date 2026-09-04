@@ -1,6 +1,6 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
-import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
+import { DEG, J2000, rotateX, rotateY, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
 import type { SolarParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
@@ -136,6 +136,8 @@ export class SolarSystemSceneRenderer {
             pixelRatio: number;
             particleRenderer?: WebGLParticleRenderer | null;
             particleTransform?: SolarParticleTransform;
+            planetRotationOffset: number;
+            planetTiltOffset: number;
         },
     ) {
         this.drawOrbitMarks(context, options.farMarks, options.pixelRatio, options.particleRenderer);
@@ -444,6 +446,8 @@ export class SolarSystemSceneRenderer {
             localDetailOpacity: number;
             planetSceneFocus: number;
             introSunOpacity: number;
+            planetRotationOffset: number;
+            planetTiltOffset: number;
         },
     ) {
         const {
@@ -480,6 +484,8 @@ export class SolarSystemSceneRenderer {
                 localDetailOpacity,
                 planetSceneFocus,
                 isHovered: body === hoveredBody && showHoverVisuals,
+                planetRotationOffset: options.planetRotationOffset,
+                planetTiltOffset: options.planetTiltOffset,
             });
             this.drawPlanetarySystem(context, body, true, options);
         };
@@ -551,6 +557,8 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            planetRotationOffset: number;
+            planetTiltOffset: number;
         },
     ) {
         const system = PLANETARY_MOON_SYSTEMS[body.planet.name];
@@ -576,6 +584,8 @@ export class SolarSystemSceneRenderer {
                 rotateZ(this.moonOffset, majorMoon.node, this.moonOffset);
             }
             rotateX(this.moonOffset, system.tilt, this.moonOffset);
+            rotateX(this.moonOffset, options.planetTiltOffset, this.moonOffset);
+            rotateY(this.moonOffset, -options.planetRotationOffset, this.moonOffset);
             this.moonWorld.x = body.world.x + this.moonOffset.x;
             this.moonWorld.y = body.world.y + this.moonOffset.y;
             this.moonWorld.z = body.world.z + this.moonOffset.z;

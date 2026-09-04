@@ -43,6 +43,8 @@ type SolarBodyOptions = {
     localDetailOpacity: number;
     planetSceneFocus: number;
     isHovered: boolean;
+    planetRotationOffset: number;
+    planetTiltOffset: number;
 };
 
 export const drawSolarBody = (context: CanvasRenderingContext2D, body: ProjectedBody, options: SolarBodyOptions) => {
@@ -55,6 +57,8 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         innerPlanetScale,
         localDetailOpacity,
         planetSceneFocus,
+        planetRotationOffset,
+        planetTiltOffset,
     } = options;
     const { planet } = body;
     const isFocusedPlanet = focusedPlanet === planet;
@@ -88,7 +92,9 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         const characterWidth = context.measureText('M').width * 0.76;
         const sphereWidth = compactGrid.columns * characterWidth;
         const sphereHeight = compactGrid.rows * compactLineHeight;
-        const spin = decorativeRotation(planet.name, seconds, reducedMotion);
+        const spin = decorativeRotation(planet.name, seconds, reducedMotion) + planetRotationOffset;
+        const tiltCosine = Math.cos(planetTiltOffset);
+        const tiltSine = Math.sin(planetTiltOffset);
         spriteWidth = sphereWidth;
 
         const drawCompactRings = (foreground: boolean) => {
@@ -129,8 +135,11 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                 const column = firstColumn + rowColumn;
                 const normalizedX = (column - (compactGrid.columns - 1) / 2) / (compactGrid.columns / 2);
                 const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
-                const longitude = Math.atan2(normalizedX, sphereZ) + spin;
-                const latitude = Math.asin(-normalizedY);
+                const surfaceY = -normalizedY;
+                const tiltedY = surfaceY * tiltCosine + sphereZ * tiltSine;
+                const tiltedZ = -surfaceY * tiltSine + sphereZ * tiltCosine;
+                const longitude = Math.atan2(normalizedX, tiltedZ) + spin;
+                const latitude = Math.asin(Math.max(-1, Math.min(1, tiltedY)));
                 const isFirst = rowColumn === 0;
                 const isLast = rowColumn === rowWidth - 1;
                 const isTop = row === 0;
