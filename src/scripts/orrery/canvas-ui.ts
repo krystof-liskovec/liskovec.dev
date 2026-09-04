@@ -21,7 +21,14 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
         openAwayFromCenter = false,
         opacity = 1,
     } = options;
-    const width = Math.min(options.width ?? 224, viewportWidth - 16);
+    context.save();
+    context.font = '12px "DM Mono", monospace';
+    const horizontalPadding = 22;
+    const contentWidth = Math.max(...lines.map((line) => context.measureText(line).width), 0);
+    const width = Math.min(
+        Math.max(options.width ?? 224, Math.ceil(contentWidth + horizontalPadding)),
+        viewportWidth - 16,
+    );
     const height = lines.length * 16 + 18;
     const rightX = anchorX + 25;
     const leftX = anchorX - width - 25;
@@ -39,7 +46,6 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     const x = Math.min(viewportWidth - width - 8, Math.max(8, preferredX));
     const y = Math.min(viewportHeight - height - 8, Math.max(8, anchorY - height / 2));
 
-    context.save();
     context.globalAlpha = opacity;
     context.fillStyle = '#1d2021';
     context.fillRect(x, y, width, height);
@@ -49,7 +55,6 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     context.globalAlpha = opacity;
     context.textAlign = 'left';
     context.textBaseline = 'top';
-    context.font = '12px "DM Mono", monospace';
     lines.forEach((line, index) => {
         context.fillStyle = index === 0 ? titleColor : '#ebdbb2';
         context.fillText(line, x + 11, y + 10 + index * 16);
