@@ -14,7 +14,7 @@ import '../styles/site.css';
         <section class="not-found">
             <div class="not-found-scene" aria-hidden="true">
                 <pre
-                    class="not-found-art">
+                    class="not-found-art not-found-lander">
                                               ______
                                              /      \
                                              | ??!! |
@@ -33,12 +33,13 @@ import '../styles/site.css';
          \'.___.''-. _|____|_ .-''.___.'/
           '---._|_____|----|_____|_.---'
             /  /       |::|      \  \
-           /  /        |::|       \  \
+           /  /   x    |::|   x   \  \
           /__/_________|::|________\__\
          /  /          |::|         \  \
         /  /           |::|          \  \
      _.-'-/           _|::|_          \-' -._
     '-----'          '------'         '-----'
+<!--<pre class="not-found-art not-found-planet">▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ▁</pre>-->
                 </pre>
                 <pre
                     class="not-found-art not-found-moon">
@@ -57,10 +58,20 @@ import '../styles/site.css';
 
       +                       .
 
+
+
+
+
+
+
+
+
+
+<!--<pre class="not-found-art not-found-planet">_____/▔▔▔▔\_/▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔</pre>-->
                 </pre>
             </div>
             <p class="eyebrow">404 - not found</p>
-            <h1>your lander drifted<br /><span>somewhere else.</span></h1>
+            <h1>your lander drifted<br /><span>somewhere else…</span></h1>
             <nav class="not-found-links" aria-label="404 navigation">
                 <a class="blog-link" href="/">[ return home → ]</a>
                 <a class="blog-link" href="/blog">[ visit the blog → ]</a>
@@ -84,8 +95,8 @@ import '../styles/site.css';
     .not-found-scene {
         display: flex;
         align-items: flex-start;
-        gap: clamp(4px, 1vw, 14px);
-        margin: 0 0 30px;
+        gap: clamp(4px, 1vw, 30px);
+        margin: 0 0 40px;
     }
 
     .not-found-art {
@@ -96,9 +107,19 @@ import '../styles/site.css';
     }
 
     .not-found-moon {
-        margin-top: 28px;
+        margin-top: 27px;
         color: var(--fg);
         font-size: clamp(6px, 0.75vw, 9px);
+    }
+
+    .not-found-planet {
+        color: var(--muted);
+        font-size: clamp(6px, 0.75vw, 9px);
+        letter-spacing: 2px;
+    }
+
+    .not-found-lander {
+        transform: rotate(-25deg);
     }
 
     .not-found h1 {
