@@ -5,7 +5,6 @@ type ReadoutOptions = {
     viewportWidth: number;
     viewportHeight: number;
     titleColor: string;
-    width?: number;
     openAwayFromCenter?: boolean;
     opacity?: number;
 };
@@ -25,10 +24,7 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     context.font = '12px "DM Mono", monospace';
     const horizontalPadding = 22;
     const contentWidth = Math.max(...lines.map((line) => context.measureText(line).width), 0);
-    const width = Math.min(
-        Math.max(options.width ?? 224, Math.ceil(contentWidth + horizontalPadding)),
-        viewportWidth - 16,
-    );
+    const width = Math.min(Math.ceil(contentWidth + horizontalPadding), viewportWidth - 16);
     const height = lines.length * 16 + 18;
     const rightX = anchorX + 25;
     const leftX = anchorX - width - 25;

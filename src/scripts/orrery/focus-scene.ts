@@ -570,7 +570,6 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 viewportWidth: width,
                 viewportHeight: height,
                 titleColor: hoveredMajorMoon.color,
-                width: 224,
                 openAwayFromCenter: true,
                 opacity: majorMoonReveal,
             });
@@ -587,7 +586,6 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 viewportWidth: width,
                 viewportHeight: height,
                 titleColor: isMoon ? '#bdae93' : '#8ec07c',
-                width: 218,
                 openAwayFromCenter: true,
                 opacity: earthSatelliteReveal,
             });

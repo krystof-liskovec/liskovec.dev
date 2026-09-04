@@ -240,7 +240,6 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: hoveredBody.planet.color,
-            width: 260,
         });
     }
     if (hoveredComet) {
@@ -257,7 +256,6 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: '#83a598',
-            width: 270,
         });
     }
     if (hoveredSun) {
@@ -276,7 +274,6 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: '#fabd2f',
-            width: 260,
         });
     }
     if (hoveredGalacticObject) {
@@ -293,7 +290,6 @@ export const drawHoverReadouts = (
             viewportWidth: width,
             viewportHeight: height,
             titleColor: hoveredGalacticObject.object.color,
-            width: 260,
         });
     }
 };
