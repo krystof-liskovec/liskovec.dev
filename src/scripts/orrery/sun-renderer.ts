@@ -7,6 +7,7 @@ type SunRenderOptions = {
     opacity: number;
     seconds: number;
     reducedMotion: boolean;
+    planetRotationOffset: number;
 };
 
 const SURFACE_COLUMNS = 17;
@@ -16,7 +17,7 @@ const SURFACE_ROW_WIDTHS = [7, 13, 15, 17, 17, 17, 15, 13, 7];
 const SUN_MASK_COLOR = '#2b2621';
 
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
-    const { x, y, scale, opacity, seconds, reducedMotion } = options;
+    const { x, y, scale, opacity, seconds, reducedMotion, planetRotationOffset } = options;
     if (opacity <= 0.001) return;
 
     const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.35) * 0.018;
@@ -36,7 +37,7 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     context.strokeStyle = '#1d2021';
     context.lineWidth = Math.max(1.2, fontSize * 0.15);
     const characterWidth = context.measureText('M').width * 0.76;
-    const spin = decorativeRotation('Sol', seconds, reducedMotion);
+    const spin = decorativeRotation('Sol', seconds, reducedMotion) + planetRotationOffset;
     const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
 
     // The glyphs describe an opaque sphere. Mask the interior before drawing

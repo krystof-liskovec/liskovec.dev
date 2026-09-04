@@ -502,6 +502,7 @@ export class SolarSystemSceneRenderer {
                 localDetailOpacity * introSunOpacity * (focusedSun ? 1 - focusedSunDetailReveal : 1 - planetSceneFocus),
             seconds,
             reducedMotion,
+            planetRotationOffset: options.planetRotationOffset,
         });
         if (hoveredSun && showHoverVisuals) {
             context.globalAlpha = localDetailOpacity;

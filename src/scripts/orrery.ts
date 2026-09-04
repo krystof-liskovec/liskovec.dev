@@ -782,6 +782,10 @@ if (canvasElement && systemElement && canvasContext) {
                 void loadFocusScene();
             }
         }
+        system.classList.toggle(
+            'is-focus-target-hovered',
+            Boolean(activeFocusCandidate && showHoverVisuals && !camera.dragging),
+        );
         const currentSecond = Math.floor(frameTime / 1000);
         const cameraStatsTick = Math.floor(frameTime / 100);
         if (cameraStatsTick !== lastCameraStatsTick) {
