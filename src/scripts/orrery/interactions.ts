@@ -329,6 +329,7 @@ export const bindOrreryInteractions = ({
 
     const selectablePlanetNames = () =>
         PLANETS.filter((planet) => !planet.easterEgg || easterEgg.unlocked).map((planet) => planet.name);
+    const selectableSolarIds = () => [...selectablePlanetNames(), 'star:Sol'];
     const selectableChildIds = () => {
         const target = objectFocus.target;
         if (!target || target.kind !== 'planet' || objectFocus.child) return [];
@@ -337,9 +338,10 @@ export const bindOrreryInteractions = ({
     };
     const updateCanvasKeyboardLabel = () => {
         if (keyboardNavigation.mode === 'planet-selection' && keyboardNavigation.selectedId) {
+            const selectedName = keyboardNavigation.selectedId === 'star:Sol' ? 'Sol' : keyboardNavigation.selectedId;
             canvas.setAttribute(
                 'aria-label',
-                `${keyboardNavigation.selectedId} selected. Use arrow keys to choose a planet, then press Enter to zoom in.`,
+                `${selectedName} selected. Use arrow keys to choose a solar system object, then press Enter to zoom in.`,
             );
         } else if (keyboardNavigation.mode === 'child-selection' && keyboardNavigation.selectedId) {
             const selectedName =
@@ -355,7 +357,7 @@ export const bindOrreryInteractions = ({
         } else {
             canvas.setAttribute(
                 'aria-label',
-                'Interactive ASCII solar system with live approximate planetary positions',
+                'Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions',
             );
         }
     };
@@ -487,14 +489,19 @@ export const bindOrreryInteractions = ({
             event.preventDefault();
             stopKeyboardTurn();
             if (!objectFocus.target && keyboardNavigation.mode === 'camera') {
-                const selectedPlanet =
-                    getActiveFocusCandidate()?.kind === 'planet' ? getActiveFocusCandidate()?.name : null;
-                const firstPlanet = selectablePlanetNames()[0] ?? null;
-                setKeyboardNavigation('planet-selection', selectedPlanet ?? firstPlanet);
+                const activeCandidate = getActiveFocusCandidate();
+                const selectedSolarId =
+                    activeCandidate?.kind === 'planet'
+                        ? activeCandidate.name
+                        : activeCandidate?.kind === 'star'
+                          ? activeCandidate.id
+                          : null;
+                const firstSolarId = selectableSolarIds()[0] ?? null;
+                setKeyboardNavigation('planet-selection', selectedSolarId ?? firstSolarId);
                 onInteract();
             } else if (!objectFocus.target && keyboardNavigation.mode === 'planet-selection') {
                 const candidate = getActiveFocusCandidate();
-                if (candidate?.kind === 'planet') {
+                if (candidate?.kind === 'planet' || candidate?.kind === 'star') {
                     setKeyboardNavigation('camera');
                     setSimulationControlMode('rotation');
                     beginObjectFocus(candidate);
@@ -519,7 +526,13 @@ export const bindOrreryInteractions = ({
                 setKeyboardNavigation('child-selection', returningChildId);
             } else if (objectFocus.target) {
                 leaveObjectFocus();
-                setKeyboardNavigation('camera');
+                if (objectFocus.target.kind === 'planet' || objectFocus.target.kind === 'star') {
+                    const selectedId =
+                        objectFocus.target.kind === 'star' ? objectFocus.target.id : objectFocus.target.name;
+                    setKeyboardNavigation('planet-selection', selectedId);
+                } else {
+                    setKeyboardNavigation('camera');
+                }
             } else if (keyboardNavigation.mode !== 'camera') {
                 setKeyboardNavigation('camera');
                 onInteract();
@@ -550,7 +563,7 @@ export const bindOrreryInteractions = ({
         if (keyboardNavigation.mode === 'planet-selection') {
             event.preventDefault();
             stopKeyboardTurn();
-            cycleKeyboardSelection(selectablePlanetNames(), directionForSelection(event.key));
+            cycleKeyboardSelection(selectableSolarIds(), directionForSelection(event.key));
             return;
         }
         if (keyboardNavigation.mode === 'child-selection') {
@@ -803,6 +816,22 @@ export const bindOrreryInteractions = ({
             zoomSwitch.setAttribute('aria-checked', String(checked));
         }
     };
+
+    const KEYBOARD_ZOOM_STEP = 5;
+    zoomInput?.addEventListener('keydown', (event) => {
+        const isHorizontal = zoomInput.getAttribute('aria-orientation') === 'horizontal';
+        const increasesZoom = isHorizontal ? event.key === 'ArrowLeft' : event.key === 'ArrowUp';
+        const decreasesZoom = isHorizontal ? event.key === 'ArrowRight' : event.key === 'ArrowDown';
+        if (!increasesZoom && !decreasesZoom) return;
+
+        event.preventDefault();
+        const currentValue = Number(zoomInput.value);
+        const direction = increasesZoom ? 1 : -1;
+        const nextValue = Math.max(0, Math.min(100, currentValue + direction * KEYBOARD_ZOOM_STEP));
+        if (nextValue === currentValue) return;
+        onInteract();
+        setZoomTarget(nextValue / 100);
+    });
 
     zoomInput?.addEventListener('input', () => {
         onInteract();

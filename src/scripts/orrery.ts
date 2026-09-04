@@ -664,7 +664,10 @@ if (canvasElement && systemElement && canvasContext) {
         const hoveredBody =
             keyboardNavigation.mode === 'planet-selection' ? keyboardSelectedBody : currentFocusHit.hoveredBody;
         const hoveredComet = keyboardNavigation.mode === 'planet-selection' ? null : currentFocusHit.hoveredComet;
-        const hoveredSun = keyboardNavigation.mode === 'planet-selection' ? false : currentFocusHit.hoveredSun;
+        const hoveredSun =
+            keyboardNavigation.mode === 'planet-selection'
+                ? keyboardNavigation.selectedId === 'star:Sol'
+                : currentFocusHit.hoveredSun;
         const hoveredGalacticObject =
             keyboardNavigation.mode === 'planet-selection' ? null : currentFocusHit.hoveredGalacticObject;
         const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');

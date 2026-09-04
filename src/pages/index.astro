@@ -53,7 +53,7 @@ const profileStructuredData = {
             <div
                 class="solar-system"
                 id="solar-system"
-                aria-label="A live, approximate ASCII orrery of the solar system"
+                aria-label="A live, approximate ASCII visualization of the Solar System and the Milky Way galaxy"
             >
                 <div class="solar-static" aria-hidden="true">
                     <pre>
@@ -68,20 +68,23 @@ const profileStructuredData = {
                         '---'</pre>
                 </div>
                 <p class="sr-only">
-                    An interactive ASCII visualization of the Solar System and Milky Way introduces Kryštof Lískovec’s
-                    portfolio. The portfolio content continues below with information about his DevOps and software
-                    development work, technical skills, blog posts, and contact details.
+                    An interactive ASCII visualization of the Solar System and the Milky Way galaxy introduces Kryštof
+                    Lískovec’s portfolio. Use the zoom controls to move between the Solar System and the Milky Way
+                    galaxy, and use the arrow keys to turn the current view. The portfolio content continues below with
+                    information about his DevOps and software development work, technical skills, blog posts, and
+                    contact details.
                 </p>
                 <p class="sr-only" id="solar-canvas-help">
-                    Focus the animation with Tab. Press Enter to choose a planet, use the arrow keys to move between
-                    planets, and press Enter again to zoom in. In a focused planetary scene, use Tab or the arrow keys
-                    to choose a moon or station. Press Escape to zoom out and Space to return to camera controls.
+                    Focus the Solar System and Milky Way galaxy animation with Tab. Press Enter to choose a planet, use
+                    the arrow keys to move between planets or Sol, and press Enter again to zoom in. In a focused
+                    planetary scene, use Tab or the arrow keys to choose a moon or station. Press Escape to zoom out and
+                    Space to return to camera controls.
                 </p>
                 <canvas class="solar-gpu-canvas" id="solar-gpu-canvas" aria-hidden="true"></canvas>
                 <canvas
                     id="solar-canvas"
                     role="img"
-                    aria-label="Interactive ASCII solar system with live approximate planetary positions"
+                    aria-label="Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions"
                     aria-describedby="solar-canvas-help"
                     aria-keyshortcuts="Enter Escape Space Tab Shift+Tab ArrowLeft ArrowRight ArrowUp ArrowDown"
                     tabindex="0"></canvas>
