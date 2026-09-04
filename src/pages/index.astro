@@ -88,11 +88,22 @@ const profileStructuredData = {
                 <div class="mobile-orientation-hint" role="status" aria-live="polite">
                     <span aria-hidden="true">↔</span> tilt phone sideways <span aria-hidden="true">↔</span>
                 </div>
-                <div class="cosmic-zoom-control">
+                <div class="cosmic-zoom-control" role="group" aria-label="Cosmic zoom controls">
                     <label class="sr-only" for="cosmic-zoom">Zoom between the Solar System and the Milky Way</label>
                     <div class="cosmic-zoom-scale">
                         <span aria-hidden="true">MILKY WAY</span>
-                        <input id="cosmic-zoom" type="range" min="0" max="100" value="0" step="1" />
+                        <input
+                            id="cosmic-zoom"
+                            type="range"
+                            min="0"
+                            max="100"
+                            value="0"
+                            step="1"
+                            aria-orientation="vertical"
+                            aria-valuenow="0"
+                            aria-valuetext="0%, local system"
+                            aria-controls="solar-system"
+                        />
                         <span aria-hidden="true">SOL</span>
                         <output id="cosmic-zoom-status" for="cosmic-zoom">LOCAL SYSTEM</output>
                         <div class="simulation-speed-control">
@@ -224,6 +235,8 @@ const profileStructuredData = {
                         type="checkbox"
                         role="switch"
                         aria-label="Switch between the Solar System and the Milky Way"
+                        aria-checked="false"
+                        aria-controls="solar-system"
                     />
                     <span class="cosmic-zoom-switch-track" aria-hidden="true"><span></span></span>
                     <span class="cosmic-zoom-switch-label cosmic-zoom-switch-galaxy">GALAXY</span>

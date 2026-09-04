@@ -1087,7 +1087,7 @@ footer a:hover {
     background: transparent;
 }
 .cosmic-zoom-control input::-moz-range-track {
-    width: 2px;
+    width: 4px;
     height: 100%;
     border: 0;
     border-radius: 0;
@@ -1221,7 +1221,7 @@ footer a:hover {
 .cosmic-zoom-control input:focus,
 .simulation-speed:focus {
     outline: 1px solid var(--orange);
-    outline-offset: 2px;
+    outline-offset: 3px;
 }
 .simulation-speed-menu {
     position: absolute;
@@ -1468,10 +1468,11 @@ footer a:hover {
         color: var(--yellow);
     }
     .cosmic-zoom-switch input:focus-visible + .cosmic-zoom-switch-track,
+    .cosmic-zoom-switch:focus-within .cosmic-zoom-switch-track,
     .cosmic-zoom-switch:hover .cosmic-zoom-switch-track {
         border-color: var(--orange);
     }
-    .cosmic-zoom-switch input:focus-visible + .cosmic-zoom-switch-track {
+    .cosmic-zoom-switch:focus-within .cosmic-zoom-switch-track {
         outline: 1px solid var(--orange);
         outline-offset: 3px;
     }
@@ -1500,7 +1501,7 @@ footer a:hover {
     }
     .cosmic-zoom-control input::-moz-range-track {
         width: 100%;
-        height: 2px;
+        height: 4px;
     }
     .cosmic-zoom-control input::-moz-range-progress {
         background: transparent;

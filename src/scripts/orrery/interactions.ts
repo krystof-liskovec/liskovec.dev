@@ -92,10 +92,16 @@ export const bindOrreryInteractions = ({
     let fallbackFullscreen = false;
 
     const isFullscreen = () => document.fullscreenElement === system || fallbackFullscreen;
+    const updateZoomOrientation = () => {
+        if (!zoomInput) return;
+        const isHorizontal = isFullscreen() || window.matchMedia('(max-width: 700px)').matches;
+        zoomInput.setAttribute('aria-orientation', isHorizontal ? 'horizontal' : 'vertical');
+    };
     const updateFullscreenControl = () => {
         const active = isFullscreen();
         system.classList.toggle('is-fullscreen', active);
         document.documentElement.classList.toggle('is-orrery-fullscreen', active);
+        updateZoomOrientation();
         if (!mobileFullscreenToggle) return;
         const fullscreenIcon = mobileFullscreenToggle.querySelector<HTMLElement>('.mobile-fullscreen-icon');
         if (fullscreenIcon) fullscreenIcon.textContent = active ? '×' : '⛶';
@@ -143,6 +149,7 @@ export const bindOrreryInteractions = ({
         if (document.fullscreenElement !== system) screen.orientation?.unlock?.();
     });
     updateFullscreenControl();
+    window.addEventListener('resize', updateZoomOrientation, { passive: true });
 
     const updateSimulationSpeedControl = (presetIndex: number) => {
         const control =
@@ -533,13 +540,19 @@ export const bindOrreryInteractions = ({
         const location = target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];
         setZoomLocation(location[0], location[1]);
         const status = target < 0.3 ? 'LOCAL SYSTEM' : target < 0.72 ? 'INTERSTELLAR' : 'MILKY WAY';
+        const value = Math.round(target * 100);
         if (zoomStatus) zoomStatus.value = status;
         if (zoomInput) {
-            zoomInput.value = String(Math.round(target * 100));
-            zoomInput.style.setProperty('--zoom-progress', `${Math.round(target * 100)}%`);
-            zoomInput.setAttribute('aria-valuetext', status);
+            zoomInput.value = String(value);
+            zoomInput.style.setProperty('--zoom-progress', `${value}%`);
+            zoomInput.setAttribute('aria-valuenow', String(value));
+            zoomInput.setAttribute('aria-valuetext', `${value}%, ${status.toLowerCase()}`);
         }
-        if (zoomSwitch) zoomSwitch.checked = target >= 0.5;
+        if (zoomSwitch) {
+            const checked = target >= 0.5;
+            zoomSwitch.checked = checked;
+            zoomSwitch.setAttribute('aria-checked', String(checked));
+        }
     };
 
     zoomInput?.addEventListener('input', () => {
