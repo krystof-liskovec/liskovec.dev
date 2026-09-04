@@ -72,11 +72,18 @@ const profileStructuredData = {
                     portfolio. The portfolio content continues below with information about his DevOps and software
                     development work, technical skills, blog posts, and contact details.
                 </p>
+                <p class="sr-only" id="solar-canvas-help">
+                    Focus the animation with Tab, then use the arrow keys to turn the camera. Shift plus an arrow key
+                    turns faster.
+                </p>
                 <canvas class="solar-gpu-canvas" id="solar-gpu-canvas" aria-hidden="true"></canvas>
                 <canvas
                     id="solar-canvas"
                     role="img"
-                    aria-label="ASCII solar system with live approximate planetary positions"></canvas>
+                    aria-label="Interactive ASCII solar system with live approximate planetary positions"
+                    aria-describedby="solar-canvas-help"
+                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
+                    tabindex="0"></canvas>
                 <button class="object-focus-return" id="object-focus-return" type="button" hidden>[ ← return ]</button>
                 <button
                     class="mobile-fullscreen-toggle"

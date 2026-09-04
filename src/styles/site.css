@@ -792,6 +792,13 @@ footer a:hover {
 .solar-system.is-sun-visible::before {
     opacity: 1;
 }
+.solar-system.is-canvas-focused {
+    outline: 1px solid var(--orange);
+    outline-offset: 4px;
+}
+.solar-system.is-canvas-focused #solar-canvas {
+    outline: none;
+}
 .solar-system:fullscreen,
 .solar-system.is-fullscreen {
     position: fixed;

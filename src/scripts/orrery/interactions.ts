@@ -312,6 +312,96 @@ export const bindOrreryInteractions = ({
         if (simulationControlMode === 'rotation') updateSimulationSpeedControl(presetIndex);
     };
 
+    const prepareManualSolarCamera = () => {
+        if (camera.manual) return;
+        camera.manual = true;
+        camera.resetting = false;
+        camera.pitch = camera.renderedPitch;
+        camera.yaw = camera.renderedYaw;
+        camera.roll = camera.renderedRoll;
+        pointer.targetX = pointer.x;
+        pointer.targetY = pointer.y;
+    };
+
+    type KeyboardDirection = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown';
+    const keyboardDirections = new Set<KeyboardDirection>();
+    let keyboardFast = false;
+    let keyboardFrame = 0;
+    let lastKeyboardFrameAt = 0;
+    const isKeyboardDirection = (key: string): key is KeyboardDirection =>
+        key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
+
+    const applyKeyboardTurn = (frameSeconds: number) => {
+        const horizontal =
+            (keyboardDirections.has('ArrowRight') ? 1 : 0) - (keyboardDirections.has('ArrowLeft') ? 1 : 0);
+        const vertical = (keyboardDirections.has('ArrowUp') ? 1 : 0) - (keyboardDirections.has('ArrowDown') ? 1 : 0);
+        if (!horizontal && !vertical) return;
+
+        const stepMultiplier = keyboardFast ? 2 : 1;
+        if (objectFocus.target) {
+            const longitudeStep = 80 * DEG * frameSeconds * stepMultiplier;
+            const latitudeStep = 70 * DEG * frameSeconds * stepMultiplier;
+            objectFocus.resetting = false;
+            if (objectFocus.child) {
+                objectFocus.childLongitude -= horizontal * longitudeStep;
+                objectFocus.childLatitude = Math.max(
+                    -65 * DEG,
+                    Math.min(65 * DEG, objectFocus.childLatitude + vertical * latitudeStep),
+                );
+            } else {
+                objectFocus.longitude -= horizontal * longitudeStep;
+                objectFocus.latitude = Math.max(
+                    -65 * DEG,
+                    Math.min(65 * DEG, objectFocus.latitude + vertical * latitudeStep),
+                );
+            }
+            return;
+        }
+
+        if (cosmicZoom.current > 0.55 || cosmicZoom.target > 0.55) {
+            galaxyCamera.resetting = false;
+            galaxyCamera.rotation += horizontal * 80 * DEG * frameSeconds * stepMultiplier;
+            galaxyCamera.tilt = Math.max(
+                0.5,
+                Math.min(1.35, galaxyCamera.tilt + vertical * 0.9 * frameSeconds * stepMultiplier),
+            );
+            return;
+        }
+
+        prepareManualSolarCamera();
+        camera.roll += horizontal * 90 * DEG * frameSeconds * stepMultiplier;
+        camera.yaw += horizontal * 36 * DEG * frameSeconds * stepMultiplier;
+        camera.pitch = Math.max(
+            12 * DEG,
+            Math.min(88 * DEG, camera.pitch + vertical * 100 * DEG * frameSeconds * stepMultiplier),
+        );
+    };
+
+    const stopKeyboardTurn = () => {
+        keyboardDirections.clear();
+        keyboardFast = false;
+        if (keyboardFrame) cancelAnimationFrame(keyboardFrame);
+        keyboardFrame = 0;
+        lastKeyboardFrameAt = 0;
+    };
+
+    const animateKeyboardTurn = (frameTime: number) => {
+        keyboardFrame = 0;
+        if (!keyboardDirections.size) return;
+        const frameSeconds = lastKeyboardFrameAt
+            ? Math.min(0.05, Math.max(0, (frameTime - lastKeyboardFrameAt) / 1000))
+            : 1 / 60;
+        lastKeyboardFrameAt = frameTime;
+        applyKeyboardTurn(frameSeconds);
+        keyboardFrame = requestAnimationFrame(animateKeyboardTurn);
+    };
+
+    const startKeyboardTurn = () => {
+        if (keyboardFrame) return;
+        lastKeyboardFrameAt = performance.now();
+        keyboardFrame = requestAnimationFrame(animateKeyboardTurn);
+    };
+
     const startCameraDrag = (
         event: PointerEvent,
         startX = event.clientX,
@@ -319,13 +409,7 @@ export const bindOrreryInteractions = ({
         captureTarget: HTMLElement = canvas,
     ) => {
         if (camera.dragMode === 'solar') {
-            camera.manual = true;
-            camera.resetting = false;
-            camera.pitch = camera.renderedPitch;
-            camera.yaw = camera.renderedYaw;
-            camera.roll = camera.renderedRoll;
-            pointer.targetX = pointer.x;
-            pointer.targetY = pointer.y;
+            prepareManualSolarCamera();
         } else if (camera.dragMode === 'galaxy') {
             galaxyCamera.resetting = false;
         } else {
@@ -341,6 +425,37 @@ export const bindOrreryInteractions = ({
         dragCaptureTarget.setPointerCapture(event.pointerId);
         if (event.pointerType !== 'touch') event.preventDefault();
     };
+
+    canvas.addEventListener('focus', () => system.classList.add('is-canvas-focused'));
+    canvas.addEventListener('blur', () => {
+        system.classList.remove('is-canvas-focused');
+        stopKeyboardTurn();
+    });
+    canvas.addEventListener('keydown', (event) => {
+        if (!isKeyboardDirection(event.key)) return;
+
+        event.preventDefault();
+        if (!keyboardDirections.has(event.key)) {
+            onInteract();
+            keyboardDirections.add(event.key);
+            applyKeyboardTurn(1 / 60);
+            startKeyboardTurn();
+        }
+        keyboardFast = event.shiftKey;
+    });
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Shift') keyboardFast = true;
+    });
+    window.addEventListener('keyup', (event) => {
+        if (event.key === 'Shift') {
+            keyboardFast = false;
+            return;
+        }
+        if (!isKeyboardDirection(event.key)) return;
+        keyboardDirections.delete(event.key);
+        if (!keyboardDirections.size) keyboardFast = false;
+    });
+    window.addEventListener('blur', stopKeyboardTurn);
 
     window.addEventListener('pointermove', (event) => {
         pointer.clientX = event.clientX;
