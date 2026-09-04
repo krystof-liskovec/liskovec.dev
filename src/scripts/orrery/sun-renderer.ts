@@ -8,6 +8,7 @@ type SunRenderOptions = {
     seconds: number;
     reducedMotion: boolean;
     planetRotationOffset: number;
+    planetTiltOffset: number;
 };
 
 const SURFACE_COLUMNS = 17;
@@ -15,9 +16,35 @@ const SURFACE_ROW_WIDTHS = [7, 13, 15, 17, 17, 17, 15, 13, 7];
 // Match the center of the scene's subtle orange glow. The fill still acts as
 // an opaque occlusion mask, but no longer reads as a darker patch behind Sol.
 const SUN_MASK_COLOR = '#2b2621';
+const SUN_CAMERA_SURFACE_INFLUENCE = 0.35;
+const SUN_CAMERA_SURFACE_SPEED = 2.4;
+
+let smoothedCameraRotation: number | null = null;
+let smoothedCameraTilt: number | null = null;
+let lastSurfaceSeconds = -1;
+
+const approach = (current: number, target: number, maximumStep: number) => {
+    const distance = target - current;
+    return Math.abs(distance) <= maximumStep ? target : current + Math.sign(distance) * maximumStep;
+};
+
+const smoothCameraSurface = (rotation: number, tilt: number, seconds: number) => {
+    const frameSeconds = lastSurfaceSeconds < 0 ? 0 : Math.min(0.05, Math.max(0, seconds - lastSurfaceSeconds));
+    lastSurfaceSeconds = seconds;
+    if (smoothedCameraRotation === null || smoothedCameraTilt === null) {
+        smoothedCameraRotation = rotation;
+        smoothedCameraTilt = tilt;
+        return { rotation, tilt };
+    }
+
+    const maximumStep = frameSeconds * SUN_CAMERA_SURFACE_SPEED;
+    smoothedCameraRotation = approach(smoothedCameraRotation, rotation, maximumStep);
+    smoothedCameraTilt = approach(smoothedCameraTilt, tilt, maximumStep);
+    return { rotation: smoothedCameraRotation, tilt: smoothedCameraTilt };
+};
 
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
-    const { x, y, scale, opacity, seconds, reducedMotion, planetRotationOffset } = options;
+    const { x, y, scale, opacity, seconds, reducedMotion, planetRotationOffset, planetTiltOffset } = options;
     if (opacity <= 0.001) return;
 
     const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.35) * 0.018;
@@ -37,7 +64,17 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     context.strokeStyle = '#1d2021';
     context.lineWidth = Math.max(1.2, fontSize * 0.15);
     const characterWidth = context.measureText('M').width * 0.76;
-    const spin = decorativeRotation('Sol', seconds, reducedMotion) + planetRotationOffset;
+    // Dragging can move the camera across several discrete ASCII texture cells
+    // in one frame. Ease only the camera contribution so the surface follows
+    // the scene without making its spots flash between glyphs.
+    const cameraSurface = smoothCameraSurface(
+        planetRotationOffset * SUN_CAMERA_SURFACE_INFLUENCE,
+        planetTiltOffset * SUN_CAMERA_SURFACE_INFLUENCE,
+        seconds,
+    );
+    const spin = decorativeRotation('Sol', seconds, reducedMotion) + cameraSurface.rotation;
+    const tiltCosine = Math.cos(cameraSurface.tilt);
+    const tiltSine = Math.sin(cameraSurface.tilt);
     const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
 
     // The glyphs describe an opaque sphere. Mask the interior before drawing
@@ -65,8 +102,11 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
             const column = firstColumn + rowColumn;
             const normalizedX = (column - (SURFACE_COLUMNS - 1) / 2) / (SURFACE_COLUMNS / 2);
             const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
-            const longitude = Math.atan2(normalizedX, sphereZ) + spin;
-            const latitude = Math.asin(-normalizedY);
+            const surfaceY = -normalizedY;
+            const tiltedY = surfaceY * tiltCosine + sphereZ * tiltSine;
+            const tiltedZ = -surfaceY * tiltSine + sphereZ * tiltCosine;
+            const longitude = Math.atan2(normalizedX, tiltedZ) + spin;
+            const latitude = Math.asin(Math.max(-1, Math.min(1, tiltedY)));
             const isFirst = rowColumn === 0;
             const isLast = rowColumn === rowWidth - 1;
             const isTop = row === 0;
