@@ -4,3 +4,7 @@ node_modules/
 package-lock.json
 public/terminal.wasm
 public/robots.txt
+
+# Parsed line-by-line by scripts/build_cv.py
+cv-devops-en.md
+cv-backend-en.md

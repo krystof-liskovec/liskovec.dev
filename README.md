@@ -138,17 +138,14 @@ Centauri is intentionally above the disk because it is a halo globular cluster.
 
 ## Deployment
 
-The `.woodpecker.yml` workflow fetches the latest generated CV PDFs from the
-private Gitea Generic Package Registry, builds the site, and deploys `dist/` to
-Cloudflare Pages after every push to `main`. The CV repository's CI uploads the
-PDFs and triggers this pipeline with the exact package version; the PDFs are
-fetched into the Astro build workspace without changing this repository.
+The `.woodpecker.yml` workflow builds the CV PDFs and Astro site in the same
+pipeline, then deploys `dist/` to Cloudflare Pages after every push to `main`.
+The CV sources are `cv-devops-en.md` and `cv-backend-en.md`; the PDF builder is
+`scripts/build_cv.py`.
 
 Create these repository secrets in Woodpecker before enabling the workflow:
 
 - `cloudflare_account_id` — the Cloudflare account ID
 - `cloudflare_api_token` — an API token with the permissions required to deploy to Cloudflare Pages
-- `deploy_user_name` — the Gitea bot account that owns the CV package
-- `deploy_user_token` — a Gitea personal access token for that bot with package-read access
 
 The workflow expects the Pages project to be named `liskovec`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.

@@ -3,17 +3,13 @@ when:
     branch: main
 
 steps:
-    - name: fetch-cv-artifacts
+    - name: build-cv
       image: python:3.13-slim
-      environment:
-          GITEA_PACKAGE_HOST: https://gitea.liskovec.dev
-          GITEA_PACKAGE_NAME: liskovec-cv
-          GITEA_PACKAGE_OWNER:
-              from_secret: deploy_user_name
-          GITEA_PACKAGE_TOKEN:
-              from_secret: deploy_user_token
       commands:
-          - python3 scripts/fetch_cv_artifacts.py
+          - apt-get update
+          - apt-get install -y --no-install-recommends fonts-liberation git ca-certificates poppler-utils
+          - pip install --no-cache-dir reportlab
+          - python3 scripts/build_cv.py
     - name: build-and-deploy
       image: node:26-alpine
       environment:

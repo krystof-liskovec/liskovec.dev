@@ -25,10 +25,6 @@ pnpm-debug.log*
 
 public/terminal.wasm
 
-# CI-fetched CV artifacts
-public/cv.pdf
-public/cv-backend.pdf
-
 # Python cache
 __pycache__/
 *.py[cod]
