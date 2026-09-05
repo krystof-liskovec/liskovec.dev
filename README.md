@@ -140,8 +140,8 @@ Centauri is intentionally above the disk because it is a halo globular cluster.
 
 The `.woodpecker.yml` workflow builds the CV PDFs and Astro site in the same
 pipeline, then deploys `dist/` to Cloudflare Pages after every push to `main`.
-The CV sources are `cv-devops-en.md` and `cv-backend-en.md`; the PDF builder is
-`scripts/build_cv.py`.
+The CV sources and PDF builder live under `cv/`; generated PDFs are written to
+`public/` for the `/cv.pdf` and `/cv-backend.pdf` links.
 
 Create these repository secrets in Woodpecker before enabling the workflow:
 

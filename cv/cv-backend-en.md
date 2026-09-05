@@ -2,7 +2,7 @@
 
 # Kryštof Lískovec
 
-DevOps Engineer
+Backend Developer
 
 5 years of experience across backend development and DevOps
 
@@ -18,27 +18,28 @@ July 2021 – Present
 
 DevOps Engineer · Sept 2024 – Present
 
-- Reduced new-project CI/CD setup from up to 1 hour to typically 5–10 minutes by building reusable, configurable GitLab CI/CD components for Nuxt, NestJS and Go
-- Built a modular backup wizard generating Git-tracked resticprofile configs for databases and files; CI/CD deployed them to each server for independent Backblaze B2 backups
-- Provisioned self-managed infrastructure with Ansible and Git-tracked Docker Compose definitions, replacing Bash scripts to keep deployments reproducible and control long-term costs
-- Added observability with Graylog, an OpenTelemetry pipeline, and GlitchTip for centralized logs, telemetry, and application-error tracking
-- Automated container deployments with Docker health checks, discarding releases that failed validation before stopping and replacing the running version
+- Reduced new-project CI/CD setup from up to 1 hour to typically 5–10 minutes through reusable GitLab CI/CD components with configurable inputs
+- Migrated on-premises container deployments from Bash scripts to Docker Compose, simplifying configuration review and maintenance
 
 Backend Developer · July 2021 – Aug 2024
 
 - Replaced address autocomplete subscriptions costing approximately €2,880–€3,360 annually with a Go and Elasticsearch REST API for a client with 40+ websites
 - Automated ingestion of Czech and Slovak address datasets and tuned Elasticsearch indexes for fuzzy autocomplete search
+- Unified parcel locker locations from multiple delivery providers in the same API, enabling a shared search instead of separate provider widgets
 - Built a cached NestJS and Puppeteer rendering service to serve rendered HTML to crawlers without rewriting existing Vue.js applications
+- Extended the rendering service with sitemap generation for single-page applications
 
 ## Skills
 
-Infrastructure: Linux, Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
+Languages and frameworks: Go, TypeScript, PHP, NestJS, Express, Symfony
 
-Languages and frameworks: Go, TypeScript, PHP, NestJS, Symfony
+Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
+
+Infrastructure: Ansible, Linux, Docker, Docker Compose, GitLab CI/CD
 
 Observability: Graylog, OpenTelemetry, GlitchTip
 
-Services: resticprofile, Backblaze B2, Consul, OpenBao, Elasticsearch, PostgreSQL, Redis
+Tools: Puppeteer
 
 ## Education
 
@@ -49,4 +50,5 @@ Bachelor’s degree in Applied Computer Science (2024)
 ## Languages
 
 English: B2 certificate (FCE) · Czech: Native · German: A2
+
 

@@ -5,6 +5,6 @@ package-lock.json
 public/terminal.wasm
 public/robots.txt
 
-# Parsed line-by-line by scripts/build_cv.py
-cv-devops-en.md
-cv-backend-en.md
+# Parsed line-by-line by cv/build_cv.py
+cv/cv-devops-en.md
+cv/cv-backend-en.md

@@ -9,7 +9,7 @@ steps:
           - apt-get update
           - apt-get install -y --no-install-recommends fonts-liberation git ca-certificates poppler-utils
           - pip install --no-cache-dir reportlab
-          - python3 scripts/build_cv.py
+          - python3 cv/build_cv.py
     - name: build-and-deploy
       image: node:26-alpine
       environment:
