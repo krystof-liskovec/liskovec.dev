@@ -1,4 +1,4 @@
-import { DEG } from './math';
+import { DEG, shortestAngleDifference } from './math';
 import type { CameraState, GalaxyCameraState, PointerState } from './runtime-state';
 import type { FocusState } from './types';
 
@@ -17,7 +17,11 @@ export const updateSolarCamera = (options: {
     const drift = reducedMotion ? 0 : seconds * 0.035;
     const automaticPitch = (58 + Math.sin(seconds * 0.18) * 4 + pointer.y * 10) * DEG;
     const automaticYaw = (Math.sin(seconds * 0.11) * 8 + pointer.x * 14) * DEG;
-    const automaticRoll = -12 * DEG + drift;
+    // Keep automatic roll on the same continuous branch as a manually dragged
+    // camera. The projection only cares about the angle modulo one turn, but
+    // surface textures use the raw value so a branch change would look like a
+    // sudden reverse spin after reset.
+    const automaticRoll = -12 * DEG + drift + camera.automaticRollOffset;
     let pitch = camera.manual ? camera.pitch : automaticPitch;
     let yaw = camera.manual ? camera.yaw : automaticYaw;
     let roll = camera.manual ? camera.roll : automaticRoll;
@@ -25,14 +29,17 @@ export const updateSolarCamera = (options: {
     if (camera.resetting) {
         const progress = Math.min(1, (frameTime - camera.resetStartedAt) / 900);
         const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
-        const interpolateAngle = (from: number, to: number) => {
-            const difference = ((to - from + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-            return from + difference * eased;
-        };
         pitch = camera.resetPitch + (automaticPitch - camera.resetPitch) * eased;
-        yaw = interpolateAngle(camera.resetYaw, automaticYaw);
-        roll = interpolateAngle(camera.resetRoll, automaticRoll);
-        if (progress === 1) camera.resetting = false;
+        yaw = camera.resetYaw + shortestAngleDifference(camera.resetYaw, automaticYaw) * eased;
+        const resetRollTarget = camera.resetRoll + shortestAngleDifference(camera.resetRoll, automaticRoll);
+        roll = camera.resetRoll + (resetRollTarget - camera.resetRoll) * eased;
+        if (progress === 1) {
+            // The target is visually equivalent to automaticRoll, but may be
+            // several turns away numerically. Carry that turn offset forward so
+            // the next frame does not snap the texture's raw rotation back.
+            camera.automaticRollOffset += resetRollTarget - automaticRoll;
+            camera.resetting = false;
+        }
     }
 
     camera.renderedPitch = pitch;
@@ -55,7 +62,7 @@ export const updateGalaxyCamera = (options: {
 
     const progress = Math.min(1, (frameTime - galaxyCamera.resetStartedAt) / 900);
     const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
-    const rotationDifference = ((-galaxyCamera.resetRotation + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    const rotationDifference = shortestAngleDifference(galaxyCamera.resetRotation, 0);
     galaxyCamera.rotation = galaxyCamera.resetRotation + rotationDifference * eased;
     galaxyCamera.tilt = galaxyCamera.resetTilt + (1 - galaxyCamera.resetTilt) * eased;
     if (progress === 1) {
@@ -69,7 +76,7 @@ export const updateFocusRotation = (focus: FocusState, frameTime: number) => {
     if (!focus.resetting) return;
     const progress = Math.min(1, (frameTime - focus.resetStartedAt) / 700);
     const eased = 1 - (1 - progress) ** 3;
-    const longitudeDifference = ((-focus.resetLongitude + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    const longitudeDifference = shortestAngleDifference(focus.resetLongitude, 0);
     focus.longitude = focus.resetLongitude + longitudeDifference * eased;
     focus.latitude = focus.resetLatitude * (1 - eased);
     if (progress === 1) {

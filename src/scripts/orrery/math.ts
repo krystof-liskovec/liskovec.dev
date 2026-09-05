@@ -3,6 +3,9 @@ import type { Planet, Vec3 } from './types';
 export const DEG = Math.PI / 180;
 export const J2000 = Date.UTC(2000, 0, 1, 12);
 
+export const shortestAngleDifference = (from: number, to: number) =>
+    Math.atan2(Math.sin(to - from), Math.cos(to - from));
+
 export const smoothstep = (value: number) => {
     const clamped = Math.max(0, Math.min(1, value));
     return clamped * clamped * (3 - 2 * clamped);

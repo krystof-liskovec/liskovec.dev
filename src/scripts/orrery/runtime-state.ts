@@ -26,6 +26,7 @@ export type CameraState = {
     resetPitch: number;
     resetYaw: number;
     resetRoll: number;
+    automaticRollOffset: number;
     lastX: number;
     lastY: number;
     pointerId: number;
@@ -140,6 +141,7 @@ export const createRuntimeState = () => {
         resetPitch: 58 * DEG,
         resetYaw: 0,
         resetRoll: -12 * DEG,
+        automaticRollOffset: 0,
         lastX: 0,
         lastY: 0,
         pointerId: -1,

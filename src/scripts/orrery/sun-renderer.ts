@@ -19,7 +19,6 @@ const SUN_MASK_COLOR = '#2b2621';
 const SUN_CAMERA_SURFACE_INFLUENCE = 0.35;
 const SUN_CAMERA_SURFACE_SPEED = 2.4;
 
-let smoothedCameraRotation: number | null = null;
 let smoothedCameraTilt: number | null = null;
 let lastSurfaceSeconds = -1;
 
@@ -31,16 +30,14 @@ const approach = (current: number, target: number, maximumStep: number) => {
 const smoothCameraSurface = (rotation: number, tilt: number, seconds: number) => {
     const frameSeconds = lastSurfaceSeconds < 0 ? 0 : Math.min(0.05, Math.max(0, seconds - lastSurfaceSeconds));
     lastSurfaceSeconds = seconds;
-    if (smoothedCameraRotation === null || smoothedCameraTilt === null) {
-        smoothedCameraRotation = rotation;
+    if (smoothedCameraTilt === null) {
         smoothedCameraTilt = tilt;
         return { rotation, tilt };
     }
 
     const maximumStep = frameSeconds * SUN_CAMERA_SURFACE_SPEED;
-    smoothedCameraRotation = approach(smoothedCameraRotation, rotation, maximumStep);
     smoothedCameraTilt = approach(smoothedCameraTilt, tilt, maximumStep);
-    return { rotation: smoothedCameraRotation, tilt: smoothedCameraTilt };
+    return { rotation, tilt: smoothedCameraTilt };
 };
 
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
@@ -64,9 +61,9 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     context.strokeStyle = '#1d2021';
     context.lineWidth = Math.max(1.2, fontSize * 0.15);
     const characterWidth = context.measureText('M').width * 0.76;
-    // Dragging can move the camera across several discrete ASCII texture cells
-    // in one frame. Ease only the camera contribution so the surface follows
-    // the scene without making its spots flash between glyphs.
+    // Keep the camera-driven longitude synchronous with the rest of the solar
+    // system. Only ease tilt, where a small transition is less noticeable than
+    // a lagging surface during a rapid horizontal rotation.
     const cameraSurface = smoothCameraSurface(
         planetRotationOffset * SUN_CAMERA_SURFACE_INFLUENCE,
         planetTiltOffset * SUN_CAMERA_SURFACE_INFLUENCE,
