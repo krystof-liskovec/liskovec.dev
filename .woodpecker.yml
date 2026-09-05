@@ -8,9 +8,9 @@ steps:
       environment:
           GITEA_PACKAGE_BASE: https://gitea.liskovec.dev/api/packages/krystof.liskovec/generic/liskovec-cv
           GITEA_PACKAGE_USER:
-              from_secret: gitea_package_user
+              from_secret: deploy_user_name
           GITEA_PACKAGE_TOKEN:
-              from_secret: gitea_package_token
+              from_secret: deploy_user_token
       commands:
           - python3 scripts/fetch_cv_artifacts.py
     - name: build-and-deploy
