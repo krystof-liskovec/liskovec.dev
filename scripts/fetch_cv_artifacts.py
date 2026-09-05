@@ -30,13 +30,16 @@ def main() -> None:
         temporary_root = Path(temporary_directory)
         try:
             for filename in FILES:
+                artifact_url = f"{base_url}/{version}/{filename}"
+                print(f"Fetching CV artifact: {artifact_url}")
                 request = Request(
-                    f"{base_url}/{version}/{filename}",
+                    artifact_url,
                     headers={"Authorization": authorization},
                 )
                 with urlopen(request) as response:
                     (temporary_root / filename).write_bytes(response.read())
-        except HTTPError:
+        except HTTPError as error:
+            print(f"Gitea returned HTTP {error.code} for {error.url}")
             if version_from_pipeline or not all(path.exists() for path in FILES.values()):
                 raise
             print(f"CV package {version} is not available; keeping the checked-in fallback.")
