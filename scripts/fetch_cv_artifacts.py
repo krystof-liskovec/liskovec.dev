@@ -15,7 +15,13 @@ FILES = {
 
 
 def main() -> None:
-    base_url = os.environ["GITEA_PACKAGE_BASE"].rstrip("/")
+    base_url = os.environ.get("GITEA_PACKAGE_BASE")
+    if not base_url:
+        host = os.environ["GITEA_PACKAGE_HOST"].rstrip("/")
+        owner = os.environ["GITEA_PACKAGE_OWNER"]
+        package_name = os.environ.get("GITEA_PACKAGE_NAME", "liskovec-cv")
+        base_url = f"{host}/api/packages/{owner}/generic/{package_name}"
+    base_url = base_url.rstrip("/")
     version_from_pipeline = os.environ.get("CV_ARTIFACT_VERSION", "").strip("/")
     version = version_from_pipeline or "latest"
     authorization = f'token {os.environ["GITEA_PACKAGE_TOKEN"]}'

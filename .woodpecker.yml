@@ -6,7 +6,10 @@ steps:
     - name: fetch-cv-artifacts
       image: python:3.13-slim
       environment:
-          GITEA_PACKAGE_BASE: https://gitea.liskovec.dev/api/packages/krystof.liskovec/generic/liskovec-cv
+          GITEA_PACKAGE_HOST: https://gitea.liskovec.dev
+          GITEA_PACKAGE_NAME: liskovec-cv
+          GITEA_PACKAGE_OWNER:
+              from_secret: deploy_user_name
           GITEA_PACKAGE_TOKEN:
               from_secret: deploy_user_token
       commands:

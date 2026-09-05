@@ -148,6 +148,7 @@ Create these repository secrets in Woodpecker before enabling the workflow:
 
 - `cloudflare_account_id` — the Cloudflare account ID
 - `cloudflare_api_token` — an API token with the permissions required to deploy to Cloudflare Pages
-- `deploy_user_token` — a Gitea personal access token with package-read access to the CV Generic Package Registry
+- `deploy_user_name` — the Gitea bot account that owns the CV package
+- `deploy_user_token` — a Gitea personal access token for that bot with package-read access
 
 The workflow expects the Pages project to be named `liskovec`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.
