@@ -336,21 +336,12 @@ const profileStructuredData = {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const initialHashTarget = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
     const isAnchorEntry = Boolean(initialHashTarget);
-    const introStorageKey = 'liskovec:orrery-intro-seen:v3';
-    const isRepeatIntro = (() => {
-        try {
-            return localStorage.getItem(introStorageKey) === '1';
-        } catch {
-            return false;
-        }
-    })();
 
     if (isAnchorEntry) document.documentElement.setAttribute('data-orrery-anchor-entry', '');
     if (!reducedMotion && !isAnchorEntry) {
         solarHeading?.classList.add('is-intro-running');
         solarSystem?.classList.add('is-intro-running');
     }
-    if (isRepeatIntro) document.documentElement.setAttribute('data-orrery-intro-repeat', '');
     document.documentElement.setAttribute('data-orrery-heading-managed', '');
 
     const createIntroTypewriter = (element: HTMLElement) => {

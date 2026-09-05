@@ -9,7 +9,7 @@
 - `math.ts` — coordinate, orbit, and projection helpers
 - `runtime-state.ts` — mutable camera/focus/clock state and its defaults
 - `frame-state.ts` — passive camera motion and reset interpolation
-- `intro-controller.ts` — interruptible opening sequence with browser-persistent first-visit state
+- `intro-controller.ts` — interruptible opening sequence
 - `render-metrics.ts` — canvas bounds, bleed offsets, and resize invalidation
 - `time-formatters.ts` — camera and simulation clock display formatting
 - `typewriter.ts` — interruptible animated labels used by the live scene
