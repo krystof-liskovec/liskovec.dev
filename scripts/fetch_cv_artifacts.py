@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Fetch the built CV PDFs from Gitea into the Astro public directory."""
 
-import base64
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -19,9 +18,7 @@ def main() -> None:
     base_url = os.environ["GITEA_PACKAGE_BASE"].rstrip("/")
     version_from_pipeline = os.environ.get("CV_ARTIFACT_VERSION", "").strip("/")
     version = version_from_pipeline or "latest"
-    credentials = base64.b64encode(
-        f'{os.environ["GITEA_PACKAGE_USER"]}:{os.environ["GITEA_PACKAGE_TOKEN"]}'.encode()
-    ).decode()
+    authorization = f'token {os.environ["GITEA_PACKAGE_TOKEN"]}'
 
     with TemporaryDirectory() as temporary_directory:
         temporary_root = Path(temporary_directory)
@@ -29,7 +26,7 @@ def main() -> None:
             for filename in FILES:
                 request = Request(
                     f"{base_url}/{version}/{filename}",
-                    headers={"Authorization": f"Basic {credentials}"},
+                    headers={"Authorization": authorization},
                 )
                 with urlopen(request) as response:
                     (temporary_root / filename).write_bytes(response.read())
