@@ -205,6 +205,9 @@ h1 span {
     padding: 110px 0 0;
     scroll-margin-top: 24px;
 }
+.profile-layout + .content-section {
+    padding-top: 72px;
+}
 .section-label {
     display: flex;
     justify-content: space-between;
@@ -655,6 +658,9 @@ footer a:hover {
     }
     .content-section {
         padding-top: 78px;
+    }
+    .profile-layout + .content-section {
+        padding-top: 54px;
     }
     .about-grid {
         display: block;
