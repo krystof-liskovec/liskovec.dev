@@ -3,6 +3,7 @@ import type { MajorMoon } from './catalog';
 import { DEG, J2000, rotateX, rotateY, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
+import { sceneMaskColor } from './scene-mask';
 import type { SolarParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
@@ -50,27 +51,6 @@ const KUIPER_BELT_STYLE: ParticleFieldStyle = {
     outerRadius: 52.5,
     innerPeriodDays: 59860,
     outerPeriodDays: 129100,
-};
-
-const SCENE_BACKGROUND = [29, 32, 33] as const;
-const SCENE_GLOW = [254, 128, 25] as const;
-
-const planetMaskColor = (x: number, y: number, width: number, height: number, isOgPreview: boolean) => {
-    const glowX = width * 0.52;
-    const glowY = height * 0.38;
-    const glowOpacity = isOgPreview ? 0.12 : 0.06;
-    const farthestCorner = Math.max(
-        Math.hypot(glowX, glowY),
-        Math.hypot(width - glowX, glowY),
-        Math.hypot(glowX, height - glowY),
-        Math.hypot(width - glowX, height - glowY),
-    );
-    const glowProgress = Math.min(1, Math.hypot(x - glowX, y - glowY) / (farthestCorner * 0.56));
-    const alpha = glowOpacity * (1 - glowProgress);
-    const channels = SCENE_BACKGROUND.map((channel, index) =>
-        Math.round(channel + (SCENE_GLOW[index] - channel) * alpha),
-    );
-    return `rgb(${channels.join(', ')})`;
 };
 
 const JUPITER_TROJAN_LIBRATION_PERIOD_DAYS = 150 * 365.256;
@@ -599,7 +579,7 @@ export class SolarSystemSceneRenderer {
         // This ellipse is an opaque occlusion mask for the orbit marks and
         // particles behind a planet. Match the page's local background glow so
         // the mask does not appear as a second, darker planet-sized circle.
-        context.fillStyle = planetMaskColor(body.x, body.y, options.width, options.height, options.isOgPreview);
+        context.fillStyle = sceneMaskColor(body.x, body.y, options.width, options.height, options.isOgPreview);
         context.globalAlpha = body.reveal * options.localDetailOpacity * (1 - options.planetSceneFocus);
         context.fill();
         context.globalAlpha = 1;

@@ -2,6 +2,7 @@ import { GALACTIC_OBJECTS } from './catalog';
 import { smoothstep } from './math';
 import { galacticPositionFromSun } from './galaxy-model';
 import { galacticPatternPhase, moveGalacticMaterial, rotateGalacticPoint } from './galactic-simulation';
+import { sceneMaskColor } from './scene-mask';
 
 export type ProjectedGalacticObject = {
     object: (typeof GALACTIC_OBJECTS)[number];
@@ -88,10 +89,12 @@ export class GalaxyObjectRenderer {
             renderTop: number;
             renderRight: number;
             renderBottom: number;
+            isOgPreview: boolean;
         },
     ) {
         const {
             width,
+            height,
             seconds,
             reducedMotion,
             opacity,
@@ -102,6 +105,7 @@ export class GalaxyObjectRenderer {
             renderTop,
             renderRight,
             renderBottom,
+            isOgPreview,
         } = options;
         if (opacity <= 0.001) return;
         // The galaxy contracts substantially on phones while the canvas glyphs
@@ -124,11 +128,14 @@ export class GalaxyObjectRenderer {
             // coordinate here makes zooming scrub through the sine wave and
             // produces a rapid strobe, especially during fast slider movement.
             const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 0.8 + index * 1.73) * 0.045;
+            const maskColor = sceneMaskColor(galacticObject.x, galacticObject.y, width, height, isOgPreview);
             const spriteReveal = smoothstep((galaxyProgress - 0.58) / 0.28);
             const spriteFontSize = (isHovered ? 8.8 : 7.8) * pulse * viewportScale;
-            context.fillStyle = galacticObject.object.color;
             context.globalAlpha = opacity * (1 - spriteReveal);
             context.font = `bold ${(isHovered ? 13 : 11) * pulse * viewportScale}px "DM Mono", monospace`;
+            context.fillStyle = maskColor;
+            context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
+            context.fillStyle = galacticObject.object.color;
             context.fillText(galacticObject.object.glyph, galacticObject.x, galacticObject.y);
             context.globalAlpha = opacity * spriteReveal;
             context.font = `bold ${spriteFontSize}px "DM Mono", monospace`;
@@ -140,6 +147,9 @@ export class GalaxyObjectRenderer {
                 const lineY =
                     galacticObject.y +
                     (row - (galacticObject.object.sprite.length - 1) / 2) * spriteFontSize * rowSpacing;
+                context.fillStyle = maskColor;
+                context.fillText(line, galacticObject.x, lineY);
+                context.fillStyle = galacticObject.object.color;
                 context.strokeText(line, galacticObject.x, lineY);
                 context.fillText(line, galacticObject.x, lineY);
                 if (galacticObject.object.name === 'Sagittarius A*' && row === 2) {

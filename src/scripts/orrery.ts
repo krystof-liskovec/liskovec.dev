@@ -746,6 +746,7 @@ if (canvasElement && systemElement && canvasContext) {
             renderTop,
             renderRight,
             renderBottom,
+            isOgPreview,
         });
         drawSolMarker(context, {
             alpha: galaxyAlpha,
