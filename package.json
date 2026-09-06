@@ -9,6 +9,7 @@
         "dev": "astro dev --host 0.0.0.0",
         "build": "astro build",
         "check": "astro check",
+        "capture:og": "node scripts/capture-og.mjs",
         "preview": "astro preview",
         "astro": "astro",
         "format": "prettier --write .",

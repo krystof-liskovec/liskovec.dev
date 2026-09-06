@@ -1,0 +1,122 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/site.css';
+---
+
+<Layout
+    title="Kryštof Lískovec — Open Graph preview"
+    description="A 1200 × 630 Open Graph image preview using the live site orrery."
+    canonical={false}
+    noindex
+>
+    <main class="og-preview" aria-label="Open Graph image preview">
+        <div class="og-preview-name" aria-label="Kryštof Lískovec">
+            <span>Kryštof</span>
+            <span>Lískovec</span>
+        </div>
+        <div
+            class="solar-system og-preview-animation"
+            id="solar-system"
+            aria-label="A live, approximate ASCII visualization of the Solar System"
+        >
+            <canvas class="solar-gpu-canvas" id="solar-gpu-canvas" aria-hidden="true"></canvas>
+            <canvas id="solar-canvas" aria-hidden="true"></canvas>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    void import('../scripts/orrery.ts');
+</script>
+
+<style>
+    :global(html),
+    :global(body) {
+        width: 1200px;
+        min-width: 1200px;
+        height: 630px;
+        min-height: 630px;
+        overflow: hidden;
+    }
+
+    :global(body) {
+        background: var(--bg);
+    }
+
+    .og-preview {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: var(--bg);
+        isolation: isolate;
+    }
+
+    .og-preview-name {
+        position: absolute;
+        z-index: 5;
+        left: 54px;
+        bottom: 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        color: var(--text);
+        font: 600 92px/0.93 var(--sans);
+        letter-spacing: -0.075em;
+        white-space: nowrap;
+    }
+
+    .og-preview-name span:last-child {
+        color: var(--orange);
+    }
+
+    .og-preview-animation {
+        --canvas-bleed-x: 0px;
+        --canvas-bleed-y: 0px;
+        --scene-glow-x: 52%;
+        --scene-glow-y: 38%;
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        left: 120px;
+        width: 1080px;
+        height: 630px;
+        min-height: 0;
+        margin: 0;
+        overflow: hidden;
+        background-color: var(--bg);
+    }
+
+    .og-preview-animation::before {
+        background-image: radial-gradient(
+            circle at var(--scene-glow-x) var(--scene-glow-y),
+            rgba(254, 128, 25, 0.12),
+            transparent 56%
+        );
+        opacity: 1;
+    }
+
+    .og-preview-animation canvas {
+        top: 0;
+        left: 0;
+        width: 1080px;
+        height: 630px;
+        filter: brightness(1.55) contrast(1.22) saturate(1.08);
+    }
+
+    .og-preview-animation canvas.solar-gpu-canvas {
+        opacity: 1;
+    }
+
+    .og-preview-animation canvas#solar-canvas {
+        opacity: 1;
+    }
+
+    @media (max-width: 1200px) {
+        :global(html),
+        :global(body) {
+            transform-origin: top left;
+            transform: scale(calc(100vw / 1200));
+        }
+    }
+</style>

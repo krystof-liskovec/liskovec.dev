@@ -9,7 +9,13 @@ npm install
 npm run dev
 npm run build
 npm run preview
+npm run capture:og
 ```
+
+`/og-preview/` is a fixed 1200 × 630 preview for the alternate social image. It
+uses the live orrery canvas and the site's Space Grotesk font. With the local
+Astro server running, `npm run capture:og` waits for the scene to settle and
+writes the result to `public/og-default-live.png`.
 
 Set `SITE_URL` when the public domain changes. It controls canonical URLs, social metadata, structured data, the sitemap, RSS links, and `robots.txt`. The deployment currently uses `https://liskovec.pages.dev` until the custom domain is ready. Redirect the temporary `pages.dev` hostname permanently to the custom domain after the move so only one public origin remains indexable.
 
