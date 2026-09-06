@@ -4,6 +4,8 @@ interface Props {
     description?: string;
     image?: string;
     imageAlt?: string;
+    imageWidth?: number;
+    imageHeight?: number;
     type?: 'website' | 'article';
     canonical?: string | false;
     noindex?: boolean;
@@ -17,8 +19,10 @@ interface Props {
 const {
     title = 'Kryštof Lískovec — DevOps & Software Developer',
     description = 'Kryštof Lískovec is a software developer working across DevOps, reliable systems, internal tools, and useful software.',
-    image = '/og-default.png',
-    imageAlt = 'A Gruvbox-inspired ASCII solar system orrery',
+    image = '/og-default-v2.png',
+    imageAlt = 'A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec',
+    imageWidth = image === '/og-default-v2.png' ? 2400 : 1200,
+    imageHeight = image === '/og-default-v2.png' ? 1260 : 630,
     type = 'website',
     canonical = Astro.url.pathname,
     noindex = false,
@@ -79,8 +83,8 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         <meta property="og:description" content={description} />
         {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
         <meta property="og:image" content={socialImageUrl} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
+        <meta property="og:image:width" content={String(imageWidth)} />
+        <meta property="og:image:height" content={String(imageHeight)} />
         <meta property="og:image:alt" content={imageAlt} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
