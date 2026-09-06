@@ -15,7 +15,7 @@ npm run capture:og
 `/og-preview/` is a fixed 1200 × 630 preview for the alternate social image. It
 uses the live orrery canvas and the site's Space Grotesk font. With the local
 Astro server running, `npm run capture:og` waits for the scene to settle and
-writes the 2× result to `public/og-default-v2.png`.
+writes the 2× result to `public/og-default.png`.
 
 Set `SITE_URL` when the public domain changes. It controls canonical URLs, social metadata, structured data, the sitemap, RSS links, and `robots.txt`. The deployment currently uses `https://liskovec.pages.dev` until the custom domain is ready. Redirect the temporary `pages.dev` hostname permanently to the custom domain after the move so only one public origin remains indexable.
 
@@ -36,7 +36,7 @@ image: /images/blog/example.png # optional; also used for link previews
 imageAlt: A concise description of the image
 ```
 
-Store local images under `public/images/blog`. Posts without a cover image use `public/og-default-v2.png` for social previews. Draft posts are excluded from pages, the sitemap, RSS, and structured data.
+Store local images under `public/images/blog`. Posts without a cover image use `public/og-default.png` for social previews. Draft posts are excluded from pages, the sitemap, RSS, and structured data.
 
 ## Astronomical data and sources
 

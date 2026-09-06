@@ -7,7 +7,7 @@ draft: true
 tags:
     - devops
     - deployments
-image: /og-default-v2.png
+image: /og-default.png?v=2
 imageAlt: A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec
 ---
 

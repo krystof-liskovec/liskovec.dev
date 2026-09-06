@@ -138,6 +138,7 @@ export class SolarSystemSceneRenderer {
             particleTransform?: SolarParticleTransform;
             planetRotationOffset: number;
             planetTiltOffset: number;
+            isOgPreview: boolean;
         },
     ) {
         this.drawOrbitMarks(
@@ -146,6 +147,7 @@ export class SolarSystemSceneRenderer {
             options.viewportGlyphScale,
             options.pixelRatio,
             options.particleRenderer,
+            options.isOgPreview,
         );
         this.drawOrbitMarks(
             context,
@@ -153,6 +155,7 @@ export class SolarSystemSceneRenderer {
             options.viewportGlyphScale,
             options.pixelRatio,
             options.particleRenderer,
+            options.isOgPreview,
         );
         this.drawSmallBodyFields(context, options);
         this.drawTrojanClouds(context, options);
@@ -166,14 +169,21 @@ export class SolarSystemSceneRenderer {
         viewportGlyphScale: number,
         pixelRatio: number,
         particleRenderer?: WebGLParticleRenderer | null,
+        isOgPreview = false,
     ) {
         // Orbit spacing contracts on narrow screens, so keep the lane glyphs
         // from visually merging into heavy continuous lines.
         const fontSize = Math.max(5.5, 9 * viewportGlyphScale);
         const font = `${fontSize}px "DM Mono", monospace`;
-        const drawOrbitGlyph = createParticleGlyphDrawer(context, particleRenderer, font, '#7c6f64', pixelRatio);
+        const drawOrbitGlyph = createParticleGlyphDrawer(
+            context,
+            particleRenderer,
+            font,
+            isOgPreview ? '#bdae93' : '#7c6f64',
+            pixelRatio,
+        );
         for (const mark of marks) {
-            drawOrbitGlyph(mark.glyph, mark.x, mark.y, mark.alpha * mark.reveal);
+            drawOrbitGlyph(mark.glyph, mark.x, mark.y, mark.alpha * mark.reveal * (isOgPreview ? 1.35 : 1));
         }
         context.globalAlpha = 1;
     }

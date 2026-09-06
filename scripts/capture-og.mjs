@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
 const baseUrl = process.env.OG_PREVIEW_URL ?? 'http://127.0.0.1:4321/og-preview/';
-const outputPath = resolve(process.argv[2] ?? 'public/og-default-v2.png');
+const outputPath = resolve(process.argv[2] ?? 'public/og-default.png');
 const driverPort = 9517;
 const driver = spawn('chromedriver', [`--port=${driverPort}`, '--silent'], { stdio: 'ignore' });
 let devServer;

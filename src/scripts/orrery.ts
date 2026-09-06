@@ -61,6 +61,7 @@ if (canvasElement && systemElement && canvasContext) {
     const canvas = canvasElement;
     const system = systemElement;
     const context = canvasContext;
+    const isOgPreview = system.dataset.ogPreview === 'true';
     const backgroundCanvas = document.createElement('canvas');
     const backgroundContext = backgroundCanvas.getContext('2d');
     let particleRenderer: WebGLParticleRenderer | null = null;
@@ -317,7 +318,7 @@ if (canvasElement && systemElement && canvasContext) {
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene.
-        const viewportGlyphScale = Math.min(1, Math.max(0.61, width / 700));
+        const viewportGlyphScale = isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, width / 700));
         const innerPlanetScale = width < 600 ? 0.84 : 1;
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
         const viewportSunScale = 0.52 + mobileSunProgress * 0.48;
@@ -468,7 +469,9 @@ if (canvasElement && systemElement && canvasContext) {
             void loadGalaxyBackdrop();
         }
         // Leave enough room for Neptune even at the nearest point in the projection.
-        const baseWorldScale = width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50);
+        const baseWorldScale =
+            (width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50)) *
+            (isOgPreview ? 1.1 : 1);
         const focusedSceneScale = 1 + planetSceneFocus * 13;
         const worldScale = baseWorldScale * (1 - plutoReveal * 0.11) * solarSystemScale * focusedSceneScale;
         const cameraDistance = 145;
@@ -726,6 +729,7 @@ if (canvasElement && systemElement && canvasContext) {
             particleTransform,
             planetRotationOffset,
             planetTiltOffset,
+            isOgPreview,
         });
         galaxyObjectRenderer.draw(context, {
             width,

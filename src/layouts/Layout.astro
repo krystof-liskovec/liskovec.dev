@@ -19,10 +19,10 @@ interface Props {
 const {
     title = 'Kryštof Lískovec — DevOps & Software Developer',
     description = 'Kryštof Lískovec is a software developer working across DevOps, reliable systems, internal tools, and useful software.',
-    image = '/og-default-v2.png',
+    image = '/og-default.png?v=2',
     imageAlt = 'A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec',
-    imageWidth = image === '/og-default-v2.png' ? 2400 : 1200,
-    imageHeight = image === '/og-default-v2.png' ? 1260 : 630,
+    imageWidth = image.startsWith('/og-default.png') ? 2400 : 1200,
+    imageHeight = image.startsWith('/og-default.png') ? 1260 : 630,
     type = 'website',
     canonical = Astro.url.pathname,
     noindex = false,
