@@ -19,8 +19,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Spacer
 
 
-CV_ROOT = Path(__file__).resolve()
-ROOT = CV_ROOT.parent
+ROOT = Path(__file__).resolve().parents[1]
+CV_ROOT = ROOT / "cv"
 OUTPUT = ROOT / "public"
 MARGIN = 38
 # SimpleDocTemplate's frame has 6 pt of padding on each side.
@@ -210,7 +210,8 @@ def main():
         pdfmetrics.registerFont(TTFont(f"CV-{weight}", str(font_dir / f"LiberationSans-{weight}.ttf")))
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for role in ["devops", "backend"]:
-        build(ROOT / f"cv-{role}-en.md", OUTPUT / f"krystof-liskovec-cv-{role}-en.pdf")
+        filename = "cv.pdf" if role == "devops" else "cv-backend.pdf"
+        build(CV_ROOT / f"cv-{role}-en.md", OUTPUT / filename)
 
 
 if __name__ == "__main__":

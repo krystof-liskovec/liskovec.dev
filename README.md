@@ -142,6 +142,9 @@ The `.woodpecker.yml` workflow builds the CV PDFs and Astro site in the same
 pipeline, then deploys `dist/` to Cloudflare Pages after every push to `main`.
 The CV sources and PDF builder live under `cv/`; generated PDFs are written to
 `public/` for the `/cv.pdf` and `/cv-backend.pdf` links.
+Run `python3 cv/build_cv.py` before `npm run build` to refresh both downloads
+locally. The generator preserves inline parenthesized dates, the English/German/Czech
+language order, and navy email and website links.
 
 Create these repository secrets in Woodpecker before enabling the workflow:
 
