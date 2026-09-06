@@ -182,11 +182,12 @@ export class SolarSystemSceneRenderer {
             context,
             particleRenderer,
             font,
-            isOgPreview ? '#bdae93' : '#7c6f64',
+            isOgPreview ? '#665c54' : '#7c6f64',
             pixelRatio,
         );
+        const orbitOpacity = isOgPreview ? 0.78 : 1;
         for (const mark of marks) {
-            drawOrbitGlyph(mark.glyph, mark.x, mark.y, mark.alpha * mark.reveal * (isOgPreview ? 1.35 : 1));
+            drawOrbitGlyph(mark.glyph, mark.x, mark.y, mark.alpha * mark.reveal * orbitOpacity);
         }
         context.globalAlpha = 1;
     }
