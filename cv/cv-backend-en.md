@@ -12,16 +12,14 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 ## Experience
 
-### Anycoders s. r. o.
+### Anycoders s. r. o. (July 2021 – Present)
 
-July 2021 – Present
-
-DevOps Engineer · Sept 2024 – Present
+DevOps Engineer (Sept 2024 – Present)
 
 - Reduced new-project CI/CD setup from up to 1 hour to typically 5–10 minutes through reusable GitLab CI/CD components with configurable inputs
 - Migrated on-premises container deployments from Bash scripts to Docker Compose, simplifying configuration review and maintenance
 
-Backend Developer · July 2021 – Aug 2024
+Backend Developer (July 2021 – Aug 2024)
 
 - Replaced address autocomplete subscriptions costing approximately €2,880–€3,360 annually with a Go and Elasticsearch REST API for a client with 40+ websites
 - Automated ingestion of Czech and Slovak address datasets and tuned Elasticsearch indexes for fuzzy autocomplete search
@@ -49,6 +47,4 @@ Bachelor’s degree in Applied Computer Science (2024)
 
 ## Languages
 
-English: B2 certificate (FCE) · Czech: Native · German: A2
-
-
+English: B2 certificate (FCE) · German: A2 · Czech: Native
