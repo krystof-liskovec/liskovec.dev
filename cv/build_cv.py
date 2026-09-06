@@ -2,7 +2,7 @@
 """Render the two Markdown CVs as single-page A4 PDFs.
 
 Requires ReportLab and the Liberation Sans fonts. Uses Poppler for validation.
-Run from any directory: python3 scripts/build_cv.py
+Run from any directory: python3 cv/build_cv.py
 """
 
 import re
@@ -19,8 +19,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Spacer
 
 
-ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "output" / "pdf"
+CV_ROOT = Path(__file__).resolve()
+ROOT = CV_ROOT.parent
+OUTPUT = ROOT / "public"
 MARGIN = 38
 # SimpleDocTemplate's frame has 6 pt of padding on each side.
 WIDTH = A4[0] - 2 * MARGIN - 12
