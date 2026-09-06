@@ -52,6 +52,27 @@ const KUIPER_BELT_STYLE: ParticleFieldStyle = {
     outerPeriodDays: 129100,
 };
 
+const SCENE_BACKGROUND = [29, 32, 33] as const;
+const SCENE_GLOW = [254, 128, 25] as const;
+
+const planetMaskColor = (x: number, y: number, width: number, height: number, isOgPreview: boolean) => {
+    const glowX = width * 0.52;
+    const glowY = height * 0.38;
+    const glowOpacity = isOgPreview ? 0.12 : 0.06;
+    const farthestCorner = Math.max(
+        Math.hypot(glowX, glowY),
+        Math.hypot(width - glowX, glowY),
+        Math.hypot(glowX, height - glowY),
+        Math.hypot(width - glowX, height - glowY),
+    );
+    const glowProgress = Math.min(1, Math.hypot(x - glowX, y - glowY) / (farthestCorner * 0.56));
+    const alpha = glowOpacity * (1 - glowProgress);
+    const channels = SCENE_BACKGROUND.map((channel, index) =>
+        Math.round(channel + (SCENE_GLOW[index] - channel) * alpha),
+    );
+    return `rgb(${channels.join(', ')})`;
+};
+
 const JUPITER_TROJAN_LIBRATION_PERIOD_DAYS = 150 * 365.256;
 
 // JPL J863/77 osculating elements for 1P/Halley, referred to the J2000
@@ -139,6 +160,8 @@ export class SolarSystemSceneRenderer {
             planetRotationOffset: number;
             planetTiltOffset: number;
             isOgPreview: boolean;
+            width: number;
+            height: number;
         },
     ) {
         this.drawOrbitMarks(
@@ -474,6 +497,9 @@ export class SolarSystemSceneRenderer {
             introSunOpacity: number;
             planetRotationOffset: number;
             planetTiltOffset: number;
+            width: number;
+            height: number;
+            isOgPreview: boolean;
         },
     ) {
         const {
@@ -555,6 +581,9 @@ export class SolarSystemSceneRenderer {
             innerPlanetScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            width: number;
+            height: number;
+            isOgPreview: boolean;
         },
     ) {
         if (body.planet.easterEgg) return;
@@ -567,8 +596,11 @@ export class SolarSystemSceneRenderer {
         const radiusY = (isGiant ? 11 : 8) * glyphScale;
         context.beginPath();
         context.ellipse(body.x, body.y, radiusX, radiusY, 0, 0, Math.PI * 2);
-        context.fillStyle = '#1d2021';
-        context.globalAlpha = body.reveal * options.localDetailOpacity * (1 - options.planetSceneFocus) * 0.76;
+        // This ellipse is an opaque occlusion mask for the orbit marks and
+        // particles behind a planet. Match the page's local background glow so
+        // the mask does not appear as a second, darker planet-sized circle.
+        context.fillStyle = planetMaskColor(body.x, body.y, options.width, options.height, options.isOgPreview);
+        context.globalAlpha = body.reveal * options.localDetailOpacity * (1 - options.planetSceneFocus);
         context.fill();
         context.globalAlpha = 1;
     }

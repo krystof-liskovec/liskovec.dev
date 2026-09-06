@@ -730,6 +730,8 @@ if (canvasElement && systemElement && canvasContext) {
             planetRotationOffset,
             planetTiltOffset,
             isOgPreview,
+            width,
+            height,
         });
         galaxyObjectRenderer.draw(context, {
             width,
