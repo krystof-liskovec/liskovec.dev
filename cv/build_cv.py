@@ -2,7 +2,7 @@
 """Render the two Markdown CVs as single-page A4 PDFs.
 
 Requires ReportLab and the Liberation Sans fonts. Uses Poppler for validation.
-Run from any directory: python3 cv/build_cv.py
+Run from any directory: python3 scripts/build_cv.py
 """
 
 import re
@@ -19,14 +19,14 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate, Spacer
 
 
-CV_ROOT = Path(__file__).resolve().parent
-ROOT = CV_ROOT.parent
-OUTPUT = ROOT / "public"
+ROOT = Path(__file__).resolve().parents[1]
+OUTPUT = ROOT / "output" / "pdf"
 MARGIN = 38
 # SimpleDocTemplate's frame has 6 pt of padding on each side.
 WIDTH = A4[0] - 2 * MARGIN - 12
 NAVY = colors.HexColor("#234D68")
 RULE = colors.HexColor("#C7D4DE")
+DATED_HEADING = re.compile(r"^(.*?) \((\w+ \d{4} – (?:\w+ \d{4}|Present))\)$")
 
 
 def plain(text):
@@ -38,12 +38,12 @@ def markup(text):
     text = escape(plain(text))
     text = re.sub(
         r"\[([^\]]+)\]\((https://[^)]+)\)",
-        r'<link href="\2" color="#000000">\1</link>',
+        r'<link href="\2" color="#234D68">\1</link>',
         text,
     )
     text = text.replace(
         "krystof@liskovec.dev",
-        '<link href="mailto:krystof@liskovec.dev" color="#000000">krystof@liskovec.dev</link>',
+        '<link href="mailto:krystof@liskovec.dev" color="#234D68">krystof@liskovec.dev</link>',
     )
     return text
 
@@ -59,12 +59,13 @@ def style(name, **kwargs):
 
 
 class DatedRow(Flowable):
-    """One logical row with a left label and right-aligned date."""
+    """A heading followed immediately by its parenthesized date range."""
 
-    def __init__(self, left, right, bold=True, company=False):
+    def __init__(self, title, date, company=False):
         super().__init__()
-        self.left, self.right = plain(left), plain(right)
-        self.font = "CV-Bold" if bold else "CV-Regular"
+        self.title = plain(title)
+        self.date = f" ({plain(date)})"
+        self.font = "CV-Bold"
         self.size = 11.5 if company else 10.5
         self.color = NAVY if company else colors.black
         self.height = 21 if company else 19
@@ -73,21 +74,22 @@ class DatedRow(Flowable):
     def wrap(self, avail_width, avail_height):
         self.width = avail_width
         needed = (
-            pdfmetrics.stringWidth(self.left, self.font, self.size)
-            + pdfmetrics.stringWidth(self.right, "CV-Regular", 10.5)
-            + 16
+            pdfmetrics.stringWidth(self.title, self.font, self.size)
+            + pdfmetrics.stringWidth(self.date, "CV-Regular", 10.5)
         )
         if needed > avail_width:
-            raise ValueError(f"Date row would overlap: {self.left}")
+            raise ValueError(f"Dated heading exceeds line width: {self.title}")
         return self.width, self.height
 
     def draw(self):
-        self.canv.setFillColor(self.color)
-        self.canv.setFont(self.font, self.size)
-        self.canv.drawString(0, 5, self.left)
-        self.canv.setFillColor(colors.black)
-        self.canv.setFont("CV-Regular", 10.5)
-        self.canv.drawRightString(self.width, 5, self.right)
+        text = self.canv.beginText(0, 5)
+        text.setFillColor(self.color)
+        text.setFont(self.font, self.size)
+        text.textOut(self.title)
+        text.setFillColor(colors.black)
+        text.setFont("CV-Regular", 10.5)
+        text.textOut(self.date)
+        self.canv.drawText(text)
 
 
 class SectionHeading(Flowable):
@@ -146,9 +148,8 @@ def build(source, destination):
         elif line.startswith("## "):
             story.append(SectionHeading(line[3:]))
         elif line.startswith("### "):
-            if idx + 1 < len(lines) and re.fullmatch(r"\w+ \d{4} – Present", lines[idx + 1]):
-                story.append(DatedRow(line[4:], lines[idx + 1], company=True))
-                idx += 1
+            if dated := DATED_HEADING.fullmatch(line[4:]):
+                story.append(DatedRow(*dated.groups(), company=True))
             else:
                 story.append(Paragraph(markup(line[4:]), styles["company"]))
         elif line.startswith("- "):
@@ -157,10 +158,9 @@ def build(source, destination):
             if height > styles["bullet"].leading * 2:
                 raise ValueError(f"Bullet exceeds two lines: {line}")
             story.append(paragraph)
-        elif re.search(r" · (?:\w+ \d{4} – |\d{4}$)", line):
-            left, right = line.rsplit(" · ", 1)
+        elif dated := DATED_HEADING.fullmatch(line):
             story.append(Spacer(1, 7))
-            story.append(DatedRow(left, right, bold=not left.startswith("Bachelor")))
+            story.append(DatedRow(*dated.groups()))
         else:
             story.append(Paragraph(markup(line), body))
         idx += 1
@@ -181,7 +181,8 @@ def build(source, destination):
     for line in lines:
         expected = re.sub(r"^#{1,3} |^- ", "", line)
         expected = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", expected)
-        # Dates are drawn as separate text objects, so check the label and date separately.
+        # Contact separators may be positioned separately by text extraction;
+        # dated headings must survive extraction as complete, adjacent text.
         for part in expected.split(" · "):
             if compact(plain(part)) not in compact(extracted):
                 raise ValueError(f"Missing PDF text: {part}")
@@ -207,9 +208,8 @@ def main():
     for weight in ["Regular", "Bold"]:
         pdfmetrics.registerFont(TTFont(f"CV-{weight}", str(font_dir / f"LiberationSans-{weight}.ttf")))
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    output_names = {"devops": "cv.pdf", "backend": "cv-backend.pdf"}
-    for role, filename in output_names.items():
-        build(CV_ROOT / f"cv-{role}-en.md", OUTPUT / filename)
+    for role in ["devops", "backend"]:
+        build(ROOT / f"cv-{role}-en.md", OUTPUT / f"krystof-liskovec-cv-{role}-en.pdf")
 
 
 if __name__ == "__main__":
