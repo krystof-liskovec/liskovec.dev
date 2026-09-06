@@ -28,3 +28,5 @@ public/terminal.wasm
 # Python cache
 __pycache__/
 *.py[cod]
+
+cv*.pdf
