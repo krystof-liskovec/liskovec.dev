@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { getBlogSlug } from '../lib/blog';
 
 interface Props {
     posts: CollectionEntry<'blog'>[];
@@ -19,14 +20,27 @@ const formatDate = (date: Date) =>
     {
         posts.length > 0 ? (
             posts.map((post) => (
-                <a class="post-card" href={`/blog/${post.id}`}>
-                    <div class="post-card-date">{formatDate(post.data.published)}</div>
+                <a class="post-card" href={`/blog/${getBlogSlug(post.id)}`}>
+                    <div class="post-card-media">
+                        <img
+                            src={post.data.image ?? '/og-default.png?v=2'}
+                            alt={post.data.imageAlt ?? post.data.title}
+                            width="180"
+                            height="104"
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    </div>
                     <div class="post-card-body">
+                        <div class="post-card-meta">
+                            <div class="post-card-date">{formatDate(post.data.published)}</div>
+                            {post.data.tags.length > 0 && (
+                                <span class="post-card-tags">{post.data.tags.join(' · ')}</span>
+                            )}
+                        </div>
                         <h2>{post.data.title}</h2>
                         <p>{post.data.description}</p>
-                        {post.data.tags.length > 0 && <span>{post.data.tags.join(' · ')}</span>}
                     </div>
-                    <b aria-hidden="true">→</b>
                 </a>
             ))
         ) : (

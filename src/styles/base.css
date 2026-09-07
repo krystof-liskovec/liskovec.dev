@@ -93,7 +93,6 @@ nav a {
     padding: 5px 3px;
     font-size: 13px;
     text-decoration: none;
-    transition: color 0.2s;
 }
 nav a:hover,
 nav a[aria-current='page'] {
@@ -102,7 +101,7 @@ nav a[aria-current='page'] {
 .eyebrow,
 .section-label,
 footer {
-    font-size: 11px;
+    font-size: var(--label-size);
     line-height: 1.5;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -144,7 +143,6 @@ h1 span {
 .section-label-anchor {
     color: inherit;
     text-decoration: none;
-    transition: color 0.2s;
 }
 .section-label-anchor:hover,
 .section-label-anchor:focus-visible {
@@ -265,7 +263,6 @@ h1 span {
 .about-cv-link a {
     color: var(--text);
     text-decoration: none;
-    transition: color 0.2s;
 }
 .about-cv-link a:hover,
 .about-cv-link a:focus-visible {
@@ -278,29 +275,49 @@ h1 span {
 }
 .post-card {
     display: grid;
-    grid-template-columns: 130px minmax(0, 1fr) 24px;
+    grid-template-columns: 180px minmax(0, 1fr);
     gap: 28px;
-    align-items: start;
+    align-items: center;
     padding: 30px 0;
     text-decoration: none;
-    transition:
-        padding 0.2s,
-        background 0.2s;
 }
 .post-card + .post-card {
     border-top: 1px solid #3c3836;
 }
-.post-card:hover {
-    padding-right: 14px;
-    padding-left: 14px;
+.post-card:focus-visible {
+    outline: 1px solid var(--orange);
+    outline-offset: 8px;
+}
+.post-card:hover,
+.post-card:focus-visible {
     background: var(--surface);
 }
+.post-card-media {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid #504945;
+    background: var(--surface);
+}
+.post-card-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 .post-card-date {
-    padding-top: 5px;
     color: var(--muted);
-    font-size: 10px;
+    font-size: var(--label-size);
     letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+.post-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 14px;
+    padding-right: clamp(16px, 2.4vw, 28px);
 }
 .post-card-body h2 {
     margin: 0 0 9px;
@@ -314,32 +331,21 @@ h1 span {
     font-size: 13px;
     line-height: 1.65;
 }
-.post-card-body span {
+.post-card-tags {
     display: block;
-    margin-top: 13px;
     color: var(--yellow);
-    font-size: 9px;
+    font-size: var(--label-size);
     letter-spacing: 0.05em;
     text-transform: uppercase;
-}
-.post-card b {
-    color: var(--orange);
-    font-size: 19px;
-    font-weight: 400;
 }
 .post-list-empty {
     padding: 32px 0;
     color: var(--muted);
     font-size: 13px;
 }
-.blog-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 18px;
-}
 .blog-link {
     color: var(--orange);
-    font-size: 10px;
+    font-size: var(--label-size);
     letter-spacing: 0.05em;
     text-decoration: none;
     text-transform: uppercase;
@@ -352,18 +358,12 @@ h1 span {
     min-height: calc(100svh - 81px);
 }
 .blog-hero {
-    padding: clamp(90px, 15vh, 160px) 0 90px;
-    border-bottom: 1px solid #504945;
-}
-.blog-hero .eyebrow {
-    margin: 0 0 18px;
-    color: var(--yellow);
-    text-transform: none;
+    padding: clamp(48px, calc(5vh + 14px), 72px) 0 40px;
 }
 .blog-hero h1 {
     max-width: 880px;
     margin: 0;
-    font-size: clamp(54px, 8vw, 108px);
+    font-size: clamp(42px, 5.4vw, 76px);
 }
 .blog-hero p {
     max-width: 620px;
@@ -373,7 +373,7 @@ h1 span {
     line-height: 1.8;
 }
 .post-index {
-    padding: 82px 0 120px;
+    padding: 0 0 120px;
 }
 .post-index .post-list {
     margin-top: 0;
@@ -390,7 +390,7 @@ h1 span {
     color: var(--yellow);
     font-size: 11px;
     text-decoration: none;
-    text-transform: lowercase;
+    text-transform: uppercase;
 }
 .post-back:hover {
     color: var(--orange);
@@ -404,7 +404,7 @@ h1 span {
     justify-content: space-between;
     gap: 20px;
     color: var(--muted);
-    font-size: 10px;
+    font-size: var(--label-size);
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -526,7 +526,7 @@ h1 span {
 }
 .skill-groups span {
     color: var(--yellow);
-    font-size: 10px;
+    font-size: var(--label-size);
     letter-spacing: 0.05em;
     text-transform: uppercase;
 }
@@ -621,14 +621,20 @@ footer a:hover {
         display: block;
     }
     .post-card {
-        grid-template-columns: 1fr 20px;
+        grid-template-columns: 132px minmax(0, 1fr);
         gap: 16px;
     }
-    .post-card-date {
-        grid-column: 1 / -1;
+    .post-card-meta {
+        display: block;
+    }
+    .post-card-tags {
+        margin-top: 8px;
     }
     .blog-hero {
-        padding: 72px 0 64px;
+        padding: 28px 0 32px;
+    }
+    .blog-hero h1 {
+        font-size: clamp(32px, 9.6vw, 42px);
     }
     .post-page {
         padding: 54px 0 80px;
@@ -668,6 +674,16 @@ footer a:hover {
     }
     .brand-lockup .eyebrow {
         line-height: 1.55;
+    }
+    .post-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .post-card-media {
+        grid-column: 1 / -1;
+        aspect-ratio: 2 / 1;
+    }
+    .post-card-body {
+        grid-column: 1;
     }
 }
 @media (prefers-reduced-motion: reduce) {

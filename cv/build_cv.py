@@ -32,7 +32,7 @@ DATED_HEADING = re.compile(r"^(.*?) \((\w+ \d{4} – (?:\w+ \d{4}|Present))\)$")
 
 def plain(text):
     """Normalize typography for PDF output without changing the source files."""
-    return text.replace("–", "-").replace("—", "-").replace("’", "'")
+    return text.replace("–", "-").replace(chr(0x2014), "-").replace("’", "'")
 
 
 def markup(text):

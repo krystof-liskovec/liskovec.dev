@@ -164,7 +164,7 @@ language order, and navy email and website links.
 
 Create these repository secrets in Woodpecker before enabling the workflow:
 
-- `cloudflare_account_id` — the Cloudflare account ID
-- `cloudflare_api_token` — an API token with the permissions required to deploy to Cloudflare Pages
+- `cloudflare_account_id` - the Cloudflare account ID
+- `cloudflare_api_token` - an API token with the permissions required to deploy to Cloudflare Pages
 
 The workflow expects the Pages project to be named `liskovec`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.

@@ -53,6 +53,7 @@
     --canvas-bleed-y: clamp(96px, 14vh, 140px);
     --scene-glow-x: 52%;
     --scene-glow-y: 38%;
+    --scene-glow-offset-y: clamp(23px, 3.36vh, 34px);
     position: relative;
     z-index: 1;
     width: 100%;
@@ -66,11 +67,11 @@
 .solar-system::before {
     position: absolute;
     z-index: 0;
-    inset: 0;
+    inset: calc(-1 * var(--canvas-bleed-y)) 0;
     pointer-events: none;
     content: '';
     background-image: radial-gradient(
-        circle at var(--scene-glow-x) var(--scene-glow-y),
+        circle at var(--scene-glow-x) calc(var(--scene-glow-y) + var(--scene-glow-offset-y)),
         rgba(254, 128, 25, 0.06),
         transparent 48%
     );
@@ -100,6 +101,7 @@
     overflow: hidden;
     --canvas-bleed-x: 0px;
     --canvas-bleed-y: 0px;
+    --scene-glow-offset-y: 0px;
     background-color: var(--bg);
 }
 .solar-system:fullscreen canvas,
@@ -192,8 +194,8 @@
 }
 .solar-system canvas#solar-canvas {
     z-index: 3;
-    /* Keep the glow on the scene box. The canvas is larger than the box to
-       provide artwork bleed, so it must remain transparent behind the glow. */
+    /* Keep the canvas transparent so the extended scene glow remains visible
+       behind the artwork bleed. */
     background-color: transparent;
     background-image: none;
 }
@@ -575,7 +577,7 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     display: flex;
     justify-content: space-between;
     color: var(--muted);
-    font-size: 11px;
+    font-size: var(--label-size);
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -583,7 +585,6 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
 .hero-footer a:visited {
     color: var(--yellow);
     text-decoration: none;
-    transition: color 0.2s;
 }
 .hero-footer a:hover,
 .hero-footer a:focus-visible {
@@ -837,7 +838,7 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
         width: 100%;
     }
     .hero-footer {
-        font-size: 9px;
+        font-size: var(--label-size);
     }
 }
 

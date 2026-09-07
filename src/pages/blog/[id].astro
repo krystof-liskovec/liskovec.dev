@@ -1,13 +1,14 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
+import { getBlogSlug } from '../../lib/blog';
 import Layout from '../../layouts/Layout.astro';
 import SiteShell from '../../components/SiteShell.astro';
 import '../../styles/site.css';
 
 export async function getStaticPaths() {
     const posts = await getCollection('blog', ({ data }) => !data.draft);
-    return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+    return posts.map((post) => ({ params: { id: getBlogSlug(post.id) }, props: { post } }));
 }
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const { post } = Astro.props;
+const slug = getBlogSlug(post.id);
 const { Content } = await render(post);
 const published = new Intl.DateTimeFormat('en-GB', {
     day: '2-digit',
@@ -29,7 +31,7 @@ const updated = post.data.updated
       }).format(post.data.updated)
     : null;
 const siteUrl = Astro.site ?? Astro.url;
-const canonicalUrl = new URL(`/blog/${post.id}/`, siteUrl).href;
+const canonicalUrl = new URL(`/blog/${slug}/`, siteUrl).href;
 const homeUrl = new URL('/', siteUrl).href;
 const articleImageUrl = post.data.image ? new URL(post.data.image, siteUrl).href : undefined;
 const articleStructuredData = {
@@ -58,7 +60,7 @@ const articleStructuredData = {
 ---
 
 <Layout
-    title={`${post.data.title} — Kryštof Lískovec`}
+    title={`${post.data.title} | Kryštof Lískovec`}
     description={post.data.description}
     image={post.data.image}
     imageAlt={post.data.imageAlt ?? post.data.title}
@@ -70,7 +72,7 @@ const articleStructuredData = {
 >
     <SiteShell mainClass="post-page">
         <article>
-            <a class="post-back" href="/blog">← all posts</a>
+            <a class="post-back" href="/blog">[ ← ALL POSTS ]</a>
             <header class="post-header">
                 <div class="post-meta">
                     <span>

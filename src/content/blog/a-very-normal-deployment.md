@@ -11,7 +11,7 @@ image: /og-default.png?v=2
 imageAlt: A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec
 ---
 
-This is a mock post. It is here to make sure the blog works from Markdown file to finished page—and to give me something real to replace later.
+This is a mock post. It is here to make sure the blog works from Markdown file to finished page - and to give me something real to replace later.
 
 ## The plan
 
