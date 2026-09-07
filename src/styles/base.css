@@ -272,7 +272,7 @@ h1 span {
     color: var(--orange);
 }
 .about-cv-link span {
-    margin-left: 12px;
+    margin-left: 5px;
     color: var(--orange);
     font-size: 16px;
 }
@@ -552,7 +552,7 @@ h1 span {
 }
 .contact-links span {
     color: var(--orange);
-    margin-left: 12px;
+    margin-left: 5px;
     font-size: 16px;
     font-weight: 400;
 }
