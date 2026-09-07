@@ -51,9 +51,10 @@
 .solar-system {
     --canvas-bleed-x: clamp(72px, 9vw, 132px);
     --canvas-bleed-y: clamp(96px, 14vh, 140px);
-    --scene-glow-x: 52%;
-    --scene-glow-y: 38%;
-    --scene-glow-offset-y: clamp(23px, 3.36vh, 34px);
+    --scene-glow-bleed-y: clamp(180px, 26vh, 260px);
+    --scene-glow-x: 50%;
+    --scene-glow-y: 50%;
+    --scene-glow-offset-y: 0px;
     position: relative;
     z-index: 1;
     width: 100%;
@@ -67,11 +68,11 @@
 .solar-system::before {
     position: absolute;
     z-index: 0;
-    inset: calc(-1 * var(--canvas-bleed-y)) 0;
+    inset: calc(-1 * var(--scene-glow-bleed-y)) 0;
     pointer-events: none;
     content: '';
     background-image: radial-gradient(
-        circle at var(--scene-glow-x) calc(var(--scene-glow-y) + var(--scene-glow-offset-y)),
+        circle at var(--scene-glow-x) calc(var(--scene-glow-bleed-y) + var(--scene-glow-y) + var(--scene-glow-offset-y)),
         rgba(254, 128, 25, 0.06),
         transparent 48%
     );
@@ -101,6 +102,7 @@
     overflow: hidden;
     --canvas-bleed-x: 0px;
     --canvas-bleed-y: 0px;
+    --scene-glow-bleed-y: 0px;
     --scene-glow-offset-y: 0px;
     background-color: var(--bg);
 }
@@ -839,6 +841,13 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     }
     .hero-footer {
         font-size: var(--label-size);
+    }
+}
+
+@media (max-width: 600px) {
+    .solar-system {
+        --scene-glow-x: 52%;
+        --scene-glow-y: 38%;
     }
 }
 

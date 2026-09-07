@@ -95,6 +95,8 @@ if (canvasElement && systemElement && canvasContext) {
     let renderTimer = 0;
     let galaxyBackdropCacheValid = false;
     let lastGalaxyBackdropAt = -Infinity;
+    let lastSceneGlowX = '';
+    let lastSceneGlowY = '';
     const renderMetricsController = createRenderMetrics(canvas, system, () => {
         galaxyBackdropCacheValid = false;
     });
@@ -412,8 +414,28 @@ if (canvasElement && systemElement && canvasContext) {
             solveMoonOrbitAtDate(moon, solarMoonElapsedDays, target);
         const solveFocusedMoonOrbit = (moon: MajorMoon, target = { angle: 0, distance: 1 }) =>
             solveMoonOrbitAtDate(moon, focusedMoonElapsedDays, target);
-        const viewportCenterX = width * 0.52;
-        const viewportCenterY = height * 0.38;
+        // Center desktop scenes against the visible landing viewport instead of
+        // the full scene box, which can extend below the fold on shorter laptops.
+        // The compact phone layout intentionally keeps the scene slightly higher
+        // so the heading and controls have room around it.
+        const compactViewport = width < 600;
+        const viewportCenterX = compactViewport
+            ? width * 0.52
+            : Math.max(0, Math.min(width, window.innerWidth / 2 - systemLeft));
+        const desktopCenterY = window.innerHeight / 2 - (systemTop + window.scrollY);
+        const viewportCenterY = compactViewport
+            ? height * 0.38
+            : Math.max(height * 0.18, Math.min(height * 0.5, desktopCenterY));
+        // The glow pseudo-element extends by the canvas bleed, so use its local
+        // pixel coordinates instead of percentages based on the larger box.
+        const sceneGlowX = `${viewportCenterX}px`;
+        const sceneGlowY = `${viewportCenterY}px`;
+        if (sceneGlowX !== lastSceneGlowX || sceneGlowY !== lastSceneGlowY) {
+            system.style.setProperty('--scene-glow-x', sceneGlowX);
+            system.style.setProperty('--scene-glow-y', sceneGlowY);
+            lastSceneGlowX = sceneGlowX;
+            lastSceneGlowY = sceneGlowY;
+        }
         const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;

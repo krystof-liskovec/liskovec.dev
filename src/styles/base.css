@@ -3,8 +3,14 @@
 }
 html {
     scroll-behavior: smooth;
-    scrollbar-color: #665c54 var(--bg);
+    scrollbar-color: var(--orange) var(--bg);
     scrollbar-width: thin;
+}
+@supports selector(::-webkit-scrollbar) {
+    html {
+        scrollbar-color: auto;
+        scrollbar-width: auto;
+    }
 }
 body {
     margin: 0;
@@ -19,20 +25,23 @@ a {
     color: inherit;
 }
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 4px;
+    height: 4px;
 }
 ::-webkit-scrollbar-track {
-    background: var(--bg);
+    border: 0.5px solid transparent;
+    background: #665c54;
+    background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb {
-    min-height: 42px;
-    border: 2px solid var(--bg);
+    min-height: 14px;
+    border: 1px solid var(--yellow);
     border-radius: 0;
-    background: #665c54;
+    background: var(--orange);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--orange);
+    border-color: var(--orange);
+    background: var(--yellow);
 }
 ::-webkit-scrollbar-corner {
     background: var(--bg);
