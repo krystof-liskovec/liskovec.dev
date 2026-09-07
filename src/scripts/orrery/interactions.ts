@@ -478,7 +478,11 @@ export const bindOrreryInteractions = ({
         if (event.pointerType !== 'touch') event.preventDefault();
     };
 
-    canvas.addEventListener('focus', () => system.classList.add('is-canvas-focused'));
+    canvas.addEventListener('focus', () => {
+        // Touch and mouse clicks may focus the canvas, but the scene outline
+        // is meant to communicate keyboard focus only.
+        system.classList.toggle('is-canvas-focused', canvas.matches(':focus-visible'));
+    });
     canvas.addEventListener('blur', () => {
         system.classList.remove('is-canvas-focused');
         stopKeyboardTurn();
