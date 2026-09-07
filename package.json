@@ -12,13 +12,15 @@
         "capture:og": "node scripts/capture-og.mjs",
         "preview": "astro preview",
         "astro": "astro",
+        "ascii": "node scripts/ascii-art.mjs",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
     },
     "dependencies": {
         "@astrojs/rss": "^4.0.19",
         "@astrojs/sitemap": "^3.7.3",
-        "astro": "^7.2.4"
+        "astro": "^7.2.4",
+        "sharp": "^0.35.4"
     },
     "devDependencies": {
         "@astrojs/check": "^0.9.10",

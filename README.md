@@ -38,6 +38,16 @@ imageAlt: A concise description of the image
 
 Store local images under `public/images/blog`. Posts without a cover image use `public/og-default.png` for social previews. Draft posts are excluded from pages, the sitemap, RSS, and structured data.
 
+## Image to ASCII art
+
+The blog's terminal-style image converter is a local CLI. It keeps the source image on your machine and infers the output format from the --output extension:
+
+```sh
+./scripts/ascii-art.mjs public/images/blog/example.jpg --output example-ascii.png
+```
+
+Use .txt or .asc for plain ASCII, .svg for a crisp scalable export, or .png, .jpg, .jpeg, .webp, and .bmp for themed raster images. Flat edge-connected backgrounds are kept as a clean fill, inner colors remain part of the subject, and source transparency is preserved in SVG, PNG, and WebP output. Gruvbox is the default; use --theme original for exact source colours, or --theme amber and --theme monochrome for other stylized palettes. The standard character ramp is the default; use --chars fine for a denser full tonal ramp, --no-dither for cleaner flat areas, --invert to invert the source colours, character contrast, and generated background fill, or --force-theme-background to use the selected theme's background instead of the source background. Run npm run ascii -- --help for all options.
+
 ## Astronomical data and sources
 
 The orrery is data-informed, but it is not a literal scale model. Real orbital

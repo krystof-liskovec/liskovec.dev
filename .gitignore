@@ -30,3 +30,7 @@ __pycache__/
 *.py[cod]
 
 **/cv*.pdf
+
+scripts/*.png
+scripts/*.jpg
+scripts/*.webp
