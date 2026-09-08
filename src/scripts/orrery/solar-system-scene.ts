@@ -1,6 +1,6 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
-import { DEG, J2000, rotateX, rotateY, rotateZ, solveKeplerOrbit } from './math';
+import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
 import { sceneMaskColor } from './scene-mask';
@@ -139,6 +139,7 @@ export class SolarSystemSceneRenderer {
             particleTransform?: SolarParticleTransform;
             planetRotationOffset: number;
             planetTiltOffset: number;
+            planetYawOffset: number;
             isOgPreview: boolean;
             width: number;
             height: number;
@@ -478,6 +479,7 @@ export class SolarSystemSceneRenderer {
             introSunOpacity: number;
             planetRotationOffset: number;
             planetTiltOffset: number;
+            planetYawOffset: number;
             width: number;
             height: number;
             isOgPreview: boolean;
@@ -519,6 +521,7 @@ export class SolarSystemSceneRenderer {
                 isHovered: body === hoveredBody && showHoverVisuals,
                 planetRotationOffset: options.planetRotationOffset,
                 planetTiltOffset: options.planetTiltOffset,
+                planetYawOffset: options.planetYawOffset,
             });
             this.drawPlanetarySystem(context, body, true, options);
         };
@@ -598,8 +601,6 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
-            planetRotationOffset: number;
-            planetTiltOffset: number;
         },
     ) {
         const system = PLANETARY_MOON_SYSTEMS[body.planet.name];
@@ -625,8 +626,6 @@ export class SolarSystemSceneRenderer {
                 rotateZ(this.moonOffset, majorMoon.node, this.moonOffset);
             }
             rotateX(this.moonOffset, system.tilt, this.moonOffset);
-            rotateX(this.moonOffset, options.planetTiltOffset, this.moonOffset);
-            rotateY(this.moonOffset, -options.planetRotationOffset, this.moonOffset);
             this.moonWorld.x = body.world.x + this.moonOffset.x;
             this.moonWorld.y = body.world.y + this.moonOffset.y;
             this.moonWorld.z = body.world.z + this.moonOffset.z;

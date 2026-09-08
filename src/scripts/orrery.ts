@@ -505,6 +505,7 @@ if (canvasElement && systemElement && canvasContext) {
         const cameraYawSine = Math.sin(camera.renderedYaw);
         const planetRotationOffset = camera.renderedRoll + 12 * DEG;
         const planetTiltOffset = camera.renderedPitch - 58 * DEG;
+        const planetYawOffset = camera.renderedYaw;
 
         const cameraProjection = (world: Vec3, target: ProjectedPoint): ProjectedPoint => {
             const rolledX = world.x * cameraRollCosine - world.y * cameraRollSine;
@@ -751,6 +752,7 @@ if (canvasElement && systemElement && canvasContext) {
             particleTransform,
             planetRotationOffset,
             planetTiltOffset,
+            planetYawOffset,
             isOgPreview,
             width,
             height,

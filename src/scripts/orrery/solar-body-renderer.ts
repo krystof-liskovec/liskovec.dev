@@ -45,6 +45,7 @@ type SolarBodyOptions = {
     isHovered: boolean;
     planetRotationOffset: number;
     planetTiltOffset: number;
+    planetYawOffset: number;
 };
 
 export const drawSolarBody = (context: CanvasRenderingContext2D, body: ProjectedBody, options: SolarBodyOptions) => {
@@ -59,6 +60,7 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         planetSceneFocus,
         planetRotationOffset,
         planetTiltOffset,
+        planetYawOffset,
     } = options;
     const { planet } = body;
     const isFocusedPlanet = focusedPlanet === planet;
@@ -95,12 +97,30 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         const spin = decorativeRotation(planet.name, seconds, reducedMotion) + planetRotationOffset;
         const tiltCosine = Math.cos(planetTiltOffset);
         const tiltSine = Math.sin(planetTiltOffset);
+        const yawCosine = Math.cos(planetYawOffset);
+        const yawSine = Math.sin(planetYawOffset);
         spriteWidth = sphereWidth;
 
         const drawCompactRings = (foreground: boolean) => {
             if (planet.name !== 'Saturn' && planet.name !== 'Uranus') return;
             const isUranus = planet.name === 'Uranus';
-            const tilt = isUranus ? 68 * DEG : -8 * DEG;
+            // The ring plane is attached to the planet, so it needs the same
+            // camera orientation offsets as the surface texture. Keeping the
+            // ring as a 3D ellipse also lets pitch change its apparent opening
+            // instead of leaving it as a flat screen-space decoration.
+            const ringBaseRotation = (isUranus ? 68 : -8) * DEG;
+            const ringBaseRotationCosine = Math.cos(ringBaseRotation);
+            const ringBaseRotationSine = Math.sin(ringBaseRotation);
+            const defaultCameraPitch = 58 * DEG;
+            const currentCameraPitch = defaultCameraPitch + planetTiltOffset;
+            const defaultCameraPitchCosine = Math.cos(defaultCameraPitch);
+            const defaultCameraPitchSine = Math.sin(defaultCameraPitch);
+            const currentCameraPitchCosine = Math.cos(currentCameraPitch);
+            const currentCameraPitchSine = Math.sin(currentCameraPitch);
+            const systemRotationCosine = Math.cos(planetRotationOffset);
+            const systemRotationSine = Math.sin(planetRotationOffset);
+            const systemYawCosine = Math.cos(planetYawOffset);
+            const systemYawSine = Math.sin(planetYawOffset);
             const bands = isUranus
                 ? [{ x: 0.74, y: 0.12, glyph: '-', color: '#83a598', alpha: 0.72 }]
                 : [
@@ -109,17 +129,35 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                       { x: 0.88, y: 0.175, glyph: '-', color: '#d79921', alpha: 0.58 },
                   ];
             for (const band of bands) {
+                const ringRadius = sphereWidth * band.x;
+                const ringOpening = Math.min(0.95, (sphereHeight * band.y) / ringRadius);
+                const ringDepthScale = Math.sqrt(1 - ringOpening ** 2);
                 for (let sample = 0; sample < 48; sample += 2) {
                     const angle = (sample / 48) * Math.PI * 2;
-                    if (Math.sin(angle) >= 0 !== foreground) continue;
-                    const ringX = Math.cos(angle) * sphereWidth * band.x;
-                    const ringY = Math.sin(angle) * sphereHeight * band.y;
-                    const tiltedX = ringX * Math.cos(tilt) - ringY * Math.sin(tilt);
-                    const tiltedY = ringX * Math.sin(tilt) + ringY * Math.cos(tilt);
+                    const ringDepth = Math.sin(angle) * ringRadius * ringDepthScale;
+                    const ringMajor = Math.cos(angle) * ringRadius;
+                    const ringMinor = Math.sin(angle) * ringRadius * ringOpening;
+                    // Start in the camera-relative pose used by the original
+                    // ring art, then apply the same roll → pitch → yaw order
+                    // as the system projection. Undoing the default pitch
+                    // makes the transform continuous at the neutral camera.
+                    const baseRingX = ringMajor * ringBaseRotationCosine - ringMinor * ringBaseRotationSine;
+                    const baseRingY = ringMajor * ringBaseRotationSine + ringMinor * ringBaseRotationCosine;
+                    const unpitchedY = baseRingY * defaultCameraPitchCosine + ringDepth * defaultCameraPitchSine;
+                    const unpitchedZ = -baseRingY * defaultCameraPitchSine + ringDepth * defaultCameraPitchCosine;
+                    const rolledX = baseRingX * systemRotationCosine - unpitchedY * systemRotationSine;
+                    const rolledY = baseRingX * systemRotationSine + unpitchedY * systemRotationCosine;
+                    const rolledZ = unpitchedZ;
+                    const pitchedY = rolledY * currentCameraPitchCosine - rolledZ * currentCameraPitchSine;
+                    const pitchedZ = rolledY * currentCameraPitchSine + rolledZ * currentCameraPitchCosine;
+                    const tiltedZ = -rolledX * systemYawSine + pitchedZ * systemYawCosine;
+                    if (tiltedZ >= 0 !== foreground) continue;
+                    const rotatedX = rolledX * systemYawCosine + pitchedZ * systemYawSine;
+                    const rotatedY = pitchedY;
                     context.globalAlpha =
                         bodyOpacity * (1 - focusedDetailReveal) * band.alpha * (foreground ? 1 : 0.48);
                     context.fillStyle = foreground ? band.color : '#665c54';
-                    context.fillText(band.glyph, body.x + tiltedX, body.y + tiltedY);
+                    context.fillText(band.glyph, body.x + rotatedX, body.y + rotatedY);
                 }
             }
         };
@@ -138,7 +176,9 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                 const surfaceY = -normalizedY;
                 const tiltedY = surfaceY * tiltCosine + sphereZ * tiltSine;
                 const tiltedZ = -surfaceY * tiltSine + sphereZ * tiltCosine;
-                const longitude = Math.atan2(normalizedX, tiltedZ) + spin;
+                const yawedX = normalizedX * yawCosine - tiltedZ * yawSine;
+                const yawedZ = normalizedX * yawSine + tiltedZ * yawCosine;
+                const longitude = Math.atan2(yawedX, yawedZ) + spin;
                 const latitude = Math.asin(Math.max(-1, Math.min(1, tiltedY)));
                 const isFirst = rowColumn === 0;
                 const isLast = rowColumn === rowWidth - 1;

@@ -159,7 +159,13 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             const drawPlanetRings = (foreground: boolean) => {
                 if (target.name !== 'Saturn' && target.name !== 'Uranus') return;
                 const isUranus = target.name === 'Uranus';
-                const ringTilt = isUranus ? 72 * DEG + objectFocus.longitude * 0.12 : objectFocus.longitude * 0.22;
+                const ringBaseRotation = isUranus ? 72 * DEG : 0;
+                const ringBaseRotationCosine = Math.cos(ringBaseRotation);
+                const ringBaseRotationSine = Math.sin(ringBaseRotation);
+                const longitudeCosine = Math.cos(objectFocus.longitude);
+                const longitudeSine = Math.sin(objectFocus.longitude);
+                const latitudeCosine = Math.cos(latitudeTilt);
+                const latitudeSine = Math.sin(latitudeTilt);
                 const bands = isUranus
                     ? [{ x: 0.78, y: 0.12, alpha: 0.58, color: target.color, glyph: '.' }]
                     : [
@@ -169,19 +175,28 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                           { x: 1.16, y: 0.3, alpha: 0.68, color: '#d79921', glyph: '=' },
                       ];
                 for (const band of bands) {
+                    const ringRadius = sphereWidth * band.x;
+                    const ringOpening = Math.min(0.95, (sphereHeight * band.y) / ringRadius);
+                    const ringDepthScale = Math.sqrt(1 - ringOpening ** 2);
                     for (let sample = 0; sample < 112; sample++) {
                         const angle = (sample / 112) * Math.PI * 2;
-                        const inFront = Math.sin(angle) >= 0;
-                        if (inFront !== foreground) continue;
-                        const ringX = Math.cos(angle) * sphereWidth * band.x;
-                        const ringY = Math.sin(angle) * sphereHeight * band.y;
-                        const tiltedX = ringX * Math.cos(ringTilt) - ringY * Math.sin(ringTilt);
-                        const tiltedY =
-                            (ringX * Math.sin(ringTilt) + ringY * Math.cos(ringTilt)) * Math.cos(latitudeTilt * 0.45);
+                        const ringDepth = Math.sin(angle) * ringRadius * ringDepthScale;
+                        const ringMajor = Math.cos(angle) * ringRadius;
+                        const ringMinor = Math.sin(angle) * ringRadius * ringOpening;
+                        const baseRingX = ringMajor * ringBaseRotationCosine - ringMinor * ringBaseRotationSine;
+                        const baseRingY = ringMajor * ringBaseRotationSine + ringMinor * ringBaseRotationCosine;
+                        // Keep the detailed ring plane in the same 3D frame as
+                        // the detailed moon orbits: longitude around Y, then
+                        // latitude around X.
+                        const rotatedX = baseRingX * longitudeCosine - ringDepth * longitudeSine;
+                        const rotatedZ = baseRingX * longitudeSine + ringDepth * longitudeCosine;
+                        const tiltedY = baseRingY * latitudeCosine - rotatedZ * latitudeSine;
+                        const tiltedZ = baseRingY * latitudeSine + rotatedZ * latitudeCosine;
+                        if (tiltedZ >= 0 !== foreground) continue;
                         context.globalAlpha = objectReveal * band.alpha * (foreground ? 1 : 0.42);
                         context.fillStyle = foreground ? band.color : '#665c54';
                         const glyph = isUranus && sample % 4 === 0 ? '-' : band.glyph;
-                        context.fillText(glyph, focusCenterX + tiltedX, focusCenterY + tiltedY);
+                        context.fillText(glyph, focusCenterX + rotatedX, focusCenterY + tiltedY);
                     }
                 }
             };
