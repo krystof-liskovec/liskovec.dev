@@ -352,6 +352,10 @@ h1 span {
     color: var(--muted);
     font-size: 13px;
 }
+.blog-actions {
+    display: flex;
+    justify-content: flex-end;
+}
 .blog-link {
     color: var(--orange);
     font-size: var(--label-size);
