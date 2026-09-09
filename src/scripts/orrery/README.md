@@ -24,6 +24,7 @@
 - `solar-body-renderer.ts` - compact planet sprites used by the orrery
 - `focus-scene.ts` - detailed object views and satellite systems
 - `galactic-renderer.ts` - detailed Milky Way object artwork
+- `sagittarius-renderer.ts` - ASCII accretion flow, lensed arcs, and shadow for Sagittarius A*
 - `sun-renderer.ts`, `moon-renderer.ts`, `iss-renderer.ts`, `comet-renderer.ts` - specialized artwork
 - `planet-textures.ts`, `earth-map.ts` - sphere surface glyphs and textures
 - `canvas-ui.ts` - canvas readouts and labels

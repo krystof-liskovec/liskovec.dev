@@ -146,6 +146,33 @@ const drawVolumetricSprite = (
 ) => {
     const { name, lines, x, y, fontSize, rowSpacing, color, maskColor, outlineColor, opacity, seconds, phase } =
         options;
+    if (name === 'Sagittarius A*') {
+        // Use dense text to quiet the crowded galactic core behind the shadow.
+        // The marker has no solid disk, matching the detailed ASCII renderer.
+        context.globalAlpha = opacity;
+        context.font = `bold ${fontSize}px "DM Mono", monospace`;
+        context.strokeStyle = outlineColor;
+        context.lineWidth = Math.max(1, fontSize * 0.35);
+        for (let row = -1; row <= 1; row++) {
+            const line = row === 0 ? '#@@@#' : ' ### ';
+            const backdrop = row === 0 ? '#####' : ' ### ';
+            const lineY = y + (row - 0.3) * fontSize * rowSpacing;
+            context.fillStyle = outlineColor;
+            context.strokeText(backdrop, x, lineY);
+            context.fillText(backdrop, x, lineY);
+            context.fillStyle = '#141617';
+            context.fillText(line, x, lineY);
+        }
+        context.strokeStyle = outlineColor;
+        context.lineWidth = Math.max(1, fontSize * 0.16);
+        for (let row = 0; row < lines.length; row++) {
+            const lineY = y + (row - (lines.length - 1) / 2) * fontSize * rowSpacing;
+            context.fillStyle = row === 3 ? '#ebdbb2' : row < 2 ? '#fabd2f' : '#fe8019';
+            context.strokeText(lines[row], x, lineY);
+            context.fillText(lines[row], x, lineY);
+        }
+        return;
+    }
     const maximumColumns = Math.max(1, ...lines.map((line) => line.length));
     const lightAngle = seconds * 0.16 + phase;
     const lightX = Math.cos(lightAngle) * 0.22 - 0.22;
@@ -358,15 +385,7 @@ export class GalaxyObjectRenderer {
 
             const middleRowY =
                 galacticObject.y + (2 - (galacticObject.object.sprite.length - 1) / 2) * spriteFontSize * rowSpacing;
-            if (galacticObject.object.name === 'Sagittarius A*') {
-                context.globalAlpha = opacity * spriteReveal;
-                context.font = `bold ${spriteFontSize * 1.02}px "DM Mono", monospace`;
-                context.fillStyle = '#d65d0e';
-                context.strokeStyle = outlineColor;
-                context.lineWidth = Math.max(1, spriteFontSize * 0.12);
-                context.strokeText('@', galacticObject.x, middleRowY);
-                context.fillText('@', galacticObject.x, middleRowY);
-            } else if (galacticObject.object.name === 'Cygnus X-1') {
+            if (galacticObject.object.name === 'Cygnus X-1') {
                 const line = galacticObject.object.sprite[1] ?? '';
                 const lineWidth = context.measureText(line).width;
                 const characterWidth = context.measureText('M').width;
