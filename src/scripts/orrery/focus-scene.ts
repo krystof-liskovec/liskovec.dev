@@ -621,7 +621,10 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         }
 
         const compact = width < 600;
-        const hideCompactDetails = compact && !isFullscreen && (target.kind === 'planet' || target.kind === 'star');
+        const hideCompactDetails =
+            compact &&
+            !isFullscreen &&
+            (target.kind === 'planet' || target.kind === 'star' || target.kind === 'galactic');
         const infoY = Math.min(
             height - (hideCompactDetails ? 30 : target.fact ? 93 : 72),
             focusCenterY + (compact ? 150 : 205) * focusScale,

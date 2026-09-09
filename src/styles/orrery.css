@@ -722,6 +722,11 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
         text-transform: uppercase;
         cursor: pointer;
     }
+    .solar-system.is-object-focus .cosmic-zoom-switch {
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
     .cosmic-zoom-switch-label {
         transition: color 220ms ease;
     }
