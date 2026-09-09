@@ -259,7 +259,6 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .mobile-fullscreen-
 html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     animation: none;
     opacity: 1;
-    transform: none;
 }
 @keyframes solar-interface-opacity-intro {
     from {

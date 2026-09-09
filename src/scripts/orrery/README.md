@@ -19,11 +19,12 @@
 - `solar-system-scene.ts` - orbit, asteroid, moon, Sun, and compact-body painting
 - `background-renderer.ts` - local stars and the projected Milky Way backdrop
 - `galaxy-object-renderer.ts` - pooled galactic-object projection, hit testing, and sprites
-- `galactic-landmark-renderer.ts` - detailed stellar remnants, clusters, and pulsar artwork
+- `galactic-landmark-renderer.ts` - detailed pulsar, wind torus, and sweeping beam artwork
 - `scene-ui.ts` - overlap-aware hit resolution, focus candidates, and readouts
 - `solar-body-renderer.ts` - compact planet sprites used by the orrery
 - `focus-scene.ts` - detailed object views and satellite systems
 - `galactic-renderer.ts` - detailed Milky Way object artwork
+- `galactic-volume-renderer.ts` - 3D clouds, remnant shells, bipolar lobes, and star clusters projected onto an ASCII grid
 - `sagittarius-renderer.ts` - ASCII accretion flow, lensed arcs, and shadow for Sagittarius A*
 - `sun-renderer.ts`, `moon-renderer.ts`, `iss-renderer.ts`, `comet-renderer.ts` - specialized artwork
 - `planet-textures.ts`, `earth-map.ts` - sphere surface glyphs and textures

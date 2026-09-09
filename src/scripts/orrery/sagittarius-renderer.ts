@@ -13,7 +13,12 @@ const COLORS = ['#665c54', '#9d512b', '#d65d0e', '#fe8019', '#fabd2f', '#ebdbb2'
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
 /** Artistic lensing model: a tilted disk, its bent far-side image, and a photon ring. */
-export function drawSagittarius(context: CanvasRenderingContext2D, options: GalacticRenderOptions, radius: number) {
+export function drawSagittarius(
+    context: CanvasRenderingContext2D,
+    options: GalacticRenderOptions,
+    radius: number,
+    samplingStep = 1,
+) {
     const { x, y, opacity, longitude, latitude, reducedMotion, seconds } = options;
     if (opacity <= 0 || radius <= 0) return;
     radius *= 1.16;
@@ -29,11 +34,12 @@ export function drawSagittarius(context: CanvasRenderingContext2D, options: Gala
     context.translate(x, y);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = `bold ${radius * CELL_HEIGHT}px "DM Mono", monospace`;
+    // The smaller black hole in Cygnus uses fewer, larger characters.
+    context.font = `bold ${radius * CELL_HEIGHT * samplingStep}px "DM Mono", monospace`;
 
-    for (let row = 0; row < ROWS; row++) {
+    for (let row = 0; row < ROWS; row += samplingStep) {
         const screenY = (row - (ROWS - 1) / 2) * CELL_HEIGHT;
-        for (let column = 0; column < COLUMNS; column++) {
+        for (let column = 0; column < COLUMNS; column += samplingStep) {
             const screenX = (column - (COLUMNS - 1) / 2) * CELL_WIDTH;
             const localX = screenX * cosine + screenY * sine;
             const localY = -screenX * sine + screenY * cosine;
@@ -46,7 +52,7 @@ export function drawSagittarius(context: CanvasRenderingContext2D, options: Gala
                 const shadowGlyph = distance < 0.19 ? '@' : '#';
                 context.globalAlpha = opacity;
                 context.strokeStyle = '#1d2021';
-                context.lineWidth = radius * CELL_WIDTH * 0.5;
+                context.lineWidth = radius * CELL_WIDTH * samplingStep * 0.5;
                 context.strokeText(shadowGlyph, screenX * radius, screenY * radius);
                 context.fillStyle = '#000000';
                 context.fillText(shadowGlyph, screenX * radius, screenY * radius);
@@ -90,7 +96,7 @@ export function drawSagittarius(context: CanvasRenderingContext2D, options: Gala
             // Keep the upper shadow empty. A narrow photon ring traces its
             // circular edge independently of the disk's viewing inclination.
             if (distance < shadowRadius && !foreground) light = 0;
-            const ring = Math.max(0, 1 - Math.abs(distance - 0.327) / 0.025);
+            const ring = Math.max(0, 1 - Math.abs(distance - 0.327) / (0.025 * samplingStep));
             const ringLight = Math.sqrt(ring) * (0.9 - localX * 0.5);
             const isRing = ringLight > light && ring > 0.2;
             light = Math.max(light, ringLight);

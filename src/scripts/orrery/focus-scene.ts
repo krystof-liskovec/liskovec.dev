@@ -96,7 +96,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             (target.sourceSprite?.reduce((longest, line) => Math.max(longest, line.length), 1) ?? 1) *
             galacticSourceFontSize *
             0.31;
-        const galacticSourceHeight = ((target.sourceSprite?.length ?? 1) * galacticSourceFontSize * 0.76) / 2;
+        const galacticSourceHeight = ((target.sourceSprite?.length ?? 1) * galacticSourceFontSize * 0.9) / 2;
         const galacticFocusedRadius = width < 600 ? 112 : 190;
         const galacticStartScale = Math.max(
             0.06,
@@ -536,7 +536,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 context.lineWidth = Math.max(1.25, bridgeFontSize * 0.16);
                 context.font = `bold ${bridgeFontSize}px "DM Mono", monospace`;
                 target.sourceSprite.forEach((line, row) => {
-                    const lineY = focusCenterY + (row - (target.sourceSprite!.length - 1) / 2) * bridgeFontSize * 0.76;
+                    const lineY = focusCenterY + (row - (target.sourceSprite!.length - 1) / 2) * bridgeFontSize * 0.9;
                     context.strokeText(line, focusCenterX, lineY);
                     context.fillText(line, focusCenterX, lineY);
                 });
