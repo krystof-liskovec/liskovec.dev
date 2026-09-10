@@ -15,7 +15,6 @@ type GalacticOffset = (x: number, y: number, radius: number, target: Offset) => 
 
 const landmarkColor = (name: string, glyph: string, column: number, baseColor: string) => {
     if (glyph === '+' || glyph === '@' || glyph === '#') return '#ebdbb2';
-    if (name === 'Orion Nebula') return glyph === '*' ? '#ebdbb2' : glyph === '~' ? '#d3869b' : '#83a598';
     if (name === 'Cygnus X-1')
         return column < 6 ? (glyph === '*' ? '#ebdbb2' : '#83a598') : glyph === '=' ? '#fabd2f' : '#fe8019';
     if (name === 'Crab Nebula') return glyph === '~' ? '#83a598' : '#fb4934';

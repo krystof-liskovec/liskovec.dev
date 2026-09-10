@@ -136,7 +136,7 @@ export function drawFocusedGalacticObject(context: CanvasRenderingContext2D, opt
     const radius = (options.compact ? 112 : 190) * options.scale;
     const fontSize = (options.compact ? 8 : 11) * options.scale;
     if (options.name === 'Sagittarius A*') drawSagittarius(context, options, radius * (options.compact ? 1.3 : 1.45));
-    else if (['Orion Nebula', 'Crab Nebula', 'Eta Carinae', 'Cassiopeia A', 'Omega Centauri'].includes(options.name))
+    else if (['Crab Nebula', 'Eta Carinae', 'Cassiopeia A', 'Omega Centauri'].includes(options.name))
         drawVolumetricNebula(context, options, radius);
     else if (options.name === 'Cygnus X-1') drawCygnus(context, options, radius, fontSize);
     else return drawAdditionalGalacticObject(context, options, radius, fontSize);

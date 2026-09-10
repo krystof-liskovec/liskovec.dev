@@ -14,14 +14,7 @@ const RAMP = '.,:~=+*#';
 const WARM = ['#9d512b', '#d65d0e', '#fe8019', '#fabd2f', '#ebdbb2'];
 const FILAMENTS = ['#9d512b', '#fb4934', '#fe8019', '#d3869b', '#fabd2f'];
 const BLUE = ['#458588', '#83a598', '#8ec07c', '#d5c4a1', '#ebdbb2'];
-const PINK = ['#458588', '#b16286', '#d3869b', '#d3869b', '#ebdbb2'];
 const GOLD = ['#a89984', '#d5c4a1', '#fabd2f', '#ebdbb2', '#fbf1c7'];
-const TRAPEZIUM = [
-    [-0.08, -0.07, -0.06],
-    [0.055, -0.11, 0.07],
-    [0.12, 0.04, -0.03],
-    [-0.025, 0.1, 0.08],
-];
 
 // These are object-space volumes, not screen-space textures. Generate them
 // once when first opened; every camera turn reprojects their actual XYZ points.
@@ -44,16 +37,7 @@ function volumeFor(name: string) {
         let z = Math.sin(azimuth) * horizontal;
         let energy = 0.3 + d * 0.6;
         let cool = false;
-        if (name === 'Orion Nebula') {
-            const side = index % 2 ? 1 : -1;
-            x = side * c * 0.98;
-            const width = (0.27 + Math.sin(Math.abs(x) * 4) * 0.1) * Math.sqrt(1 - (x / 1.03) ** 2);
-            y = Math.cos(azimuth) * width * Math.sqrt(b) - x * 0.19;
-            z = Math.sin(azimuth) * width * Math.sqrt(b) * 0.85 + Math.sin(x * 4) * 0.12;
-            if (x > 0.12 && Math.abs(y + x * 0.28 + 0.1) < 0.08 && z > -0.08) continue;
-            energy *= 0.6 + (1 - Math.abs(x)) * 0.6;
-            cool = z < -0.06;
-        } else if (name === 'Eta Carinae') {
+        if (name === 'Eta Carinae') {
             const side = index % 2 ? 1 : -1;
             const progress = 0.04 + b * 0.96;
             const shell = Math.sin(progress * Math.PI) ** 0.75 * 0.4 * (0.84 + c * 0.16);
@@ -105,7 +89,6 @@ export function drawVolumetricNebula(
     const { name, x, y, longitude, latitude, opacity, reducedMotion, seconds } = options;
     const points = volumeFor(name);
     const cluster = name === 'Omega Centauri';
-    const orion = name === 'Orion Nebula';
     const eta = name === 'Eta Carinae';
     const crab = name === 'Crab Nebula';
     const time = reducedMotion ? 0 : seconds;
@@ -153,7 +136,7 @@ export function drawVolumetricNebula(
             const density = DENSITY[cell];
             if (density < 0.09) continue;
             const energy = Math.sqrt(1 - Math.exp(-density));
-            const palette = cluster ? GOLD : COOL[cell] > density * 0.5 ? BLUE : orion ? PINK : crab ? FILAMENTS : WARM;
+            const palette = cluster ? GOLD : COOL[cell] > density * 0.5 ? BLUE : crab ? FILAMENTS : WARM;
             context.globalAlpha = opacity * Math.min(1, 0.35 + energy * 0.55 + Math.max(-0.15, DEPTH[cell] * 0.15));
             context.fillStyle = palette[Math.min(palette.length - 1, Math.floor(energy * palette.length))];
             const glyph = cluster
@@ -178,19 +161,7 @@ export function drawVolumetricNebula(
     context.strokeStyle = '#1d2021';
     context.lineWidth = radius * 0.012;
     context.font = `bold ${radius * 0.065}px "DM Mono", monospace`;
-    if (orion) {
-        for (const [u, v, w] of TRAPEZIUM) {
-            const turnedX = u * yawCos + w * yawSin;
-            const turnedZ = -u * yawSin + w * yawCos;
-            const turnedY = v * pitchCos - turnedZ * pitchSin;
-            const depth = v * pitchSin + turnedZ * pitchCos;
-            const perspective = 1 / (1 - depth * 0.22);
-            const starX = x + turnedX * perspective * radius;
-            const starY = y + turnedY * perspective * radius;
-            context.strokeText('+', starX, starY);
-            context.fillText('+', starX, starY);
-        }
-    } else if (eta || crab) {
+    if (eta || crab) {
         context.fillText(eta ? '*+*' : '+', x, y);
     }
     context.restore();

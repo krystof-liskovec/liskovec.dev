@@ -27,13 +27,6 @@ export const galacticSurfaceTexture = (
         return texture(turbulence > 0.2 ? '~' : ':', turbulence > 0.2 ? '#fe8019' : '#d65d0e');
     }
 
-    if (name === 'Orion Nebula') {
-        const cloud = Math.sin(longitude * 2.8 + latitude * 4.2) + Math.sin(longitude * 6.1 - latitude * 1.6) * 0.38;
-        if (cloud > 0.82) return texture('*', '#fabd2f');
-        if (cloud < -0.62) return texture('.', '#83a598');
-        return texture(cloud > 0.2 ? ':' : '~', cloud > 0.2 ? '#d3869b' : '#928374');
-    }
-
     if (name === 'Cygnus X-1') {
         const disk = Math.sin(latitude * 13 + longitude * 2.2) + Math.sin(longitude * 5.4) * 0.34;
         if (disk > 0.78) return texture('=', '#fabd2f');
