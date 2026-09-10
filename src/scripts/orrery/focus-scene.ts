@@ -15,7 +15,14 @@ import {
     visualTransitionProgress,
 } from './math';
 import { drawFocusedMoon } from './moon-renderer';
-import { focusedRotation, planetSurfaceGlyph } from './planet-textures';
+import {
+    focusedRotation,
+    planetSurfaceColor,
+    planetSurfaceGlyph,
+    planetSurfaceLight,
+    sunSurfaceLight,
+} from './planet-textures';
+import { drawSunAtmosphere } from './sun-renderer';
 import type { CameraState, PointerState } from './runtime-state';
 import type { FocusState, FocusTarget, Planet, ProjectedBody, Vec3 } from './types';
 
@@ -154,8 +161,23 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             const lineHeight = fontSize * 0.82;
             const spin = focusedRotation(target.name, rotationHours, reducedMotion) + objectFocus.longitude;
             const latitudeTilt = objectFocus.latitude;
+            const latitudeCosine = Math.cos(latitudeTilt);
+            const latitudeSine = Math.sin(latitudeTilt);
             const sphereWidth = columns * characterWidth;
             const sphereHeight = rows * lineHeight;
+            if (target.kind === 'star') {
+                drawSunAtmosphere(context, {
+                    x: focusCenterX,
+                    y: focusCenterY,
+                    radiusX: sphereWidth / 2,
+                    radiusY: sphereHeight / 2,
+                    fontSize,
+                    opacity: objectReveal,
+                    seconds,
+                    reducedMotion,
+                    detailed: true,
+                });
+            }
             const drawPlanetRings = (foreground: boolean) => {
                 if (target.name !== 'Saturn' && target.name !== 'Uranus') return;
                 const isUranus = target.name === 'Uranus';
@@ -169,10 +191,16 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 const bands = isUranus
                     ? [{ x: 0.78, y: 0.12, alpha: 0.58, color: target.color, glyph: '.' }]
                     : [
-                          { x: 0.82, y: 0.205, alpha: 0.5, color: '#d79921', glyph: '-' },
-                          { x: 0.93, y: 0.238, alpha: 0.72, color: '#fabd2f', glyph: '=' },
-                          { x: 1.055, y: 0.274, alpha: 0.48, color: '#bdae93', glyph: '-' },
-                          { x: 1.16, y: 0.3, alpha: 0.68, color: '#d79921', glyph: '=' },
+                          { x: 0.67, y: 0.173, alpha: 0.3, color: '#b0aa9b', glyph: '.' },
+                          { x: 0.73, y: 0.189, alpha: 0.48, color: '#b0aa9b', glyph: ':' },
+                          { x: 0.79, y: 0.204, alpha: 0.66, color: '#d5d0c3', glyph: '=' },
+                          { x: 0.85, y: 0.22, alpha: 0.8, color: '#e5e0d3', glyph: '-' },
+                          { x: 0.91, y: 0.235, alpha: 0.72, color: '#d5d0c3', glyph: '=' },
+                          // Leave a visible dark division between the bright inner
+                          // bands and the softer outer ring.
+                          { x: 1.025, y: 0.265, alpha: 0.5, color: '#bcb6a8', glyph: '-' },
+                          { x: 1.085, y: 0.28, alpha: 0.6, color: '#cec8ba', glyph: ':' },
+                          { x: 1.145, y: 0.296, alpha: 0.45, color: '#bcb6a8', glyph: '-' },
                       ];
                 for (const band of bands) {
                     const ringRadius = sphereWidth * band.x;
@@ -193,8 +221,15 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         const tiltedY = baseRingY * latitudeCosine - rotatedZ * latitudeSine;
                         const tiltedZ = baseRingY * latitudeSine + rotatedZ * latitudeCosine;
                         if (tiltedZ >= 0 !== foreground) continue;
-                        context.globalAlpha = objectReveal * band.alpha * (foreground ? 1 : 0.42);
-                        context.fillStyle = foreground ? band.color : '#665c54';
+                        if (
+                            !foreground &&
+                            (rotatedX / (sphereWidth / 2)) ** 2 + (tiltedY / (sphereHeight / 2)) ** 2 < 1
+                        )
+                            continue;
+                        // The two passes control occlusion only. A continuous
+                        // depth gradient avoids a color seam at their boundary.
+                        context.globalAlpha = objectReveal * band.alpha * (0.86 + (tiltedZ / ringRadius) * 0.14);
+                        context.fillStyle = band.color;
                         const glyph = isUranus && sample % 4 === 0 ? '-' : band.glyph;
                         context.fillText(glyph, focusCenterX + rotatedX, focusCenterY + tiltedY);
                     }
@@ -208,38 +243,17 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     const normalizedX = (column + 0.5 - columns / 2) / (columns / 2);
                     if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
                     const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
-                    const latitudeY = normalizedY * Math.cos(latitudeTilt) + sphereZ * Math.sin(latitudeTilt);
-                    const latitudeZ = -normalizedY * Math.sin(latitudeTilt) + sphereZ * Math.cos(latitudeTilt);
+                    const latitudeY = normalizedY * latitudeCosine + sphereZ * latitudeSine;
+                    const latitudeZ = -normalizedY * latitudeSine + sphereZ * latitudeCosine;
                     const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
                     const latitude = Math.asin(-latitudeY);
                     const character = planetSurfaceGlyph(target.name, longitude, latitude);
-                    context.globalAlpha = objectReveal * (0.62 + sphereZ * 0.38);
-                    context.fillStyle =
-                        target.name === 'Earth'
-                            ? character === '#'
-                                ? '#b8bb26'
-                                : character === '%'
-                                  ? '#d79921'
-                                  : character === '*'
-                                    ? '#ebdbb2'
-                                    : '#83a598'
-                            : target.kind === 'star'
-                              ? character === '@'
-                                  ? '#d65d0e'
-                                  : character === '*' || character === '~'
-                                    ? '#fe8019'
-                                    : character === ':' || character === '.'
-                                      ? '#d79921'
-                                      : '#fabd2f'
-                              : target.name === 'Jupiter' && (character === '@' || character === 'o')
-                                ? '#fe8019'
-                                : target.name === 'Saturn' && character === 'o'
-                                  ? '#d79921'
-                                  : target.name === 'Mars' && character === '^'
-                                    ? '#fabd2f'
-                                    : target.name === 'Pluto' && character === '*'
-                                      ? '#ebdbb2'
-                                      : target.color;
+                    context.globalAlpha =
+                        objectReveal *
+                        (target.kind === 'star'
+                            ? sunSurfaceLight(sphereZ)
+                            : planetSurfaceLight(normalizedX, normalizedY, sphereZ));
+                    context.fillStyle = planetSurfaceColor(target.name, character, target.color);
                     context.fillText(character, focusCenterX + (column + 0.5 - columns / 2) * characterWidth, lineY);
                 }
             }
@@ -501,17 +515,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         };
 
         if (target.kind === 'star' || target.kind === 'planet' || target.kind === 'moon') {
-            drawFocusField(
-                width < 600 ? 145 : 225,
-                target.kind === 'star'
-                    ? 12
-                    : target.name === 'Earth'
-                      ? 28
-                      : target.name === 'Jupiter' || target.name === 'Saturn'
-                        ? 18
-                        : 24,
-                ['.', ':'],
-            );
+            if (target.kind !== 'star')
+                drawFocusField(
+                    width < 600 ? 145 : 225,
+                    target.name === 'Earth' ? 28 : target.name === 'Jupiter' || target.name === 'Saturn' ? 18 : 24,
+                    ['.', ':'],
+                );
             if (target.name === 'Earth') drawFocusedEarthSatellites(false);
             drawFocusedMajorMoons(false);
             drawFocusedSphere();

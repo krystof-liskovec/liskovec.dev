@@ -358,9 +358,6 @@ if (canvasElement && systemElement && canvasContext) {
         context.textBaseline = 'middle';
 
         const intro = introController.update(frameTime, reducedMotion);
-        if (intro.sun > 0.001 && !system.classList.contains('is-sun-visible')) {
-            system.classList.add('is-sun-visible');
-        }
         if (!introController.running) {
             system.classList.remove('is-intro-running');
             solarHeading?.classList.remove('is-intro-running');
@@ -393,6 +390,13 @@ if (canvasElement && systemElement && canvasContext) {
         const localDetailOpacity = 1 - smoothstep((outwardZoom - 0.2) / 0.26);
         const solarSystemScale = Math.pow(0.055, Math.min(1, outwardZoom / 0.7));
         const renderedSunScale = solarSystemScale * viewportSunScale ** 2;
+        // Keep the page-level halo coupled to an actually visible Sun. A
+        // planet close-up, moon/ISS scene, or the Milky Way must reveal the
+        // plain background underneath its own artwork.
+        system.classList.toggle(
+            'is-sun-visible',
+            intro.sun > 0.001 && (focusedSun || (!objectFocus.target && localDetailOpacity > 0.01)),
+        );
         updateSolarCamera({ camera, pointer, seconds, frameTime, frameDelta, reducedMotion });
         const revealProgress = easterEgg.unlocked
             ? Math.min(1, (frameTime - easterEgg.revealedAt) / (reducedMotion ? 1 : 1200))

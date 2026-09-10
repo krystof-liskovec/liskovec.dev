@@ -69,6 +69,72 @@ const SIDEREAL_ROTATION_HOURS: Record<string, number> = {
 
 const wrapLongitude = (longitude: number) => Math.atan2(Math.sin(longitude), Math.cos(longitude));
 
+// Sample in spherical coordinates so fine terrain stays attached to the body
+// and meets continuously at the longitude seam and both poles.
+const terrainGrain = (longitude: number, latitude: number) => {
+    const x = Math.cos(longitude) * Math.cos(latitude);
+    const y = Math.sin(latitude);
+    const z = Math.sin(longitude) * Math.cos(latitude);
+    return Math.sin(x * 31 + y * 17) * Math.sin(z * 27 - y * 23) + Math.sin(x * 67 - z * 41) * 0.28;
+};
+
+const MERCURY_CRATERS = Array.from({ length: 34 }, (_, index) => ({
+    longitude: wrapLongitude(index * 2.399963),
+    latitude: Math.asin(1 - (2 * (index + 0.5)) / 34),
+    radius: 0.045 + ((index * 7) % 11) * 0.009,
+}));
+
+const SURFACE_COLORS: Record<string, Record<string, string>> = {
+    Mercury: { o: '#928374', O: '#ebdbb2', ':': '#a89984', '.': '#bdae93', '*': '#ebdbb2' },
+    Venus: { '=': '#ebdbb2', '~': '#d5c4a1', ':': '#d79921', '.': '#bdae93' },
+    Earth: { '#': '#b8bb26', '%': '#d79921', '*': '#ebdbb2', '~': '#d5c4a1', '.': '#83a598', ':': '#458588' },
+    Mars: {
+        '*': '#ebdbb2',
+        '^': '#fabd2f',
+        '=': '#9d4935',
+        ':': '#d65d0e',
+        ',': '#9d4935',
+        '.': '#fe8019',
+        o: '#d79921',
+    },
+    // Stylized natural-color palettes, guided by NASA's Juno/Cassini views:
+    // https://www.nasa.gov/image-article/jupiters-great-red-spot-true-color/
+    // https://science.nasa.gov/resource/jewel-of-the-solar-system/
+    Jupiter: {
+        '@': '#bf6e50',
+        o: '#ce8c65',
+        '*': '#eee5d5',
+        '=': '#b58d70',
+        '-': '#e6d4bd',
+        '~': '#c8b59c',
+        ':': '#a77e65',
+    },
+    Saturn: { o: '#c2aa78', '=': '#dfcda3', '-': '#ede0bb', '~': '#d1bd94', ':': '#bca77d', '.': '#e0d1ae' },
+    Uranus: { '*': '#c4d6bd', '-': '#a4c4b3', '~': '#83a598', ':': '#689d8c', '.': '#b1c9bb' },
+    Neptune: { O: '#45657d', o: '#458588', '*': '#d5c4c1', '=': '#83a598', ':': '#547d9b', '~': '#6696ad' },
+    Pluto: { '*': '#ebdbb2', ':': '#bdae93', ',': '#9d6c55', '.': '#d5b69b' },
+    // Warm illustrative light; dark umbrae and softer penumbrae remain distinct.
+    Sol: {
+        '@': '#713b20',
+        '%': '#b85e20',
+        '*': '#ffd34d',
+        '~': '#ffad24',
+        ':': '#ed851b',
+        '.': '#cf6718',
+        o: '#ffc12e',
+    },
+};
+
+export const planetSurfaceColor = (name: string, glyph: string, fallback: string) =>
+    SURFACE_COLORS[name]?.[glyph] ?? fallback;
+
+// Illustrative upper-left illumination, fixed in view space as the globe turns.
+export const planetSurfaceLight = (x: number, y: number, z: number) =>
+    0.24 + Math.max(0, -x * 0.42 - y * 0.32 + z * 0.85) * 0.64 + z * 0.12;
+
+// An emitting photosphere has radial limb darkening, rather than a day/night side.
+export const sunSurfaceLight = (z: number) => 0.42 + z * 0.58;
+
 const insideFeature = (
     longitude: number,
     latitude: number,
@@ -100,33 +166,61 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
             0,
             Math.min(EARTH_MAP_HEIGHT - 1, Math.floor((0.5 - latitude / Math.PI) * EARTH_MAP_HEIGHT)),
         );
-        return EARTH_MAP[mapY][mapX];
+        const surface = EARTH_MAP[mapY][mapX];
+        const cloud =
+            Math.sin(longitude * 6 + Math.sin(latitude * 7) * 2) + Math.sin(longitude * 11 - latitude * 13) * 0.5;
+        if (surface !== '*' && cloud > 1.13 && Math.abs(latitude) < 1.15) return '~';
+        return surface === '.' && cloud < -0.65 ? ':' : surface;
     }
     if (name === 'Sol') {
+        const spotA = Math.hypot(
+            (wrapLongitude(longitude + 0.42) * Math.cos(latitude)) / 0.16,
+            (latitude - 0.24) / 0.105,
+        );
+        const spotB = Math.hypot(
+            (wrapLongitude(longitude + 0.16) * Math.cos(latitude)) / 0.085,
+            (latitude - 0.19) / 0.065,
+        );
+        const spotC = Math.hypot(
+            (wrapLongitude(longitude - 1.85) * Math.cos(latitude)) / 0.12,
+            (latitude + 0.32) / 0.09,
+        );
+        const spotD = Math.hypot(
+            (wrapLongitude(longitude + 2.1) * Math.cos(latitude)) / 0.13,
+            (latitude + 0.16) / 0.075,
+        );
+        const spot = Math.min(spotA, spotB, spotC, spotD);
+        if (spot < 0.58) return '@';
+        if (spot < 1.15) return '%';
+        const x = Math.cos(longitude) * Math.cos(latitude);
+        const y = Math.sin(latitude);
+        const z = Math.sin(longitude) * Math.cos(latitude);
         const granulation =
-            Math.sin(longitude * 11 + Math.sin(latitude * 7) * 2.3) +
-            Math.sin(latitude * 13 - longitude * 4.1) * 0.62 +
-            Math.sin((longitude + latitude) * 19) * 0.28;
-        const activity =
-            Math.sin(longitude * 1.7 + latitude * 2.8) + Math.sin(latitude * 3.9 - longitude * 0.65) * 0.72;
-        const turbulentSpot = (activity > 1.18 && granulation < 0.45) || (activity < -1.32 && granulation > -0.25);
-        if (turbulentSpot) return granulation > 0.38 || granulation < -0.78 ? '@' : ':';
-        return granulation > 1.02
+            Math.sin(x * 37 + Math.sin(z * 19) * 1.8) * Math.sin(y * 31 - z * 11) +
+            terrainGrain(longitude, latitude) * 0.42;
+        if (spot < 1.6 && granulation > 0.1) return '*';
+        return granulation > 0.62
             ? '*'
-            : granulation > 0.28
+            : granulation > 0.15
               ? '~'
-              : granulation > -0.28
+              : granulation > -0.25
                 ? 'o'
-                : granulation > -0.9
+                : granulation > -0.65
                   ? ':'
                   : '.';
     }
     if (name === 'Jupiter') {
-        if (latitude > -0.48 && latitude < -0.18 && wrappedLongitude > 0.1 && wrappedLongitude < 0.78) {
-            return wrappedLongitude > 0.28 && wrappedLongitude < 0.62 ? '@' : 'o';
-        }
-        const band = Math.floor((latitude + Math.PI / 2) * 11);
-        return band % 4 === 0 ? '=' : band % 4 === 2 ? '-' : broadWave > 0.2 ? '~' : ':';
+        const stormX = wrapLongitude(longitude - 0.44) / 0.36;
+        const stormY = (latitude + 0.33) / 0.16;
+        const stormRadius = Math.hypot(stormX, stormY);
+        if (stormRadius < 1) return stormRadius < 0.55 ? '@' : 'o';
+        const eddy = Math.sin(longitude * 9 + Math.sin(latitude * 13)) * 0.026;
+        const band = Math.sin((latitude + eddy) * 22 + Math.sin(longitude * 4) * 0.24);
+        if (band > 0.6) return '=';
+        if (band < -0.5) return '-';
+        const turbulence = Math.sin(longitude * 17 + latitude * 29 + Math.sin(longitude * 7));
+        if (latitude < -0.45 && latitude > -0.65 && turbulence > 0.88) return '*';
+        return turbulence > 0.15 ? '~' : ':';
     }
     if (name === 'Saturn') {
         if (latitude > 1.08) {
@@ -134,39 +228,49 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
             return hexagonSector % 2 ? ':' : '=';
         }
         if (latitude > 0.18 && latitude < 0.34 && wrappedLongitude > 0.35 && wrappedLongitude < 0.7) return 'o';
-        const band = Math.floor((latitude + Math.PI / 2) * 10);
-        const cloudWave = Math.sin(longitude * 3 + latitude * 2.4);
-        if (band % 4 === 0) return cloudWave > 0.45 ? '~' : '=';
-        if (band % 2) return cloudWave < -0.5 ? '.' : ':';
-        return cloudWave > 0.55 ? ':' : '~';
+        const band = Math.sin(latitude * 26 + Math.sin(longitude * 5) * 0.22);
+        if (Math.abs(latitude) < 0.12) return '-';
+        return band > 0.55 ? '=' : band < -0.5 ? ':' : band > 0 ? '~' : '.';
     }
     if (name === 'Venus') {
-        const cloud = Math.sin(longitude * 3 + latitude * 5) + Math.sin(longitude - latitude * 7) * 0.35;
+        const cloud =
+            Math.sin(longitude * 3 + Math.abs(latitude) * 8 + Math.sin(longitude * 5) * 0.5) +
+            Math.sin(longitude * 7 - latitude * 11) * 0.25;
         return cloud > 0.55 ? '=' : cloud < -0.55 ? ':' : '~';
     }
     if (name === 'Mars') {
-        if (Math.abs(latitude) > 1.12) return '*';
+        const grain = terrainGrain(longitude, latitude);
+        if (Math.abs(latitude) > 1.22 + Math.sin(longitude * 7) * 0.045) return '*';
         if (insideFeature(longitude, latitude, -2.34, 0.33, 0.13)) return '^';
+        const canyonLatitude = -0.16 + Math.sin(longitude * 3) * 0.035;
+        if (wrappedLongitude > -1.5 && wrappedLongitude < -0.45 && Math.abs(latitude - canyonLatitude) < 0.038)
+            return '=';
         if (
             insideFeature(longitude, latitude, -0.7, 0.15, 0.18) ||
             insideFeature(longitude, latitude, 1.3, -0.35, 0.12)
         )
             return 'o';
-        return broadWave > 0.55 ? ':' : broadWave < -0.7 ? ',' : '.';
+        return broadWave + grain * 0.35 > 0.55 ? ':' : broadWave + grain * 0.25 < -0.7 ? ',' : grain > 0.8 ? 'o' : '.';
     }
-    if (name === 'Mercury' || name === 'Moon') {
-        const craters =
-            name === 'Moon'
-                ? [
-                      [-0.9, 0.35, 0.2],
-                      [0.55, -0.15, 0.14],
-                      [1.8, 0.5, 0.1],
-                  ]
-                : [
-                      [-0.6, 0.2, 0.16],
-                      [1.2, -0.4, 0.12],
-                      [2.2, 0.45, 0.09],
-                  ];
+    if (name === 'Mercury') {
+        for (const crater of MERCURY_CRATERS) {
+            const distance =
+                Math.hypot(
+                    wrapLongitude(longitude - crater.longitude) * Math.cos(latitude),
+                    latitude - crater.latitude,
+                ) / crater.radius;
+            if (distance < 0.68) return 'o';
+            if (distance < 1) return 'O';
+        }
+        const grain = terrainGrain(longitude, latitude);
+        return grain > 0.72 ? '*' : grain < -0.2 ? ':' : '.';
+    }
+    if (name === 'Moon') {
+        const craters = [
+            [-0.9, 0.35, 0.2],
+            [0.55, -0.15, 0.14],
+            [1.8, 0.5, 0.1],
+        ];
         if (
             craters.some(([featureLongitude, featureLatitude, radius]) =>
                 insideFeature(longitude, latitude, featureLongitude, featureLatitude, radius),
@@ -216,16 +320,17 @@ export function planetSurfaceGlyph(name: string, longitude: number, latitude: nu
         return darkHemisphere ? (broadWave > 0.25 ? '#' : ':') : broadWave > 0.4 ? ':' : '.';
     }
     if (name === 'Uranus') {
-        if (Math.abs(latitude) > 1.12) return ':';
-        const band = Math.floor((latitude + Math.PI / 2) * 10);
-        return band % 4 === 0 ? '-' : broadWave > 0.8 ? '.' : '~';
+        if (latitude > 0.85 + Math.sin(longitude * 4) * 0.025) return '*';
+        const band = Math.sin(latitude * 18 + Math.sin(longitude * 3) * 0.1);
+        return band > 0.7 ? '-' : band < -0.72 ? ':' : broadWave > 0.8 ? '.' : '~';
     }
     if (name === 'Neptune') {
-        if (latitude > 0.08 && latitude < 0.38 && wrappedLongitude > -0.85 && wrappedLongitude < -0.28) {
-            return wrappedLongitude > -0.7 && wrappedLongitude < -0.42 ? 'O' : 'o';
-        }
-        const band = Math.floor((latitude + Math.PI / 2) * 9);
-        return band % 4 === 1 ? '=' : broadWave > 0.75 ? ':' : '~';
+        const storm = Math.hypot(wrapLongitude(longitude + 0.56) / 0.3, (latitude - 0.23) / 0.14);
+        if (storm < 1) return storm < 0.66 ? 'O' : 'o';
+        const cloud = Math.sin(longitude * 12 + latitude * 19);
+        if (latitude > 0.4 && latitude < 0.49 && cloud > 0.3) return '*';
+        const band = Math.sin(latitude * 20 + Math.sin(longitude * 6) * 0.3);
+        return band > 0.65 ? '=' : band < -0.25 ? ':' : '~';
     }
     if (name === 'Phobos' || name === 'Deimos') {
         const crater =

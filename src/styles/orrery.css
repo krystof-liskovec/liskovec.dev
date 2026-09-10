@@ -73,8 +73,9 @@
     content: '';
     background-image: radial-gradient(
         circle at var(--scene-glow-x) calc(var(--scene-glow-bleed-y) + var(--scene-glow-y) + var(--scene-glow-offset-y)),
-        rgba(254, 128, 25, 0.06),
-        transparent 48%
+        rgba(254, 128, 25, 0.085) 0,
+        rgba(254, 128, 25, 0.045) 9%,
+        transparent 21%
     );
     opacity: 0;
     transition: opacity 0.35s ease-out;

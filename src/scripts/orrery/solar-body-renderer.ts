@@ -1,5 +1,5 @@
 import { DEG, smoothstep } from './math';
-import { decorativeRotation, planetSurfaceGlyph } from './planet-textures';
+import { decorativeRotation, planetSurfaceColor, planetSurfaceGlyph, planetSurfaceLight } from './planet-textures';
 import type { Planet, ProjectedBody } from './types';
 
 export const COMPACT_PLANET_GRIDS: Record<
@@ -20,18 +20,6 @@ const INNER_PLANETS = new Set(['Mercury', 'Venus', 'Earth', 'Mars']);
 
 export const solarBodyViewportScale = (planetName: string, viewportGlyphScale: number, innerPlanetScale: number) =>
     viewportGlyphScale * (INNER_PLANETS.has(planetName) ? innerPlanetScale : 1);
-
-const compactSurfaceColor = (planet: Planet, glyph: string) => {
-    if (planet.name === 'Earth') {
-        return glyph === '#' ? '#b8bb26' : glyph === '%' ? '#d79921' : glyph === '*' ? '#ebdbb2' : '#83a598';
-    }
-    if (planet.name === 'Jupiter' && (glyph === '@' || glyph === 'o')) return '#fe8019';
-    if (planet.name === 'Saturn' && glyph === 'o') return '#d79921';
-    if (planet.name === 'Mars' && glyph === '*') return '#ebdbb2';
-    if (planet.name === 'Venus' && glyph === '=') return '#fabd2f';
-    if (planet.name === 'Neptune' && (glyph === 'O' || glyph === 'o')) return '#83a598';
-    return planet.color;
-};
 
 type SolarBodyOptions = {
     focusedPlanet: Planet | null;
@@ -124,9 +112,9 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
             const bands = isUranus
                 ? [{ x: 0.74, y: 0.12, glyph: '-', color: '#83a598', alpha: 0.72 }]
                 : [
-                      { x: 0.69, y: 0.105, glyph: '-', color: '#bdae93', alpha: 0.5 },
-                      { x: 0.79, y: 0.14, glyph: '=', color: '#fabd2f', alpha: 0.78 },
-                      { x: 0.88, y: 0.175, glyph: '-', color: '#d79921', alpha: 0.58 },
+                      { x: 0.69, y: 0.105, glyph: '-', color: '#b0aa9b', alpha: 0.5 },
+                      { x: 0.79, y: 0.14, glyph: '=', color: '#e5e0d3', alpha: 0.78 },
+                      { x: 0.88, y: 0.175, glyph: '-', color: '#cec8ba', alpha: 0.58 },
                   ];
             for (const band of bands) {
                 const ringRadius = sphereWidth * band.x;
@@ -154,9 +142,11 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                     if (tiltedZ >= 0 !== foreground) continue;
                     const rotatedX = rolledX * systemYawCosine + pitchedZ * systemYawSine;
                     const rotatedY = pitchedY;
+                    if (!foreground && (rotatedX / (sphereWidth / 2)) ** 2 + (rotatedY / (sphereHeight / 2)) ** 2 < 1)
+                        continue;
                     context.globalAlpha =
-                        bodyOpacity * (1 - focusedDetailReveal) * band.alpha * (foreground ? 1 : 0.48);
-                    context.fillStyle = foreground ? band.color : '#665c54';
+                        bodyOpacity * (1 - focusedDetailReveal) * band.alpha * (0.86 + (tiltedZ / ringRadius) * 0.14);
+                    context.fillStyle = band.color;
                     context.fillText(band.glyph, body.x + rotatedX, body.y + rotatedY);
                 }
             }
@@ -211,8 +201,11 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                                 : '|'
                           : planetSurfaceGlyph(planet.name, longitude, latitude);
                 const cellX = body.x + (column - (compactGrid.columns - 1) / 2) * characterWidth;
-                context.globalAlpha = bodyOpacity * (1 - focusedDetailReveal) * (0.66 + sphereZ * 0.34);
-                context.fillStyle = isContour ? planet.color : compactSurfaceColor(planet, glyph);
+                context.globalAlpha =
+                    bodyOpacity *
+                    (1 - focusedDetailReveal) *
+                    (0.22 + planetSurfaceLight(normalizedX, normalizedY, sphereZ) * 0.78);
+                context.fillStyle = isContour ? planet.color : planetSurfaceColor(planet.name, glyph, planet.color);
                 context.strokeText(glyph, cellX, cellY);
                 context.fillText(glyph, cellX, cellY);
             }

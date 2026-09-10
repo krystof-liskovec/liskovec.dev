@@ -89,7 +89,7 @@ export const PLANETS: Planet[] = [
         displayRadius: 24,
         glyph: 'O',
         sprite: ['  .---.  ', ' /~~~~~\\ ', '|==~~~==|', '|~(@)~~~|', '|==~~~==|', ' \\~~~~~/ ', "  '---'  "],
-        color: '#d5c4a1',
+        color: '#d5c2aa',
         size: 0.76,
     },
     {
@@ -115,7 +115,7 @@ export const PLANETS: Planet[] = [
             "   '.:::::.'   ",
             "     '---'     ",
         ],
-        color: '#fabd2f',
+        color: '#dfcda3',
         size: 0.52,
     },
     {

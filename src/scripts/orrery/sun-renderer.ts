@@ -1,4 +1,4 @@
-import { decorativeRotation, planetSurfaceGlyph } from './planet-textures';
+import { decorativeRotation, planetSurfaceColor, planetSurfaceGlyph, sunSurfaceLight } from './planet-textures';
 
 type SunRenderOptions = {
     x: number;
@@ -40,6 +40,51 @@ const smoothCameraSurface = (rotation: number, tilt: number, seconds: number) =>
     return { rotation, tilt: smoothedCameraTilt };
 };
 
+type SunAtmosphereOptions = {
+    x: number;
+    y: number;
+    radiusX: number;
+    radiusY: number;
+    fontSize: number;
+    opacity: number;
+    seconds: number;
+    reducedMotion: boolean;
+    detailed: boolean;
+};
+
+// A restrained, illustrative corona.
+// Fixed samples keep the atmosphere stable between frames; motion only gently
+// changes streamer length, with no random flickering.
+export function drawSunAtmosphere(context: CanvasRenderingContext2D, options: SunAtmosphereOptions) {
+    const { x, y, radiusX, radiusY, fontSize, opacity, seconds, reducedMotion, detailed } = options;
+    if (opacity <= 0.001) return;
+    const time = reducedMotion ? 0 : seconds;
+    const samples = detailed ? 96 : 32;
+    const layers = detailed ? 5 : 2;
+    context.save();
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = `${fontSize * 0.8}px "DM Mono", monospace`;
+    context.shadowBlur = 0;
+    for (let sample = 0; sample < samples; sample++) {
+        const angle = (sample / samples) * Math.PI * 2;
+        const streamer = (0.5 + 0.5 * Math.sin(angle * 5 + Math.sin(angle * 3))) ** 3;
+        const breath = Math.sin(time * 0.45 + angle * 3) * 0.015;
+        for (let layer = 0; layer < layers; layer++) {
+            const distance = 1.055 + layer * (0.042 + streamer * 0.055) + breath * layer;
+            const curl = angle + Math.sin(angle * 7 + layer * 0.4) * layer * 0.005;
+            context.globalAlpha = opacity * (0.23 - layer * 0.037) * (0.65 + streamer * 0.35);
+            context.fillStyle = layer === 0 ? '#f59a23' : '#ffc34d';
+            context.fillText(
+                layer === 0 && sample % 3 === 0 ? ':' : '.',
+                x + Math.cos(curl) * radiusX * distance,
+                y + Math.sin(curl) * radiusY * distance,
+            );
+        }
+    }
+    context.restore();
+}
+
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
     const { x, y, scale, opacity, seconds, reducedMotion, planetRotationOffset, planetTiltOffset } = options;
     if (opacity <= 0.001) return;
@@ -73,6 +118,18 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     const tiltCosine = Math.cos(cameraSurface.tilt);
     const tiltSine = Math.sin(cameraSurface.tilt);
     const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
+
+    drawSunAtmosphere(context, {
+        x: 0,
+        y: 0,
+        radiusX: (SURFACE_COLUMNS * characterWidth) / 2,
+        radiusY: (SURFACE_ROW_WIDTHS.length * lineHeight) / 2,
+        fontSize,
+        opacity,
+        seconds,
+        reducedMotion,
+        detailed: false,
+    });
 
     // The glyphs describe an opaque sphere. Mask the interior before drawing
     // them so orbit marks and bodies on the far side cannot show through the
@@ -135,17 +192,8 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
                             : '|'
                       : planetSurfaceGlyph('Sol', longitude, latitude);
             const cellX = (column - (SURFACE_COLUMNS - 1) / 2) * characterWidth;
-            context.globalAlpha =
-                opacity * (0.72 + sphereZ * 0.26 + Math.sin(seconds * 1.1 + row * 1.7) * (reducedMotion ? 0 : 0.02));
-            context.fillStyle = isContour
-                ? '#fabd2f'
-                : glyph === '@'
-                  ? '#d65d0e'
-                  : glyph === '*' || glyph === '~'
-                    ? '#fe8019'
-                    : glyph === ':' || glyph === '.'
-                      ? '#d79921'
-                      : '#fabd2f';
+            context.globalAlpha = opacity * sunSurfaceLight(sphereZ);
+            context.fillStyle = isContour ? '#f59a23' : planetSurfaceColor('Sol', glyph, '#ffc12e');
             context.strokeText(glyph, cellX, cellY);
             context.fillText(glyph, cellX, cellY);
         }
