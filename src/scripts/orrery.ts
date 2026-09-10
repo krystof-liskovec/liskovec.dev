@@ -25,6 +25,7 @@ import type { FocusTarget, Vec3 } from './orrery/types';
 import type { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
 
 type DrawGalaxyBackdrop = typeof import('./orrery/background-renderer').drawGalaxyBackdrop;
+type DrawGalaxyGlow = typeof import('./orrery/galaxy-glow-renderer').drawGalaxyGlow;
 type DrawFocusScene = typeof import('./orrery/focus-scene').drawFocusScene;
 
 // Keep the scene fluid on high-refresh displays while bounding work above 120Hz.
@@ -41,6 +42,7 @@ const MAX_CANVAS_DPR = 2;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const gpuCanvasElement = document.querySelector<HTMLCanvasElement>('#solar-gpu-canvas');
+const glowCanvasElement = document.querySelector<HTMLCanvasElement>('#galaxy-glow-canvas');
 const systemElement = document.querySelector<HTMLElement>('#solar-system');
 const clock = document.querySelector<HTMLElement>('#solar-time');
 const cameraStats = document.querySelector<HTMLElement>('#camera-stats');
@@ -64,6 +66,7 @@ if (canvasElement && systemElement && canvasContext) {
     const isOgPreview = system.dataset.ogPreview === 'true';
     const backgroundCanvas = document.createElement('canvas');
     const backgroundContext = backgroundCanvas.getContext('2d');
+    const glowContext = glowCanvasElement?.getContext('2d');
     let particleRenderer: WebGLParticleRenderer | null = null;
     const {
         pointer,
@@ -131,13 +134,15 @@ if (canvasElement && systemElement && canvasContext) {
     };
 
     let galaxyBackdropRenderer: DrawGalaxyBackdrop | null = null;
+    let galaxyGlowRenderer: DrawGalaxyGlow | null = null;
     let galaxyBackdropLoadPromise: Promise<DrawGalaxyBackdrop | null> | null = null;
     const loadGalaxyBackdrop = () => {
         if (galaxyBackdropRenderer) return Promise.resolve(galaxyBackdropRenderer);
         if (!galaxyBackdropLoadPromise) {
             galaxyBackdropLoadPromise = import('./orrery/background-renderer')
-                .then(({ drawGalaxyBackdrop }) => {
+                .then(({ drawGalaxyBackdrop, drawGalaxyGlow }) => {
                     galaxyBackdropRenderer = drawGalaxyBackdrop;
+                    galaxyGlowRenderer = drawGalaxyGlow;
                     scheduleRender();
                     return drawGalaxyBackdrop;
                 })
@@ -356,6 +361,18 @@ if (canvasElement && systemElement && canvasContext) {
         context.translate(canvasOriginX, canvasOriginY);
         context.textAlign = 'center';
         context.textBaseline = 'middle';
+
+        // Keep diffuse galaxy light beneath both the GPU stars and 2D artwork.
+        // Clear even when the galaxy is hidden, so no glow survives a close-up.
+        if (glowCanvasElement && glowContext) {
+            if (glowCanvasElement.width !== pixelWidth || glowCanvasElement.height !== pixelHeight) {
+                glowCanvasElement.width = pixelWidth;
+                glowCanvasElement.height = pixelHeight;
+            }
+            glowContext.setTransform(pixelWidth / renderWidth, 0, 0, pixelHeight / renderHeight, 0, 0);
+            glowContext.clearRect(0, 0, renderWidth, renderHeight);
+            glowContext.translate(canvasOriginX, canvasOriginY);
+        }
 
         const intro = introController.update(frameTime, reducedMotion);
         if (!introController.running) {
@@ -585,6 +602,17 @@ if (canvasElement && systemElement && canvasContext) {
                 galaxyTransform: galaxyParticleTransform,
             });
         };
+
+        if (glowContext) {
+            galaxyGlowRenderer?.(glowContext, {
+                coreX: galaxyCoreX,
+                coreY: galaxyCoreY,
+                radius: galaxyRadius,
+                verticalProjection: galacticProjectedTilt,
+                rotation: galaxyCamera.rotation - patternPhase,
+                alpha: galaxyAlpha,
+            });
+        }
 
         drawLocalStarfield(context, {
             width,

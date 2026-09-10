@@ -18,6 +18,7 @@
 - `solar-system-model.ts` - pooled orbit/body projection for each frame
 - `solar-system-scene.ts` - orbit, asteroid, moon, Sun, and compact-body painting
 - `background-renderer.ts` - local stars and the projected Milky Way backdrop
+- `galaxy-glow-renderer.ts` - cached diffuse starlight beneath the galaxy, using the same projected bar and arm geometry
 - `galaxy-object-renderer.ts` - pooled galactic-object projection, hit testing, and sprites
 - `galactic-landmark-renderer.ts` - detailed pulsar, wind torus, and sweeping beam artwork
 - `scene-ui.ts` - overlap-aware hit resolution, focus candidates, and readouts

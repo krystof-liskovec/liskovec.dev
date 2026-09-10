@@ -12,6 +12,27 @@ const RAMP = '.,:;~=+*#';
 const COLORS = ['#665c54', '#9d512b', '#d65d0e', '#fe8019', '#fabd2f', '#ebdbb2', '#fbf1c7'];
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 
+/** A restrained amber center glow for the Sagittarius A* close-up backdrop. */
+export function drawSagittariusGlow(
+    context: CanvasRenderingContext2D,
+    options: { x: number; y: number; radius: number; opacity: number },
+) {
+    if (options.opacity <= 0.001 || options.radius <= 0) return;
+    const outerRadius = options.radius * 1.8;
+    context.save();
+    context.globalAlpha = options.opacity;
+    context.translate(options.x, options.y);
+    context.scale(1, 0.72);
+    const glow = context.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
+    glow.addColorStop(0, 'rgba(214, 93, 14, 0.18)');
+    glow.addColorStop(0.22, 'rgba(215, 153, 33, 0.125)');
+    glow.addColorStop(0.58, 'rgba(168, 153, 132, 0.042)');
+    glow.addColorStop(1, 'rgba(168, 153, 132, 0)');
+    context.fillStyle = glow;
+    context.fillRect(-outerRadius, -outerRadius, outerRadius * 2, outerRadius * 2);
+    context.restore();
+}
+
 /** Artistic lensing model: a tilted disk, its bent far-side image, and a photon ring. */
 export function drawSagittarius(
     context: CanvasRenderingContext2D,

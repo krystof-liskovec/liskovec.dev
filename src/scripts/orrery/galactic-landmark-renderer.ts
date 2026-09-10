@@ -35,6 +35,26 @@ const PULSAR_STAR_ROWS = [3, 5, 7, 7, 7, 5, 3];
 // Keep the beam visibly energetic while leaving each ASCII sweep readable.
 const B1509_DISPLAY_ROTATIONS_PER_SECOND = 1.2;
 
+export function drawPulsarGlow(
+    context: CanvasRenderingContext2D,
+    options: { x: number; y: number; radius: number; opacity: number },
+) {
+    if (options.opacity <= 0.001 || options.radius <= 0) return;
+    const outerRadius = options.radius * 1.7;
+    context.save();
+    context.globalAlpha = options.opacity * 0.95;
+    context.translate(options.x, options.y);
+    const glow = context.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
+    glow.addColorStop(0, 'rgba(235, 219, 178, 0.34)');
+    glow.addColorStop(0.16, 'rgba(131, 165, 152, 0.26)');
+    glow.addColorStop(0.46, 'rgba(69, 133, 136, 0.12)');
+    glow.addColorStop(0.78, 'rgba(131, 165, 152, 0.028)');
+    glow.addColorStop(1, 'rgba(131, 165, 152, 0)');
+    context.fillStyle = glow;
+    context.fillRect(-outerRadius, -outerRadius, outerRadius * 2, outerRadius * 2);
+    context.restore();
+}
+
 const drawB1509Pulsar = (
     context: CanvasRenderingContext2D,
     options: GalacticRenderOptions,

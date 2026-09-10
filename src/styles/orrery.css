@@ -190,6 +190,10 @@
     touch-action: pan-y pinch-zoom;
     user-select: none;
 }
+.solar-system canvas.galaxy-glow-canvas {
+    z-index: 1;
+    pointer-events: none;
+}
 .solar-system canvas.solar-gpu-canvas {
     z-index: 2;
     background-color: transparent;

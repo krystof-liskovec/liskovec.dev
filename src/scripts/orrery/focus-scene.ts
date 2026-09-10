@@ -15,6 +15,8 @@ import {
     visualTransitionProgress,
 } from './math';
 import { drawFocusedMoon } from './moon-renderer';
+import { drawFocusedNebulaGlow } from './galactic-volume-renderer';
+import { drawPulsarGlow } from './galactic-landmark-renderer';
 import {
     focusedRotation,
     planetSurfaceColor,
@@ -22,6 +24,7 @@ import {
     planetSurfaceLight,
     sunSurfaceLight,
 } from './planet-textures';
+import { drawSagittariusGlow } from './sagittarius-renderer';
 import { drawSunAtmosphere } from './sun-renderer';
 import type { CameraState, PointerState } from './runtime-state';
 import type { FocusState, FocusTarget, Planet, ProjectedBody, Vec3 } from './types';
@@ -527,6 +530,31 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             if (target.name === 'Earth') drawFocusedEarthSatellites(true);
             drawFocusedMajorMoons(true);
         } else {
+            if (target.name === 'Sagittarius A*') {
+                drawSagittariusGlow(context, {
+                    x: focusCenterX,
+                    y: focusCenterY,
+                    radius: galacticFocusedRadius * focusScale,
+                    opacity: objectReveal,
+                });
+            }
+            if (target.kind === 'galactic') {
+                drawFocusedNebulaGlow(context, {
+                    name: target.name,
+                    x: focusCenterX,
+                    y: focusCenterY,
+                    radius: galacticFocusedRadius * focusScale,
+                    opacity: objectReveal,
+                });
+                if (target.name === 'PSR B1509-58') {
+                    drawPulsarGlow(context, {
+                        x: focusCenterX,
+                        y: focusCenterY,
+                        radius: galacticFocusedRadius * focusScale,
+                        opacity: objectReveal,
+                    });
+                }
+            }
             drawFocusField(
                 width < 600 ? 145 : 235,
                 target.kind === 'galactic' ? 32 : 62,

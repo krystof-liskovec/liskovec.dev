@@ -15,6 +15,45 @@ const WARM = ['#9d512b', '#d65d0e', '#fe8019', '#fabd2f', '#ebdbb2'];
 const FILAMENTS = ['#9d512b', '#fb4934', '#fe8019', '#d3869b', '#fabd2f'];
 const BLUE = ['#458588', '#83a598', '#8ec07c', '#d5c4a1', '#ebdbb2'];
 const GOLD = ['#a89984', '#d5c4a1', '#fabd2f', '#ebdbb2', '#fbf1c7'];
+const NEBULA_GLOW_COLORS: Record<string, string> = {
+    'Crab Nebula': '#fb4934',
+    'Eta Carinae': '#fabd2f',
+    'Cassiopeia A': '#fe8019',
+    'Omega Centauri': '#d79921',
+};
+
+const hexToRgb = (hex: string) => {
+    const value = hex.slice(1);
+    return [
+        Number.parseInt(value.slice(0, 2), 16),
+        Number.parseInt(value.slice(2, 4), 16),
+        Number.parseInt(value.slice(4, 6), 16),
+    ].join(', ');
+};
+
+export function drawFocusedNebulaGlow(
+    context: CanvasRenderingContext2D,
+    options: { name: string; x: number; y: number; radius: number; opacity: number },
+) {
+    const color = NEBULA_GLOW_COLORS[options.name];
+    if (!color || options.opacity <= 0.001 || options.radius <= 0) return;
+    const outerRadius = options.radius * 1.55;
+    const horizontalScale = options.name === 'Eta Carinae' ? 1.15 : 1;
+    const verticalScale = options.name === 'Eta Carinae' ? 0.76 : options.name === 'Crab Nebula' ? 0.9 : 1;
+    const rgb = hexToRgb(color);
+    context.save();
+    context.globalAlpha = options.opacity * 0.82;
+    context.translate(options.x, options.y);
+    context.scale(horizontalScale, verticalScale);
+    const glow = context.createRadialGradient(0, 0, 0, 0, 0, outerRadius);
+    glow.addColorStop(0, `rgba(${rgb}, 0.16)`);
+    glow.addColorStop(0.34, `rgba(${rgb}, 0.075)`);
+    glow.addColorStop(0.72, `rgba(${rgb}, 0.018)`);
+    glow.addColorStop(1, `rgba(${rgb}, 0)`);
+    context.fillStyle = glow;
+    context.fillRect(-outerRadius, -outerRadius, outerRadius * 2, outerRadius * 2);
+    context.restore();
+}
 
 // These are object-space volumes, not screen-space textures. Generate them
 // once when first opened; every camera turn reprojects their actual XYZ points.
