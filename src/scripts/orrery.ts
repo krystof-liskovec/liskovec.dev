@@ -534,7 +534,7 @@ if (canvasElement && systemElement && canvasContext) {
         const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
-        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.7 : 1;
+        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.9 : 1;
         const finalGalaxyRadius = Math.min(
             galaxyViewportWidth * 0.48 * fullscreenGalaxyScale,
             galaxyViewportHeight * 0.62 * fullscreenGalaxyScale,
@@ -607,6 +607,7 @@ if (canvasElement && systemElement && canvasContext) {
         const baseWorldScale =
             (width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50)) *
             (isOgPreview ? 1.1 : 1);
+        const fullscreenSolarSystemScale = fullscreenPhoneLayout ? 0.9 : 1;
         // Move the system camera toward every local focus target at the same
         // rate. The detailed focused sphere is scaled independently in
         // focus-scene, but its surrounding scene still needs the full camera
@@ -614,7 +615,12 @@ if (canvasElement && systemElement && canvasContext) {
         const focusedSceneScaleTarget = 25;
         const focusedSceneScale =
             focusedPlanet || focusedSun || focusedComet ? 1 + planetSceneFocus * (focusedSceneScaleTarget - 1) : 1;
-        let worldScale = baseWorldScale * (1 - plutoReveal * 0.11) * solarSystemScale * focusedSceneScale;
+        let worldScale =
+            baseWorldScale *
+            fullscreenSolarSystemScale *
+            (1 - plutoReveal * 0.11) *
+            solarSystemScale *
+            focusedSceneScale;
         const cameraDistance = 145;
         const cameraRollCosine = Math.cos(camera.renderedRoll);
         const cameraRollSine = Math.sin(camera.renderedRoll);

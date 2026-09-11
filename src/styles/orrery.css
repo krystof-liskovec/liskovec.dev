@@ -995,18 +995,21 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
 }
 .solar-system.is-phone-fullscreen .cosmic-zoom-scale > input {
     grid-area: slider;
-    width: 18px;
+    width: 44px;
     height: 220px;
+    justify-self: center;
     writing-mode: vertical-lr;
     direction: rtl;
     background: linear-gradient(to top, var(--orange) 0 var(--zoom-progress), #665c54 var(--zoom-progress) 100%)
         center / 4px 100% no-repeat;
     cursor: ns-resize;
+    touch-action: none;
 }
 .solar-system.is-phone-fullscreen .cosmic-zoom-scale::before {
     grid-area: slider;
     width: 4px;
     height: 100%;
+    justify-self: center;
     content: '';
     background: #665c54;
     pointer-events: none;
@@ -1035,8 +1038,14 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     background: var(--orange);
 }
 .solar-system.is-phone-fullscreen .cosmic-zoom-control input::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
     margin-top: 0;
-    margin-left: -5px;
+    margin-left: -8px;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-control input::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
 }
 
 /* Animated close-ups and galaxy zooms can use the full page as a backdrop
