@@ -99,7 +99,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         childSceneScale,
     } = options;
     const compactViewport = width < 600 || (isFullscreen && Math.min(width, height) < 600);
-    const fullscreenPhoneFocusScale = isFullscreen && Math.min(width, height) < 600 ? 0.8 : 1;
+    const fullscreenPhoneFocusScale = isFullscreen && Math.min(width, height) < 600 ? 0.7 : 1;
     let activeFocusCandidate: FocusTarget | null = null;
     const drawSoftMoonMask = (centerX: number, centerY: number, radiusX: number, radiusY: number, reveal: number) =>
         drawSoftSceneMask(context, {
