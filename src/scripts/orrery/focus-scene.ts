@@ -99,6 +99,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         childSceneScale,
     } = options;
     const compactViewport = width < 600 || (isFullscreen && Math.min(width, height) < 600);
+    const fullscreenPhoneFocusScale = isFullscreen && Math.min(width, height) < 600 ? 0.7 : 1;
     let activeFocusCandidate: FocusTarget | null = null;
     const drawSoftMoonMask = (centerX: number, centerY: number, radiusX: number, radiusY: number, reveal: number) =>
         drawSoftSceneMask(context, {
@@ -163,7 +164,9 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
                 : target.kind === 'galactic'
                   ? galacticMatchedScale + galacticDetailGrowth * (1 - galacticMatchedScale)
-                  : 0.18 + focusEase * 0.82) * (isLocalDestination && objectFocus.child ? childSceneScale : 1);
+                  : 0.18 + focusEase * 0.82) *
+            fullscreenPhoneFocusScale *
+            (isLocalDestination && objectFocus.child ? childSceneScale : 1);
         const objectReveal = isLocalDestination
             ? smoothstep((planetSceneFocus - 0.06) / 0.3)
             : target.kind === 'galactic'

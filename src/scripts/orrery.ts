@@ -389,15 +389,17 @@ if (canvasElement && systemElement && canvasContext) {
         const fullscreenGalaxyGlyphScale = fullscreenPhoneLayout ? 0.8 : 1;
         const fullscreenGalaxyRenderScale = fullscreenSolarSystemScale * fullscreenGalaxyGlyphScale;
         const compactViewport = width < 600 || fullscreenPhoneLayout;
+        const objectViewportWidth = fullscreenPhoneLayout ? Math.min(width, height) : width;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
         // crowded into the smaller scene. Fullscreen uses the same multiplier for
         // orbital spacing, body glyphs, masks, and Sol so the scene scales as one
         // unit rather than only moving the orbits inward.
         const viewportGlyphScale =
-            (isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, width / 700))) * fullscreenSolarSystemScale;
+            (isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, objectViewportWidth / 700))) *
+            fullscreenSolarSystemScale;
         const innerPlanetScale = compactViewport ? 0.84 : 1;
-        const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
+        const mobileSunProgress = Math.max(0, Math.min(1, (objectViewportWidth - 430) / 270));
         const viewportSunScale = (0.52 + mobileSunProgress * 0.48) * fullscreenSolarSystemScale;
         const dpr = Math.min(MAX_CANVAS_DPR, Math.max(1, window.devicePixelRatio || 1));
         const pixelWidth = Math.max(1, Math.round(renderWidth * dpr));
