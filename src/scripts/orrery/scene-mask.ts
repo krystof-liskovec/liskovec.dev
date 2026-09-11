@@ -18,3 +18,28 @@ export const sceneMaskColor = (x: number, y: number, width: number, height: numb
     );
     return `rgb(${channels.join(', ')})`;
 };
+
+export const drawSoftSceneMask = (
+    context: CanvasRenderingContext2D,
+    options: {
+        x: number;
+        y: number;
+        radiusX: number;
+        radiusY: number;
+        opacity: number;
+        color: string;
+    },
+) => {
+    if (options.opacity <= 0.001 || options.radiusX <= 0 || options.radiusY <= 0) return;
+    context.save();
+    context.translate(options.x, options.y);
+    context.scale(options.radiusX, options.radiusY);
+    const mask = context.createRadialGradient(0, 0, 0, 0, 0, 1);
+    mask.addColorStop(0, options.color);
+    mask.addColorStop(0.78, options.color);
+    mask.addColorStop(1, 'rgba(29, 32, 33, 0)');
+    context.fillStyle = mask;
+    context.globalAlpha = options.opacity;
+    context.fillRect(-1, -1, 2, 2);
+    context.restore();
+};

@@ -1,7 +1,9 @@
 import { PLANETS } from './catalog';
 import { DEG, orbitalPoint, randomUnit } from './math';
 
-export const STARS = Array.from({ length: 90 }, (_, index) => ({
+// This field sits behind both the local system and the Milky Way backdrop, so
+// keep it dense enough to read as a surrounding sky rather than a few accents.
+export const STARS = Array.from({ length: 240 }, (_, index) => ({
     // Use independent seeded coordinates. Advancing x/y with separate modular
     // sequences created visible diagonal rows on narrow, expanded canvases.
     x: 0.03 + randomUnit(index * 2 + 401) * 0.94,

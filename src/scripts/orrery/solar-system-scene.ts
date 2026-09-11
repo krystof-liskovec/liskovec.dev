@@ -1,9 +1,9 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
-import { DEG, J2000, rotateX, rotateZ, solveKeplerOrbit } from './math';
+import { DEG, J2000, rotateX, rotateZ, smoothstep, solveKeplerOrbit } from './math';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
-import { sceneMaskColor } from './scene-mask';
+import { drawSoftSceneMask, sceneMaskColor } from './scene-mask';
 import type { SolarParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
 import { drawSolarBody, solarBodyViewportScale } from './solar-body-renderer';
 import { drawSun } from './sun-renderer';
@@ -54,6 +54,9 @@ const KUIPER_BELT_STYLE: ParticleFieldStyle = {
 };
 
 const JUPITER_TROJAN_LIBRATION_PERIOD_DAYS = 150 * 365.256;
+// Mercury through Mars remain close enough in the compressed solar view for
+// Sol's surface detail to stay legible alongside the nearest-planet LOD.
+const DETAILED_SUN_DISTANCE = 19;
 
 // JPL J863/77 osculating elements for 1P/Halley, referred to the J2000
 // ecliptic. The two-body propagation is sufficient for this compressed scene;
@@ -102,6 +105,9 @@ export class SolarSystemSceneRenderer {
     private readonly cometTailProjection = { x: 0, y: 0, z: 0, scale: 1 };
     private readonly cometFarTailProjection = { x: 0, y: 0, z: 0, scale: 1 };
     private readonly cometOrbit = { angle: 0, distance: 1 };
+    private detailFocusPlanetName: string | null = null;
+    private detailNeighborName: string | null = null;
+    private detailSunForFocus = false;
 
     draw(
         context: CanvasRenderingContext2D,
@@ -122,6 +128,8 @@ export class SolarSystemSceneRenderer {
             showHoverVisuals: boolean;
             centerX: number;
             centerY: number;
+            sunX: number;
+            sunY: number;
             renderedSunScale: number;
             now: number;
             seconds: number;
@@ -129,6 +137,7 @@ export class SolarSystemSceneRenderer {
             solarSystemScale: number;
             viewportGlyphScale: number;
             innerPlanetScale: number;
+            surroundingSunScale: number;
             compact: boolean;
             localDetailOpacity: number;
             planetSceneFocus: number;
@@ -143,6 +152,9 @@ export class SolarSystemSceneRenderer {
             isOgPreview: boolean;
             width: number;
             height: number;
+            focusOcclusionDepth: number | null;
+            focusedComet: boolean;
+            drawFocusedLayer?: () => void;
         },
     ) {
         this.drawOrbitMarks(
@@ -207,6 +219,7 @@ export class SolarSystemSceneRenderer {
             pixelRatio: number;
             particleRenderer?: WebGLParticleRenderer | null;
             particleTransform?: SolarParticleTransform;
+            focusOcclusionDepth: number | null;
         },
     ) {
         const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform, compact } = options;
@@ -228,6 +241,7 @@ export class SolarSystemSceneRenderer {
             options.pixelRatio,
             options.particleRenderer,
             options.particleTransform,
+            options.focusOcclusionDepth,
         );
         this.drawParticleField(
             context,
@@ -242,6 +256,7 @@ export class SolarSystemSceneRenderer {
             options.pixelRatio,
             options.particleRenderer,
             options.particleTransform,
+            options.focusOcclusionDepth,
         );
         this.drawParticleField(
             context,
@@ -256,6 +271,7 @@ export class SolarSystemSceneRenderer {
             options.pixelRatio,
             options.particleRenderer,
             options.particleTransform,
+            options.focusOcclusionDepth,
         );
         context.globalAlpha = 1;
     }
@@ -273,11 +289,13 @@ export class SolarSystemSceneRenderer {
         pixelRatio: number,
         particleRenderer?: WebGLParticleRenderer | null,
         particleTransform?: SolarParticleTransform,
+        focusOcclusionDepth: number | null = null,
     ) {
         const font = `${fontSize}px "DM Mono", monospace`;
         if (
             particleRenderer &&
             particleTransform &&
+            focusOcclusionDepth === null &&
             particleRenderer.drawSolarParticleField({
                 fieldKey,
                 particles,
@@ -319,6 +337,7 @@ export class SolarSystemSceneRenderer {
                 orbitalX * particle.nodeSine + orbitalY * particle.inclinationCosine * particle.nodeCosine;
             this.asteroidPoint.z = orbitalY * particle.inclinationSine;
             const projected = cameraTransform(this.asteroidPoint, this.asteroidProjection);
+            if (focusOcclusionDepth !== null && projected.z > focusOcclusionDepth) continue;
             drawParticleGlyph(
                 particle.glyph,
                 projected.x,
@@ -342,6 +361,7 @@ export class SolarSystemSceneRenderer {
             compact: boolean;
             pixelRatio: number;
             particleRenderer?: WebGLParticleRenderer | null;
+            focusOcclusionDepth: number | null;
         },
     ) {
         let jupiter: ProjectedBody | null = null;
@@ -377,6 +397,7 @@ export class SolarSystemSceneRenderer {
             this.asteroidPoint.y = Math.sin(angle) * trojan.radius;
             this.asteroidPoint.z = jupiter.world.z + trojan.z;
             const projected = options.cameraTransform(this.asteroidPoint, this.asteroidProjection);
+            if (options.focusOcclusionDepth !== null && projected.z > options.focusOcclusionDepth) continue;
             drawTrojanGlyph(trojan.glyph, projected.x, projected.y, opacity * (0.11 + trojan.phase * 0.22));
         }
         context.globalAlpha = 1;
@@ -423,8 +444,17 @@ export class SolarSystemSceneRenderer {
             planetSceneFocus: number;
             showHoverVisuals: boolean;
             introDetailOpacity: number;
+            focusOcclusionDepth: number | null;
+            focusedComet: boolean;
         },
     ) {
+        if (
+            !options.focusedComet &&
+            options.focusOcclusionDepth !== null &&
+            this.halley.z > options.focusOcclusionDepth
+        ) {
+            return;
+        }
         const head = this.halley;
         const tail = this.cometTailProjection;
         const farTail = this.cometFarTailProjection;
@@ -466,14 +496,15 @@ export class SolarSystemSceneRenderer {
             hoveredBody: ProjectedBody | null;
             hoveredSun: boolean;
             showHoverVisuals: boolean;
-            centerX: number;
-            centerY: number;
+            sunX: number;
+            sunY: number;
             renderedSunScale: number;
             seconds: number;
             reducedMotion: boolean;
             solarSystemScale: number;
             viewportGlyphScale: number;
             innerPlanetScale: number;
+            surroundingSunScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
             introSunOpacity: number;
@@ -483,6 +514,8 @@ export class SolarSystemSceneRenderer {
             width: number;
             height: number;
             isOgPreview: boolean;
+            focusOcclusionDepth: number | null;
+            drawFocusedLayer?: () => void;
         },
     ) {
         const {
@@ -494,8 +527,8 @@ export class SolarSystemSceneRenderer {
             hoveredBody,
             hoveredSun,
             showHoverVisuals,
-            centerX,
-            centerY,
+            sunX,
+            sunY,
             renderedSunScale,
             seconds,
             reducedMotion,
@@ -506,9 +539,55 @@ export class SolarSystemSceneRenderer {
             introSunOpacity,
         } = options;
 
+        const focusedBody = focusedPlanet ? (bodies.find((body) => body.planet === focusedPlanet) ?? null) : null;
+        if (!focusedBody) {
+            this.detailFocusPlanetName = null;
+            this.detailNeighborName = null;
+            this.detailSunForFocus = false;
+        } else if (this.detailFocusPlanetName !== focusedPlanet?.name) {
+            this.detailFocusPlanetName = focusedPlanet?.name ?? null;
+            this.detailNeighborName = null;
+            const focusedSunDistance = Math.hypot(focusedBody.world.x, focusedBody.world.y, focusedBody.world.z);
+            this.detailSunForFocus = focusedSunDistance <= DETAILED_SUN_DISTANCE;
+            let closestDetailDistance = Infinity;
+            for (const body of bodies) {
+                if (body === focusedBody || body.planet.easterEgg) continue;
+                const distance = Math.hypot(
+                    body.world.x - focusedBody.world.x,
+                    body.world.y - focusedBody.world.y,
+                    body.world.z - focusedBody.world.z,
+                );
+                if (distance >= closestDetailDistance) continue;
+                closestDetailDistance = distance;
+                this.detailNeighborName = body.planet.name;
+            }
+        }
+        // Hold the chosen secondary LOD for the whole focus session. Re-picking
+        // it every frame can swap two nearly equidistant planets mid-transition
+        // and read as a one-frame positional jump.
+        const closestDetailBody = this.detailNeighborName
+            ? (bodies.find((body) => body.planet.name === this.detailNeighborName) ?? null)
+            : null;
+        const detailedSun = this.detailSunForFocus;
+        const apparentScaleFor = (body: ProjectedBody) => {
+            if (!focusedBody || body === focusedBody) return 1;
+            const dx = body.world.x - focusedBody.world.x;
+            const dy = body.world.y - focusedBody.world.y;
+            const dz = body.world.z - focusedBody.world.z;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            // The catalogue uses compressed display-space orbits, so this is
+            // a legibility-aware angular-size curve rather than a literal AU
+            // calculation. It still responds continuously to live 3D distance.
+            const distanceScale = Math.max(0.62, Math.min(2.2, 15 / Math.max(1, distance)));
+            return 1 + (distanceScale - 1) * planetSceneFocus;
+        };
+
         const drawBody = (body: ProjectedBody) => {
-            this.drawPlanetShadow(context, body, options);
-            this.drawPlanetarySystem(context, body, false, options);
+            const apparentBodyScale = apparentScaleFor(body);
+            const detailAppearanceReveal =
+                body === closestDetailBody ? smoothstep((planetSceneFocus - 0.08) / 0.72) : 0;
+            this.drawPlanetShadow(context, body, apparentBodyScale, detailAppearanceReveal, options);
+            this.drawPlanetarySystem(context, body, false, apparentBodyScale, options);
             drawSolarBody(context, body, {
                 focusedPlanet,
                 seconds,
@@ -516,6 +595,8 @@ export class SolarSystemSceneRenderer {
                 solarSystemScale,
                 viewportGlyphScale,
                 innerPlanetScale: options.innerPlanetScale,
+                apparentBodyScale,
+                detailAppearanceReveal,
                 localDetailOpacity,
                 planetSceneFocus,
                 isHovered: body === hoveredBody && showHoverVisuals,
@@ -523,43 +604,73 @@ export class SolarSystemSceneRenderer {
                 planetTiltOffset: options.planetTiltOffset,
                 planetYawOffset: options.planetYawOffset,
             });
-            this.drawPlanetarySystem(context, body, true, options);
+            this.drawPlanetarySystem(context, body, true, apparentBodyScale, options);
+        };
+
+        const bodyPassesFocusOcclusion = (body: ProjectedBody) =>
+            options.focusOcclusionDepth === null || body === focusedBody || body.z <= options.focusOcclusionDepth;
+
+        let focusedLayerDrawn = false;
+        const drawFocusedLayerAfter = (body: ProjectedBody) => {
+            if (!options.drawFocusedLayer || focusedLayerDrawn || body !== focusedBody) return;
+            options.drawFocusedLayer();
+            focusedLayerDrawn = true;
         };
 
         for (const body of bodies) {
-            if (body.z < 0) drawBody(body);
+            if (body.z < 0 && bodyPassesFocusOcclusion(body)) {
+                drawBody(body);
+                drawFocusedLayerAfter(body);
+            }
         }
 
-        drawSun(context, {
-            x: centerX,
-            y: centerY,
-            scale: renderedSunScale * focusedSunBridgeScale ** 2,
-            opacity:
-                localDetailOpacity * introSunOpacity * (focusedSun ? 1 - focusedSunDetailReveal : 1 - planetSceneFocus),
-            seconds,
-            reducedMotion,
-            planetRotationOffset: options.planetRotationOffset,
-            planetTiltOffset: options.planetTiltOffset,
-        });
-        if (hoveredSun && showHoverVisuals) {
-            context.globalAlpha = localDetailOpacity;
-            context.fillStyle = '#ebdbb2';
-            context.font = 'bold 12px "DM Mono", monospace';
-            const bracketOffset = 54 * Math.max(0.55, Math.sqrt(renderedSunScale));
-            context.fillText('[', centerX - bracketOffset, centerY);
-            context.fillText(']', centerX + bracketOffset, centerY);
-            context.globalAlpha = 1;
+        const surroundingSunReveal = 1 - planetSceneFocus * 0.38;
+        const sunDetailReveal = detailedSun ? smoothstep((planetSceneFocus - 0.08) / 0.72) : 0;
+        const sunOcclusionReveal = surroundingSunReveal + sunDetailReveal * (1 - surroundingSunReveal);
+        const sunPassesFocusOcclusion =
+            options.focusOcclusionDepth === null || focusedSun || 0 <= options.focusOcclusionDepth;
+        if (sunPassesFocusOcclusion) {
+            drawSun(context, {
+                x: sunX,
+                y: sunY,
+                scale: renderedSunScale * options.surroundingSunScale ** 2 * focusedSunBridgeScale ** 2,
+                opacity:
+                    localDetailOpacity *
+                    introSunOpacity *
+                    (focusedSun ? 1 - focusedSunDetailReveal : sunOcclusionReveal),
+                seconds,
+                reducedMotion,
+                planetRotationOffset: options.planetRotationOffset,
+                planetTiltOffset: options.planetTiltOffset,
+                detailReveal: sunDetailReveal,
+            });
+            if (hoveredSun && showHoverVisuals) {
+                context.globalAlpha = localDetailOpacity;
+                context.fillStyle = '#ebdbb2';
+                context.font = 'bold 12px "DM Mono", monospace';
+                const bracketOffset = 54 * Math.max(0.55, Math.sqrt(renderedSunScale));
+                context.fillText('[', sunX - bracketOffset, sunY);
+                context.fillText(']', sunX + bracketOffset, sunY);
+                context.globalAlpha = 1;
+            }
         }
 
         for (const body of bodies) {
-            if (body.z >= 0) drawBody(body);
+            if (body.z >= 0 && bodyPassesFocusOcclusion(body)) {
+                drawBody(body);
+                drawFocusedLayerAfter(body);
+            }
         }
+        if (options.drawFocusedLayer && !focusedLayerDrawn) options.drawFocusedLayer();
     }
 
     private drawPlanetShadow(
         context: CanvasRenderingContext2D,
         body: ProjectedBody,
+        apparentBodyScale: number,
+        detailAppearanceReveal: number,
         options: {
+            focusedPlanet: Planet | null;
             solarSystemScale: number;
             viewportGlyphScale: number;
             innerPlanetScale: number;
@@ -573,19 +684,42 @@ export class SolarSystemSceneRenderer {
         if (body.planet.easterEgg) return;
         const glyphScale =
             Math.max(0.3, Math.sqrt(options.solarSystemScale)) *
-            solarBodyViewportScale(body.planet.name, options.viewportGlyphScale, options.innerPlanetScale);
+            solarBodyViewportScale(body.planet.name, options.viewportGlyphScale, options.innerPlanetScale) *
+            apparentBodyScale;
         const isGiant =
             body.planet.name === 'Jupiter' || body.planet.name === 'Saturn' || body.planet.name === 'Uranus';
         const radiusX = (isGiant ? 16 : 11) * glyphScale;
         const radiusY = (isGiant ? 11 : 8) * glyphScale;
-        context.beginPath();
-        context.ellipse(body.x, body.y, radiusX, radiusY, 0, 0, Math.PI * 2);
         // This ellipse is an opaque occlusion mask for the orbit marks and
         // particles behind a planet. Match the page's local background glow so
         // the mask does not appear as a second, darker planet-sized circle.
-        context.fillStyle = sceneMaskColor(body.x, body.y, options.width, options.height, options.isOgPreview);
-        context.globalAlpha = body.reveal * options.localDetailOpacity * (1 - options.planetSceneFocus);
-        context.fill();
+        const surroundingBodyReveal = 1 - options.planetSceneFocus * 0.68;
+        const occlusionReveal = surroundingBodyReveal + detailAppearanceReveal * (1 - surroundingBodyReveal);
+        const maskColor =
+            options.planetSceneFocus > 0.45
+                ? '#1d2021'
+                : sceneMaskColor(body.x, body.y, options.width, options.height, options.isOgPreview);
+        drawSoftSceneMask(context, {
+            x: body.x,
+            y: body.y,
+            radiusX,
+            radiusY,
+            opacity: body.reveal * options.localDetailOpacity * occlusionReveal,
+            color: maskColor,
+        });
+        if (detailAppearanceReveal > 0) {
+            // Transition from the overview's glow-aware mask to the exact
+            // close-up background instead of carrying the warm tint into the
+            // planet's interior.
+            drawSoftSceneMask(context, {
+                x: body.x,
+                y: body.y,
+                radiusX,
+                radiusY,
+                opacity: body.reveal * options.localDetailOpacity * detailAppearanceReveal,
+                color: maskColor,
+            });
+        }
         context.globalAlpha = 1;
     }
 
@@ -593,7 +727,9 @@ export class SolarSystemSceneRenderer {
         context: CanvasRenderingContext2D,
         body: ProjectedBody,
         foreground: boolean,
+        apparentBodyScale: number,
         options: {
+            focusedPlanet: Planet | null;
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
             moonElapsedDays: number;
@@ -601,14 +737,16 @@ export class SolarSystemSceneRenderer {
             viewportGlyphScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            focusOcclusionDepth: number | null;
         },
     ) {
         const system = PLANETARY_MOON_SYSTEMS[body.planet.name];
         if (!system || body.reveal < 0.35) return;
-        const opacity = options.localDetailOpacity * (1 - options.planetSceneFocus) * body.reveal;
+        const surroundingBodyReveal = 1 - options.planetSceneFocus * 0.68;
+        const opacity = options.localDetailOpacity * surroundingBodyReveal * body.reveal;
         if (opacity <= 0.01) return;
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[body.planet.name];
-        const systemGlyphSize = Math.max(8, 9.5 * Math.sqrt(options.solarSystemScale));
+        const systemGlyphSize = Math.max(8, 9.5 * Math.sqrt(options.solarSystemScale)) * apparentBodyScale;
         context.font = `bold ${systemGlyphSize * options.viewportGlyphScale}px "DM Mono", monospace`;
 
         for (let moonIndex = 0; moonIndex < system.radii.length; moonIndex++) {
@@ -630,6 +768,7 @@ export class SolarSystemSceneRenderer {
             this.moonWorld.y = body.world.y + this.moonOffset.y;
             this.moonWorld.z = body.world.z + this.moonOffset.z;
             const moon = options.cameraTransform(this.moonWorld, this.moonProjection);
+            if (options.focusOcclusionDepth !== null && moon.z > options.focusOcclusionDepth) continue;
             if (moon.z >= body.z !== foreground) continue;
 
             context.globalAlpha = opacity;

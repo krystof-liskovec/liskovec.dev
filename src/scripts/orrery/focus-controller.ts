@@ -27,7 +27,6 @@ export class FocusController {
         this.state.latitude = 0;
         this.state.resetting = false;
         this.clearCandidate();
-        this.system.classList.add('is-object-focus');
         if (this.returnButton) {
             this.returnButton.hidden = false;
             this.returnButton.classList.remove('is-transitioning');

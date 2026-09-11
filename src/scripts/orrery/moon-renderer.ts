@@ -1,4 +1,5 @@
 import { focusedRotation } from './planet-textures';
+import { drawSoftSceneMask } from './scene-mask';
 
 type MoonRenderOptions = {
     centerX: number;
@@ -10,6 +11,7 @@ type MoonRenderOptions = {
     rotationHours: number;
     reducedMotion: boolean;
     compact: boolean;
+    maskColor: string;
 };
 
 type SurfaceFeature = {
@@ -60,6 +62,7 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
         rotationHours,
         reducedMotion,
         compact,
+        maskColor,
     } = options;
     const columns = compact ? 39 : 53;
     const rows = compact ? 21 : 29;
@@ -70,6 +73,15 @@ export function drawFocusedMoon(context: CanvasRenderingContext2D, options: Moon
     const spin = focusedRotation('Moon', rotationHours, reducedMotion) + inspectionLongitude;
     const latitudeCosine = Math.cos(inspectionLatitude);
     const latitudeSine = Math.sin(inspectionLatitude);
+
+    drawSoftSceneMask(context, {
+        x: centerX,
+        y: centerY,
+        radiusX: columns * characterWidth * 0.505,
+        radiusY: rows * lineHeight * 0.505,
+        opacity: reveal,
+        color: maskColor,
+    });
 
     for (let row = 0; row < rows; row++) {
         const normalizedY = (row + 0.5 - rows / 2) / (rows / 2);

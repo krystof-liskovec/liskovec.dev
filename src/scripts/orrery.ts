@@ -1,4 +1,4 @@
-import { PLANETS } from './orrery/catalog';
+import { MAJOR_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
 import type { MajorMoon } from './orrery/catalog';
 import { drawLocalStarfield } from './orrery/local-background-renderer';
 import { FocusController } from './orrery/focus-controller';
@@ -7,7 +7,16 @@ import { galacticPatternPhase, moveGalacticMaterial } from './orrery/galactic-si
 import { GalaxyObjectRenderer, drawSolMarker } from './orrery/galaxy-object-renderer';
 import { bindOrreryInteractions } from './orrery/interactions';
 import { OrreryIntroController } from './orrery/intro-controller';
-import { DEG, J2000, smoothstep, solveKeplerOrbit, visualTransitionProgress } from './orrery/math';
+import {
+    DEG,
+    J2000,
+    rotateX,
+    rotateY,
+    rotateZ,
+    smoothstep,
+    solveKeplerOrbit,
+    visualTransitionProgress,
+} from './orrery/math';
 import {
     createRuntimeState,
     getGalacticElapsedYears as resolveGalacticElapsedYears,
@@ -19,13 +28,15 @@ import { GALACTIC_SOL } from './orrery/galaxy-model';
 import { createRenderMetrics } from './orrery/render-metrics';
 import { SolarSystemModel } from './orrery/solar-system-model';
 import { SolarSystemSceneRenderer } from './orrery/solar-system-scene';
+import { drawSunGlow } from './orrery/sun-renderer';
 import { formatGalacticEpoch, formatLocalDateTime, signedDegrees } from './orrery/time-formatters';
 import { createTypewriter } from './orrery/typewriter';
 import type { FocusTarget, Vec3 } from './orrery/types';
 import type { WebGLParticleRenderer } from './orrery/webgl-particle-renderer';
 
 type DrawGalaxyBackdrop = typeof import('./orrery/background-renderer').drawGalaxyBackdrop;
-type DrawGalaxyGlow = typeof import('./orrery/galaxy-glow-renderer').drawGalaxyGlow;
+type DrawGalaxyArmsGlow = typeof import('./orrery/background-renderer').drawGalaxyArmsGlow;
+type DrawGalaxyCoreGlow = typeof import('./orrery/background-renderer').drawGalaxyCoreGlow;
 type DrawFocusScene = typeof import('./orrery/focus-scene').drawFocusScene;
 
 // Keep the scene fluid on high-refresh displays while bounding work above 120Hz.
@@ -39,6 +50,9 @@ const PARTICLE_RENDERER_DELAY = 2200;
 // Rendering at a phone's full 3x/4x DPR multiplies both glyph rasterization and
 // canvas compositing cost without adding useful detail to the pixelated output.
 const MAX_CANVAS_DPR = 2;
+const EARTH_MOON_PERIOD_DAYS = 27.321661;
+// Keep the ISS animation legible at 6x slower than its real orbital period.
+const ISS_ORBIT_PERIOD_DAYS = (92.68 / 1440) * 6;
 
 const canvasElement = document.querySelector<HTMLCanvasElement>('#solar-canvas');
 const gpuCanvasElement = document.querySelector<HTMLCanvasElement>('#solar-gpu-canvas');
@@ -98,12 +112,26 @@ if (canvasElement && systemElement && canvasContext) {
     let renderTimer = 0;
     let galaxyBackdropCacheValid = false;
     let lastGalaxyBackdropAt = -Infinity;
-    let lastSceneGlowX = '';
-    let lastSceneGlowY = '';
+    let objectFocusClassActive = false;
+    let sceneExpansionClassActive = false;
     const renderMetricsController = createRenderMetrics(canvas, system, () => {
         galaxyBackdropCacheValid = false;
     });
     const { metrics: renderMetrics, update: updateRenderMetrics } = renderMetricsController;
+    const syncSceneViewportBleed = () => {
+        if (!system.classList.contains('is-canvas-expanded')) {
+            system.style.removeProperty('--focus-viewport-bleed-top');
+            system.style.removeProperty('--focus-viewport-bleed-bottom');
+            return;
+        }
+        const bounds = system.getBoundingClientRect();
+        const viewportHeight = document.documentElement.clientHeight;
+        system.style.setProperty('--focus-viewport-bleed-top', `${Math.max(0, Math.ceil(bounds.top))}px`);
+        system.style.setProperty(
+            '--focus-viewport-bleed-bottom',
+            `${Math.max(0, Math.ceil(viewportHeight - bounds.bottom))}px`,
+        );
+    };
     let systemVisible = true;
     let pageVisible = !document.hidden;
     const focusedMoonEpoch = Date.now();
@@ -114,6 +142,8 @@ if (canvasElement && systemElement && canvasContext) {
     const finalSolOffsetScratch = { x: 0, y: 0 };
     const currentSolOffsetScratch = { x: 0, y: 0 };
     const simulatedSolScratch = { x: 0, y: 0 };
+    const focusedChildOffsetScratch: Vec3 = { x: 0, y: 0, z: 0 };
+    const focusedChildOrbitScratch = { angle: 0, distance: 1 };
     const solarSystemModel = new SolarSystemModel();
     const { bodies, farMarks, nearMarks } = solarSystemModel;
     const galaxyObjectRenderer = new GalaxyObjectRenderer();
@@ -134,15 +164,17 @@ if (canvasElement && systemElement && canvasContext) {
     };
 
     let galaxyBackdropRenderer: DrawGalaxyBackdrop | null = null;
-    let galaxyGlowRenderer: DrawGalaxyGlow | null = null;
+    let galaxyArmsGlowRenderer: DrawGalaxyArmsGlow | null = null;
+    let galaxyCoreGlowRenderer: DrawGalaxyCoreGlow | null = null;
     let galaxyBackdropLoadPromise: Promise<DrawGalaxyBackdrop | null> | null = null;
     const loadGalaxyBackdrop = () => {
         if (galaxyBackdropRenderer) return Promise.resolve(galaxyBackdropRenderer);
         if (!galaxyBackdropLoadPromise) {
             galaxyBackdropLoadPromise = import('./orrery/background-renderer')
-                .then(({ drawGalaxyBackdrop, drawGalaxyGlow }) => {
+                .then(({ drawGalaxyArmsGlow, drawGalaxyBackdrop, drawGalaxyCoreGlow }) => {
                     galaxyBackdropRenderer = drawGalaxyBackdrop;
-                    galaxyGlowRenderer = drawGalaxyGlow;
+                    galaxyArmsGlowRenderer = drawGalaxyArmsGlow;
+                    galaxyCoreGlowRenderer = drawGalaxyCoreGlow;
                     scheduleRender();
                     return drawGalaxyBackdrop;
                 })
@@ -305,9 +337,35 @@ if (canvasElement && systemElement && canvasContext) {
             scheduleRender();
             return;
         }
+        const frameDelta = Math.min(40, lastFrameAt ? frameTime - lastFrameAt : 16.67);
+        lastFrameAt = frameTime;
+        // Scene expansion toggles the canvas bleed class. Apply that state
+        // before reading the canvas bounds so the first frame of every zoom
+        // transition uses one coherent origin instead of painting once with
+        // the previous geometry.
+        focusController.update(frameDelta, reducedMotion);
+        // Do not toggle this class in the pointer event that begins focus. Its
+        // wider CSS canvas would stretch the old backing bitmap until this RAF.
+        // Changing it here lets resize and redraw happen in the same paint.
+        system.classList.toggle('is-object-focus', Boolean(objectFocus.target));
+        system.classList.toggle(
+            'is-canvas-expanded',
+            Boolean(objectFocus.target) || cosmicZoom.current > 0.001 || cosmicZoom.target > 0.001,
+        );
+        const nextObjectFocusClassActive = system.classList.contains('is-object-focus');
+        const nextSceneExpansionClassActive = system.classList.contains('is-canvas-expanded');
+        if (
+            renderMetrics.dirty ||
+            nextObjectFocusClassActive !== objectFocusClassActive ||
+            nextSceneExpansionClassActive !== sceneExpansionClassActive
+        ) {
+            syncSceneViewportBleed();
+            updateRenderMetrics();
+        }
+        objectFocusClassActive = nextObjectFocusClassActive;
+        sceneExpansionClassActive = nextSceneExpansionClassActive;
         // The bitmap has an overflow-safe bleed around the hero, while all
         // projection and scale math remains tied to the original system box.
-        if (renderMetrics.dirty) updateRenderMetrics();
         const {
             width,
             height,
@@ -321,6 +379,9 @@ if (canvasElement && systemElement && canvasContext) {
             renderTop,
             renderRight,
             renderBottom,
+            starfieldBleedX,
+            starfieldBleedTop,
+            starfieldBleedBottom,
         } = renderMetrics;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
@@ -383,9 +444,6 @@ if (canvasElement && systemElement && canvasContext) {
         pointer.x += (pointer.targetX - pointer.x) * 0.055;
         pointer.y += (pointer.targetY - pointer.y) * 0.055;
         const seconds = frameTime / 1000;
-        const frameDelta = Math.min(40, lastFrameAt ? frameTime - lastFrameAt : 16.67);
-        lastFrameAt = frameTime;
-        focusController.update(frameDelta, reducedMotion);
         cosmicZoom.current += (cosmicZoom.target - cosmicZoom.current) * (reducedMotion ? 1 : 0.055);
         const outwardZoom = Math.max(0, cosmicZoom.current);
         const focusedPlanet =
@@ -393,13 +451,32 @@ if (canvasElement && systemElement && canvasContext) {
                 ? (PLANETS.find((planet) => planet.name === objectFocus.target?.name) ?? null)
                 : null;
         const focusedSun = objectFocus.target?.kind === 'star';
+        const focusedComet = objectFocus.target?.kind === 'comet';
         // Exit completes at 6%, so map that outgoing tail to an exact zero. This
         // keeps the final world scale, centering, and scene opacity continuous
         // when focus clears.
         const visualFocusProgress = visualTransitionProgress(objectFocus.progress, objectFocus.exiting);
         const localFocusProgress = visualFocusProgress;
-        const planetSceneFocus = focusedPlanet || focusedSun ? smoothstep(localFocusProgress) : 0;
+        const localSceneFocus = smoothstep((localFocusProgress - 0.06) / 0.94);
+        const planetSceneFocus = focusedPlanet || focusedSun || focusedComet ? localSceneFocus : 0;
         const localSphereGrowth = smoothstep((planetSceneFocus - 0.08) / 0.92) ** 1.45;
+        const childVisualProgress = objectFocus.child
+            ? visualTransitionProgress(objectFocus.childProgress, objectFocus.childExiting)
+            : 0;
+        const childSceneEase = smoothstep(childVisualProgress);
+        const childSceneGrowth = smoothstep((childSceneEase - 0.08) / 0.92) ** 1.45;
+        const childSceneScale = objectFocus.child ? 1 + childSceneGrowth * 2.4 : 1;
+        // Keep the parent solar scene on the parent focus rotation. Child
+        // turns are applied only to the child anchor/detail view below, so
+        // rotating a moon does not rotate its planet with it.
+        const focusCameraLongitude = objectFocus.longitude * planetSceneFocus;
+        const focusCameraLatitude = objectFocus.latitude * planetSceneFocus;
+        const childFocusCameraLongitude =
+            (objectFocus.longitude + (objectFocus.child ? objectFocus.childLongitude * childSceneEase : 0)) *
+            planetSceneFocus;
+        const childFocusCameraLatitude =
+            (objectFocus.latitude + (objectFocus.child ? objectFocus.childLatitude * childSceneEase : 0)) *
+            planetSceneFocus;
         const focusedSunDetailReveal = focusedSun ? smoothstep((planetSceneFocus - 0.06) / 0.3) : 0;
         const focusedSunBridgeScale = focusedSun ? (0.24 + localSphereGrowth * 0.76) / 0.24 : 1;
         const galaxyProgress = smoothstep((outwardZoom - 0.24) / 0.76);
@@ -407,14 +484,19 @@ if (canvasElement && systemElement && canvasContext) {
         const localDetailOpacity = 1 - smoothstep((outwardZoom - 0.2) / 0.26);
         const solarSystemScale = Math.pow(0.055, Math.min(1, outwardZoom / 0.7));
         const renderedSunScale = solarSystemScale * viewportSunScale ** 2;
-        // Keep the page-level halo coupled to an actually visible Sun. A
-        // planet close-up, moon/ISS scene, or the Milky Way must reveal the
-        // plain background underneath its own artwork.
-        system.classList.toggle(
-            'is-sun-visible',
-            intro.sun > 0.001 && (focusedSun || (!objectFocus.target && localDetailOpacity > 0.01)),
-        );
-        updateSolarCamera({ camera, pointer, seconds, frameTime, frameDelta, reducedMotion });
+        // Resume the ambient camera as soon as the return transition starts,
+        // letting its motion blend into the zoom-out instead of starting only
+        // after the focused scene has disappeared.
+        const pausePassiveCameraRotation = Boolean(objectFocus.target && !objectFocus.exiting);
+        updateSolarCamera({
+            camera,
+            pointer,
+            seconds,
+            frameTime,
+            frameDelta,
+            reducedMotion,
+            pausePassiveRotation: pausePassiveCameraRotation,
+        });
         const revealProgress = easterEgg.unlocked
             ? Math.min(1, (frameTime - easterEgg.revealedAt) / (reducedMotion ? 1 : 1200))
             : 0;
@@ -447,23 +529,20 @@ if (canvasElement && systemElement && canvasContext) {
         const viewportCenterY = compactViewport
             ? height * 0.38
             : Math.max(height * 0.18, Math.min(height * 0.5, desktopCenterY));
-        // The glow pseudo-element extends by the canvas bleed, so use its local
-        // pixel coordinates instead of percentages based on the larger box.
-        const sceneGlowX = `${viewportCenterX}px`;
-        const sceneGlowY = `${viewportCenterY}px`;
-        if (sceneGlowX !== lastSceneGlowX || sceneGlowY !== lastSceneGlowY) {
-            system.style.setProperty('--scene-glow-x', sceneGlowX);
-            system.style.setProperty('--scene-glow-y', sceneGlowY);
-            lastSceneGlowX = sceneGlowX;
-            lastSceneGlowY = sceneGlowY;
-        }
         const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
         const finalGalaxyRadius = Math.min(galaxyViewportWidth * 0.48, galaxyViewportHeight * 0.62);
         const distantGalaxyRadius = Math.max(galaxyViewportWidth, galaxyViewportHeight) * 2.2;
         const galaxyRadius = finalGalaxyRadius + (distantGalaxyRadius - finalGalaxyRadius) * (1 - galaxyProgress) ** 2;
-        updateGalaxyCamera({ galaxyCamera, solarCamera: camera, frameTime, frameDelta, reducedMotion });
+        updateGalaxyCamera({
+            galaxyCamera,
+            solarCamera: camera,
+            frameTime,
+            frameDelta,
+            reducedMotion,
+            pausePassiveRotation: pausePassiveCameraRotation,
+        });
         updateFocusRotation(objectFocus, frameTime);
         // Cache the camera transform once per frame. Galactic layers contain
         // thousands of glyphs, so repeating trigonometry for every point is a
@@ -504,7 +583,14 @@ if (canvasElement && systemElement && canvasContext) {
         const backgroundSceneOpacity =
             objectFocus.target?.kind === 'galactic' ? 1 - smoothstep((visualFocusProgress - 0.04) / 0.42) : 1;
         const galaxyAlpha = galaxyVisibility * backgroundSceneOpacity;
-        const localSkyOpacity = (1 - smoothstep((cosmicZoom.current - 0.06) / 0.24)) * backgroundSceneOpacity;
+        // Keep the local solar-system stars present but subordinate to the
+        // planets and the later Milky Way layers.
+        const solarSkyOpacity = (1 - smoothstep((cosmicZoom.current - 0.06) / 0.24)) * 0.84;
+        // Keep a sparse field of foreground stars behind the Milky Way. The
+        // galaxy has its own stars in the disk and arms, but those do not fill
+        // the surrounding sky once the local field fades out.
+        const galacticSkyOpacity = smoothstep((outwardZoom - 0.28) / 0.36) * 0.28;
+        const localSkyOpacity = Math.max(solarSkyOpacity, galacticSkyOpacity) * backgroundSceneOpacity;
         if (
             !galaxyBackdropRenderer &&
             (cosmicZoom.current > 0.05 || cosmicZoom.target > 0.05 || objectFocus.target?.kind === 'galactic')
@@ -515,8 +601,14 @@ if (canvasElement && systemElement && canvasContext) {
         const baseWorldScale =
             (width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50)) *
             (isOgPreview ? 1.1 : 1);
-        const focusedSceneScale = 1 + planetSceneFocus * 13;
-        const worldScale = baseWorldScale * (1 - plutoReveal * 0.11) * solarSystemScale * focusedSceneScale;
+        // Move the system camera toward every local focus target at the same
+        // rate. The detailed focused sphere is scaled independently in
+        // focus-scene, but its surrounding scene still needs the full camera
+        // approach so outer planets do not appear to enlarge in place.
+        const focusedSceneScaleTarget = 25;
+        const focusedSceneScale =
+            focusedPlanet || focusedSun || focusedComet ? 1 + planetSceneFocus * (focusedSceneScaleTarget - 1) : 1;
+        let worldScale = baseWorldScale * (1 - plutoReveal * 0.11) * solarSystemScale * focusedSceneScale;
         const cameraDistance = 145;
         const cameraRollCosine = Math.cos(camera.renderedRoll);
         const cameraRollSine = Math.sin(camera.renderedRoll);
@@ -524,6 +616,10 @@ if (canvasElement && systemElement && canvasContext) {
         const cameraPitchSine = Math.sin(camera.renderedPitch);
         const cameraYawCosine = Math.cos(camera.renderedYaw);
         const cameraYawSine = Math.sin(camera.renderedYaw);
+        const focusYawCosine = Math.cos(-focusCameraLongitude);
+        const focusYawSine = Math.sin(-focusCameraLongitude);
+        const focusPitchCosine = Math.cos(focusCameraLatitude);
+        const focusPitchSine = Math.sin(focusCameraLatitude);
         const planetRotationOffset = camera.renderedRoll + 12 * DEG;
         const planetTiltOffset = camera.renderedPitch - 58 * DEG;
         const planetYawOffset = camera.renderedYaw;
@@ -535,18 +631,105 @@ if (canvasElement && systemElement && canvasContext) {
             const pitchedZ = rolledY * cameraPitchSine + world.z * cameraPitchCosine;
             const yawedX = rolledX * cameraYawCosine + pitchedZ * cameraYawSine;
             const yawedZ = -rolledX * cameraYawSine + pitchedZ * cameraYawCosine;
-            const perspective = cameraDistance / (cameraDistance - yawedZ);
-            target.x = yawedX * worldScale * perspective;
-            target.y = pitchedY * worldScale * perspective;
-            target.z = yawedZ;
+            // During local focus, the drag angles orbit the camera around the
+            // selected body. Applying that rotation after the normal solar
+            // camera keeps every orbit and neighbouring body in the same view.
+            const focusedX = yawedX * focusYawCosine + yawedZ * focusYawSine;
+            const focusedYawZ = -yawedX * focusYawSine + yawedZ * focusYawCosine;
+            const focusedY = pitchedY * focusPitchCosine - focusedYawZ * focusPitchSine;
+            const focusedZ = pitchedY * focusPitchSine + focusedYawZ * focusPitchCosine;
+            const perspective = cameraDistance / (cameraDistance - focusedZ);
+            target.x = focusedX * worldScale * perspective;
+            target.y = focusedY * worldScale * perspective;
+            target.z = focusedZ;
             target.scale = perspective;
             return target;
         };
+        const focusedCometOffset = focusedComet ? solarSystemRenderer.projectHalley(now, cameraProjection) : null;
+        let focusedPlanetCenterX = viewportCenterX;
+        let focusedPlanetCenterY = viewportCenterY;
         if (focusedPlanet) {
             const focusedOffset = solarSystemModel.projectFocusedPlanet(focusedPlanet, now, cameraProjection);
             const focusedCentering = 1 - (1 - planetSceneFocus) / focusedSceneScale;
             centerX += (viewportCenterX - (centerX + focusedOffset.x)) * focusedCentering;
             centerY += (viewportCenterY - (centerY + focusedOffset.y)) * focusedCentering;
+            focusedPlanetCenterX = centerX + focusedOffset.x;
+            focusedPlanetCenterY = centerY + focusedOffset.y;
+        } else if (focusedCometOffset) {
+            const focusedCentering = 1 - (1 - planetSceneFocus) / focusedSceneScale;
+            centerX += (viewportCenterX - (centerX + focusedCometOffset.x)) * focusedCentering;
+            centerY += (viewportCenterY - (centerY + focusedCometOffset.y)) * focusedCentering;
+        }
+        const focusedSunDistance = focusedPlanet ? solarSystemModel.focusedDistanceFromSun() : 0;
+        const focusedSunApparentScale = focusedPlanet
+            ? Math.max(0.62, Math.min(2.3, 24 / Math.max(1, focusedSunDistance)))
+            : 1;
+        const surroundingSunScale = 1 + (focusedSunApparentScale - 1) * planetSceneFocus;
+        const sunGlowScale =
+            (focusedSun
+                ? renderedSunScale + (Math.max(1.55, renderedSunScale) - renderedSunScale) * planetSceneFocus
+                : renderedSunScale) *
+            surroundingSunScale ** 2;
+        if (objectFocus.child && focusedPlanet) {
+            // Continue the parent camera's projection into the selected moon or
+            // station. Recompute that anchor from the live simulated orbit so
+            // the camera follows the object rather than the original click point.
+            const parentFocusScale = 0.1 + localSphereGrowth * 0.9;
+            const parentRows = width < 600 ? 19 : 25;
+            const parentFontSize = (width < 600 ? 10 : 12.5) * parentFocusScale;
+            const parentRadius = (parentRows * parentFontSize * 0.82) / 2;
+            const orientChildOffset = (inclination: number, node: number) => {
+                rotateX(focusedChildOffsetScratch, inclination, focusedChildOffsetScratch);
+                rotateZ(focusedChildOffsetScratch, node, focusedChildOffsetScratch);
+                rotateY(focusedChildOffsetScratch, -childFocusCameraLongitude, focusedChildOffsetScratch);
+                return rotateX(focusedChildOffsetScratch, childFocusCameraLatitude, focusedChildOffsetScratch);
+            };
+            focusedChildOffsetScratch.x = 0;
+            focusedChildOffsetScratch.y = 0;
+            focusedChildOffsetScratch.z = 0;
+            if (focusedPlanet.name === 'Earth' && objectFocus.child.id === 'moon') {
+                const moonRadius =
+                    width < 600
+                        ? Math.min(parentRadius * 1.55, width * 0.42)
+                        : Math.min(parentRadius * 1.65, height * 0.38);
+                const moonAngle = (focusedMoonElapsedDays / EARTH_MOON_PERIOD_DAYS) * Math.PI * 2;
+                focusedChildOffsetScratch.x = Math.cos(moonAngle) * moonRadius;
+                focusedChildOffsetScratch.y = Math.sin(moonAngle) * moonRadius;
+                orientChildOffset(50 * DEG, -18 * DEG);
+            } else if (focusedPlanet.name === 'Earth' && objectFocus.child.id === 'iss') {
+                const issAngle =
+                    1.2 +
+                    (reducedMotion
+                        ? 0
+                        : ((focusedMoonElapsedDays % ISS_ORBIT_PERIOD_DAYS) / ISS_ORBIT_PERIOD_DAYS) * Math.PI * 2);
+                focusedChildOffsetScratch.x = Math.cos(issAngle) * parentRadius * 1.13;
+                focusedChildOffsetScratch.y = Math.sin(issAngle) * parentRadius * 1.13;
+                orientChildOffset(44 * DEG, 24 * DEG);
+            } else {
+                const moonSystem = MAJOR_MOON_SYSTEMS[focusedPlanet.name];
+                const moon = moonSystem?.moons.find((candidate) => candidate.name === objectFocus.child?.name);
+                if (moon && moonSystem) {
+                    const orbit = solveFocusedMoonOrbit(moon, focusedChildOrbitScratch);
+                    const radius = parentRadius * moon.radius * orbit.distance;
+                    focusedChildOffsetScratch.x = Math.cos(orbit.angle) * radius;
+                    focusedChildOffsetScratch.y = Math.sin(orbit.angle) * radius;
+                    rotateX(focusedChildOffsetScratch, moon.inclination, focusedChildOffsetScratch);
+                    rotateZ(focusedChildOffsetScratch, moon.node, focusedChildOffsetScratch);
+                    rotateX(focusedChildOffsetScratch, moonSystem.inclination, focusedChildOffsetScratch);
+                    rotateZ(focusedChildOffsetScratch, moonSystem.node, focusedChildOffsetScratch);
+                    rotateY(focusedChildOffsetScratch, -childFocusCameraLongitude, focusedChildOffsetScratch);
+                    rotateX(focusedChildOffsetScratch, childFocusCameraLatitude, focusedChildOffsetScratch);
+                }
+            }
+            const childAnchorX = focusedPlanetCenterX + focusedChildOffsetScratch.x;
+            const childAnchorY = focusedPlanetCenterY + focusedChildOffsetScratch.y;
+            const childCenterX = childAnchorX + (viewportCenterX - childAnchorX) * childSceneEase;
+            const childCenterY = childAnchorY + (viewportCenterY - childAnchorY) * childSceneEase;
+            worldScale *= childSceneScale;
+            centerX = childCenterX + (centerX - childAnchorX) * childSceneScale;
+            centerY = childCenterY + (centerY - childAnchorY) * childSceneScale;
+            objectFocus.child.originX = childAnchorX;
+            objectFocus.child.originY = childAnchorY;
         }
         const cameraTransform = (world: Vec3, target: ProjectedPoint): ProjectedPoint => {
             cameraProjection(world, target);
@@ -554,6 +737,29 @@ if (canvasElement && systemElement && canvasContext) {
             target.y += centerY;
             return target;
         };
+        // Project local objects before compositing the glow and scene. This
+        // lets every layer use the same camera-space depth while a planet,
+        // moon, ISS, or comet is being inspected.
+        solarSystemModel.projectBodies({
+            cameraTransform,
+            now,
+            plutoUnlocked: easterEgg.unlocked,
+            plutoReveal,
+            introProgress: intro.bodies,
+        });
+        const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
+        const focusedBodyForOcclusion = focusedPlanet
+            ? (bodies.find((body) => body.planet === focusedPlanet) ?? null)
+            : null;
+        // Larger z values are closer to the viewer. Once the close-up is
+        // established, bodies in front of the focused depth are removed even
+        // when they are no longer screen-overlapping it. Bodies behind the
+        // focus remain as spatial context.
+        const focusOcclusionDepth =
+            planetSceneFocus > 0.15
+                ? (focusedBodyForOcclusion?.z ?? (focusedSun ? 0 : focusedComet ? projectedHalley.z : null))
+                : null;
+        const sunPassesFocusOcclusion = focusOcclusionDepth === null || focusedSun || 0 <= focusOcclusionDepth;
         const particleTransform = {
             centerX: centerX + canvasOriginX,
             centerY: centerY + canvasOriginY,
@@ -581,6 +787,23 @@ if (canvasElement && systemElement && canvasContext) {
             alpha: galaxyAlpha,
         };
 
+        const solarCameraLongitude = camera.renderedYaw + focusCameraLongitude;
+        const solarCameraLatitude = camera.renderedPitch - 58 * DEG + focusCameraLatitude;
+        const solarCameraRoll = camera.renderedRoll + 12 * DEG;
+        const galacticCameraLatitude = Math.asin(Math.max(-1, Math.min(1, 0.58 * galaxyCamera.tilt))) - Math.asin(0.58);
+        const targetStarfieldCameraLongitude = solarCameraLongitude * (1 - galaxyProgress);
+        const targetStarfieldCameraLatitude =
+            solarCameraLatitude * (1 - galaxyProgress) + galacticCameraLatitude * galaxyProgress;
+        const targetStarfieldCameraRoll =
+            solarCameraRoll * (1 - galaxyProgress) + galaxyCamera.rotation * galaxyProgress;
+        // Let the solar system turn fully while the distant starfield only
+        // acknowledges the movement. A partial turn keeps it alive without
+        // making it read as a physically accurate skybox.
+        const starfieldCameraInfluence = 0.2;
+        const starfieldCameraLongitude = targetStarfieldCameraLongitude * starfieldCameraInfluence;
+        const starfieldCameraLatitude = targetStarfieldCameraLatitude * starfieldCameraInfluence;
+        const starfieldCameraRoll = targetStarfieldCameraRoll * starfieldCameraInfluence;
+
         const drawGalaxy = (targetContext: CanvasRenderingContext2D) => {
             galaxyBackdropRenderer?.(targetContext, {
                 width,
@@ -604,13 +827,29 @@ if (canvasElement && systemElement && canvasContext) {
         };
 
         if (glowContext) {
-            galaxyGlowRenderer?.(glowContext, {
+            galaxyArmsGlowRenderer?.(glowContext, {
                 coreX: galaxyCoreX,
                 coreY: galaxyCoreY,
                 radius: galaxyRadius,
                 verticalProjection: galacticProjectedTilt,
                 rotation: galaxyCamera.rotation - patternPhase,
                 alpha: galaxyAlpha,
+            });
+            galaxyCoreGlowRenderer?.(glowContext, {
+                coreX: galaxyCoreX,
+                coreY: galaxyCoreY,
+                radius: galaxyRadius,
+                alpha: galaxyAlpha,
+            });
+            const surroundingSunGlowReveal = 1 - planetSceneFocus * 0.72;
+            drawSunGlow(glowContext, {
+                x: centerX,
+                y: centerY,
+                scale: sunGlowScale,
+                opacity:
+                    intro.sun *
+                    (focusedSun ? 1 : localDetailOpacity * surroundingSunGlowReveal) *
+                    (sunPassesFocusOcclusion ? 1 : 0),
             });
         }
 
@@ -619,13 +858,16 @@ if (canvasElement && systemElement && canvasContext) {
             height,
             pointerX: pointer.x,
             pointerY: pointer.y,
+            cameraLongitude: starfieldCameraLongitude,
+            cameraLatitude: starfieldCameraLatitude,
+            cameraRoll: starfieldCameraRoll,
             seconds,
             reducedMotion,
             opacity: localSkyOpacity * intro.stars,
-            renderLeft,
-            renderTop,
-            renderRight,
-            renderBottom,
+            renderLeft: -starfieldBleedX,
+            renderTop: -starfieldBleedTop,
+            renderRight: width + starfieldBleedX,
+            renderBottom: height + starfieldBleedBottom,
             pixelRatio: pixelWidth / renderWidth,
             particleRenderer: activeParticleRenderer,
         });
@@ -661,17 +903,11 @@ if (canvasElement && systemElement && canvasContext) {
             plutoReveal,
             localDetailOpacity,
             planetSceneFocus,
+            focusedPlanetName: focusedPlanet?.name ?? null,
+            focusOcclusionDepth,
             introProgress: intro.orbits,
             compact: width < 600,
         });
-        solarSystemModel.projectBodies({
-            cameraTransform,
-            now,
-            plutoUnlocked: easterEgg.unlocked,
-            plutoReveal,
-            introProgress: intro.bodies,
-        });
-        const projectedHalley = solarSystemRenderer.projectHalley(now, cameraTransform);
 
         const localPointerX = pointer.clientX - systemLeft;
         const localPointerY = pointer.clientY - systemTop;
@@ -728,6 +964,19 @@ if (canvasElement && systemElement && canvasContext) {
                 : currentFocusHit.hoveredSun;
         const hoveredGalacticObject =
             keyboardNavigation.mode === 'planet-selection' ? null : currentFocusHit.hoveredGalacticObject;
+        const visibleHoveredBody =
+            hoveredBody &&
+            (focusOcclusionDepth === null ||
+                hoveredBody === focusedBodyForOcclusion ||
+                hoveredBody.z <= focusOcclusionDepth)
+                ? hoveredBody
+                : null;
+        const visibleHoveredComet =
+            hoveredComet && (focusOcclusionDepth === null || focusedComet || projectedHalley.z <= focusOcclusionDepth)
+                ? hoveredComet
+                : null;
+        const visibleHoveredSun =
+            hoveredSun && (focusOcclusionDepth === null || focusedSun || 0 <= focusOcclusionDepth) ? hoveredSun : false;
         const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
         getFocusCandidateAt = (clientX, clientY) => {
             const hit = resolveHitAt(clientX - systemLeft, clientY - systemTop, true);
@@ -742,14 +991,44 @@ if (canvasElement && systemElement && canvasContext) {
         };
 
         activeFocusCandidate = createFocusCandidate({
-            hoveredBody,
-            hoveredComet,
-            hoveredSun,
+            hoveredBody: visibleHoveredBody,
+            hoveredComet: visibleHoveredComet,
+            hoveredSun: visibleHoveredSun,
             hoveredGalacticObject,
             sunX: centerX,
             sunY: centerY,
         });
 
+        const hasVisibleObjectFocus = Boolean(objectFocus.target && objectFocus.progress > 0.001);
+        const drawFocusLayer = () => {
+            if (!focusSceneRenderer) return;
+            activeFocusCandidate = focusSceneRenderer(context, {
+                width,
+                height,
+                objectFocus,
+                focusedPlanet,
+                projectedComet: projectedHalley,
+                bodies,
+                viewportCenterX,
+                viewportCenterY,
+                localSphereGrowth,
+                planetSceneFocus,
+                seconds,
+                rotationHours: elapsedRotationHours,
+                reducedMotion,
+                pointer,
+                camera,
+                isFullscreen,
+                localPointerX,
+                localPointerY,
+                showHoverVisuals,
+                keyboardSelectionId:
+                    keyboardNavigation.mode === 'child-selection' ? keyboardNavigation.selectedId : null,
+                solveMoonOrbit: solveFocusedMoonOrbit,
+                moonElapsedDays: focusedMoonElapsedDays,
+                childSceneScale,
+            });
+        };
         solarSystemRenderer.draw(context, {
             farMarks,
             nearMarks,
@@ -761,12 +1040,14 @@ if (canvasElement && systemElement && canvasContext) {
             focusedSun,
             focusedSunDetailReveal,
             focusedSunBridgeScale,
-            hoveredBody,
-            hoveredComet,
-            hoveredSun,
+            hoveredBody: visibleHoveredBody,
+            hoveredComet: visibleHoveredComet,
+            hoveredSun: visibleHoveredSun,
             showHoverVisuals,
             centerX,
             centerY,
+            sunX: centerX,
+            sunY: centerY,
             renderedSunScale,
             now,
             seconds,
@@ -774,6 +1055,7 @@ if (canvasElement && systemElement && canvasContext) {
             solarSystemScale,
             viewportGlyphScale,
             innerPlanetScale,
+            surroundingSunScale,
             compact: width < 600,
             localDetailOpacity,
             planetSceneFocus,
@@ -788,6 +1070,11 @@ if (canvasElement && systemElement && canvasContext) {
             isOgPreview,
             width,
             height,
+            focusOcclusionDepth,
+            focusedComet,
+            // Focused detail is composited after the whole solar system below,
+            // so no other body can cross in front of the object being viewed.
+            drawFocusedLayer: undefined,
         });
         galaxyObjectRenderer.draw(context, {
             width,
@@ -816,9 +1103,9 @@ if (canvasElement && systemElement && canvasContext) {
             drawHoverReadouts(context, {
                 width,
                 height,
-                hoveredBody,
-                hoveredComet,
-                hoveredSun,
+                hoveredBody: visibleHoveredBody,
+                hoveredComet: visibleHoveredComet,
+                hoveredSun: visibleHoveredSun,
                 hoveredGalacticObject,
                 sunX: centerX,
                 sunY: centerY,
@@ -826,33 +1113,9 @@ if (canvasElement && systemElement && canvasContext) {
             });
         }
 
-        if (objectFocus.target && objectFocus.progress > 0.001) {
-            if (focusSceneRenderer) {
-                activeFocusCandidate = focusSceneRenderer(context, {
-                    width,
-                    height,
-                    objectFocus,
-                    focusedPlanet,
-                    bodies,
-                    viewportCenterX,
-                    viewportCenterY,
-                    localSphereGrowth,
-                    planetSceneFocus,
-                    seconds,
-                    rotationHours: elapsedRotationHours,
-                    reducedMotion,
-                    pointer,
-                    camera,
-                    isFullscreen,
-                    localPointerX,
-                    localPointerY,
-                    showHoverVisuals,
-                    keyboardSelectionId:
-                        keyboardNavigation.mode === 'child-selection' ? keyboardNavigation.selectedId : null,
-                    solveMoonOrbit: solveFocusedMoonOrbit,
-                    moonElapsedDays: focusedMoonElapsedDays,
-                });
-            } else {
+        if (hasVisibleObjectFocus) {
+            if (focusSceneRenderer) drawFocusLayer();
+            else {
                 activeFocusCandidate = null;
                 void loadFocusScene();
             }

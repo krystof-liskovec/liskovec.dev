@@ -4,10 +4,10 @@ const onBlog = Astro.url.pathname.startsWith('/blog');
 ---
 
 <header class="site-header">
-    <div class="brand-lockup">
-        <a class="wordmark" href="/" aria-label="Kryštof Lískovec home"><span>/home/</span>krystof-liskovec</a>
+    <a class="brand-lockup" href="/" aria-label="Kryštof Lískovec home">
+        <span class="wordmark"><span>/home/</span>krystof-liskovec</span>
         <p class="eyebrow">devops · software developer</p>
-    </div>
+    </a>
     <nav aria-label="Primary navigation">
         <a href={onHomepage ? '#about' : '/#about'}>[ about ]</a>
         <a

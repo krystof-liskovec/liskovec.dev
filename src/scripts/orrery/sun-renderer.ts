@@ -1,4 +1,5 @@
 import { decorativeRotation, planetSurfaceColor, planetSurfaceGlyph, sunSurfaceLight } from './planet-textures';
+import { drawSoftSceneMask } from './scene-mask';
 
 type SunRenderOptions = {
     x: number;
@@ -9,13 +10,17 @@ type SunRenderOptions = {
     reducedMotion: boolean;
     planetRotationOffset: number;
     planetTiltOffset: number;
+    detailReveal?: number;
+    maskColor?: string;
 };
 
 const SURFACE_COLUMNS = 17;
 const SURFACE_ROW_WIDTHS = [7, 13, 15, 17, 17, 17, 15, 13, 7];
+const DETAILED_SURFACE_COLUMNS = 33;
+const DETAILED_SURFACE_ROW_WIDTHS = [9, 15, 21, 25, 27, 29, 31, 33, 33, 33, 31, 29, 27, 25, 21, 15, 9];
 // Match the center of the scene's subtle orange glow. The fill still acts as
 // an opaque occlusion mask, but no longer reads as a darker patch behind Sol.
-const SUN_MASK_COLOR = '#2b2621';
+export const SUN_MASK_COLOR = '#2b2621';
 const SUN_CAMERA_SURFACE_INFLUENCE = 0.35;
 const SUN_CAMERA_SURFACE_SPEED = 2.4;
 
@@ -52,6 +57,57 @@ type SunAtmosphereOptions = {
     detailed: boolean;
 };
 
+const SUN_GLOW_TEXTURE_SIZE = 256;
+const SUN_GLOW_TEXTURE_EXTENT = 1.5;
+let sunGlowTexture: HTMLCanvasElement | null = null;
+
+const createSunGlowTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SUN_GLOW_TEXTURE_SIZE;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    const unit = SUN_GLOW_TEXTURE_SIZE / (SUN_GLOW_TEXTURE_EXTENT * 2);
+    context.translate(SUN_GLOW_TEXTURE_SIZE / 2, SUN_GLOW_TEXTURE_SIZE / 2);
+    context.scale(unit, unit);
+    const glow = context.createRadialGradient(0, 0, 0, 0, 0, 1.25);
+    glow.addColorStop(0, 'rgba(214, 93, 14, 0.13)');
+    glow.addColorStop(0.2, 'rgba(245, 154, 35, 0.095)');
+    glow.addColorStop(0.5, 'rgba(255, 195, 77, 0.04)');
+    glow.addColorStop(0.8, 'rgba(168, 153, 132, 0.012)');
+    glow.addColorStop(1, 'rgba(168, 153, 132, 0)');
+    context.fillStyle = glow;
+    context.fillRect(-1.25, -1.25, 2.5, 2.5);
+    return canvas;
+};
+
+/** Cached diffuse light that follows Sol's projected canvas position. */
+export function drawSunGlow(
+    context: CanvasRenderingContext2D,
+    options: { x: number; y: number; scale: number; opacity: number },
+) {
+    if (options.opacity <= 0.001 || options.scale <= 0) return;
+    sunGlowTexture ??= createSunGlowTexture();
+    if (!sunGlowTexture) return;
+    const fontSize = 8.9 * Math.max(0.3, Math.sqrt(options.scale));
+    const radiusX = 17 * fontSize * 0.46 * 0.5;
+    const radiusY = (9 * fontSize * 0.78) / 2;
+    context.save();
+    context.globalAlpha = options.opacity * 0.72;
+    context.imageSmoothingEnabled = true;
+    context.translate(options.x, options.y);
+    // Keep the diffuse layer broad enough to reach the asteroid belt and the
+    // inner Jupiter lane, matching the former scene-level halo's footprint.
+    context.scale(radiusX * 8.2, radiusY * 8.2);
+    context.drawImage(
+        sunGlowTexture,
+        -SUN_GLOW_TEXTURE_EXTENT,
+        -SUN_GLOW_TEXTURE_EXTENT,
+        SUN_GLOW_TEXTURE_EXTENT * 2,
+        SUN_GLOW_TEXTURE_EXTENT * 2,
+    );
+    context.restore();
+}
+
 // A restrained, illustrative corona.
 // Fixed samples keep the atmosphere stable between frames; motion only gently
 // changes streamer length, with no random flickering.
@@ -86,11 +142,30 @@ export function drawSunAtmosphere(context: CanvasRenderingContext2D, options: Su
 }
 
 export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOptions) {
-    const { x, y, scale, opacity, seconds, reducedMotion, planetRotationOffset, planetTiltOffset } = options;
+    const {
+        x,
+        y,
+        scale,
+        opacity,
+        seconds,
+        reducedMotion,
+        planetRotationOffset,
+        planetTiltOffset,
+        detailReveal = 0,
+    } = options;
     if (opacity <= 0.001) return;
+    if (detailReveal > 0 && detailReveal < 1) {
+        drawSun(context, { ...options, opacity: opacity * (1 - detailReveal), detailReveal: 0 });
+        drawSun(context, { ...options, opacity: opacity * detailReveal, detailReveal: 1 });
+        return;
+    }
+    const detailed = detailReveal >= 1;
 
     const pulse = reducedMotion ? 1 : 1 + Math.sin(seconds * 1.35) * 0.018;
-    const fontSize = 8.9 * pulse * Math.max(0.3, Math.sqrt(scale));
+    const surfaceColumns = detailed ? DETAILED_SURFACE_COLUMNS : SURFACE_COLUMNS;
+    const surfaceRowWidths = detailed ? DETAILED_SURFACE_ROW_WIDTHS : SURFACE_ROW_WIDTHS;
+    const detailDensity = surfaceColumns / SURFACE_COLUMNS;
+    const fontSize = (8.9 * pulse * Math.max(0.3, Math.sqrt(scale))) / detailDensity;
     const lineHeight = fontSize * 0.78;
 
     context.save();
@@ -117,44 +192,39 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
     const spin = decorativeRotation('Sol', seconds, reducedMotion) + cameraSurface.rotation;
     const tiltCosine = Math.cos(cameraSurface.tilt);
     const tiltSine = Math.sin(cameraSurface.tilt);
-    const middleRow = (SURFACE_ROW_WIDTHS.length - 1) / 2;
+    const middleRow = (surfaceRowWidths.length - 1) / 2;
 
     drawSunAtmosphere(context, {
         x: 0,
         y: 0,
-        radiusX: (SURFACE_COLUMNS * characterWidth) / 2,
-        radiusY: (SURFACE_ROW_WIDTHS.length * lineHeight) / 2,
+        radiusX: (surfaceColumns * characterWidth) / 2,
+        radiusY: (surfaceRowWidths.length * lineHeight) / 2,
         fontSize,
         opacity,
         seconds,
         reducedMotion,
-        detailed: false,
+        detailed,
     });
 
     // The glyphs describe an opaque sphere. Mask the interior before drawing
     // them so orbit marks and bodies on the far side cannot show through the
     // whitespace between individual ASCII character cells.
-    context.beginPath();
-    context.ellipse(
-        0,
-        0,
-        SURFACE_COLUMNS * characterWidth * 0.51,
-        SURFACE_ROW_WIDTHS.length * lineHeight * 0.51,
-        0,
-        0,
-        Math.PI * 2,
-    );
-    context.fillStyle = SUN_MASK_COLOR;
-    context.globalAlpha = opacity;
-    context.fill();
+    drawSoftSceneMask(context, {
+        x: 0,
+        y: 0,
+        radiusX: surfaceColumns * characterWidth * 0.51,
+        radiusY: surfaceRowWidths.length * lineHeight * 0.51,
+        opacity,
+        color: options.maskColor ?? SUN_MASK_COLOR,
+    });
 
-    SURFACE_ROW_WIDTHS.forEach((rowWidth, row) => {
-        const normalizedY = (row - middleRow) / (SURFACE_ROW_WIDTHS.length / 2);
-        const firstColumn = (SURFACE_COLUMNS - rowWidth) / 2;
+    surfaceRowWidths.forEach((rowWidth, row) => {
+        const normalizedY = (row - middleRow) / (surfaceRowWidths.length / 2);
+        const firstColumn = (surfaceColumns - rowWidth) / 2;
         const cellY = (row - middleRow) * lineHeight;
         for (let rowColumn = 0; rowColumn < rowWidth; rowColumn++) {
             const column = firstColumn + rowColumn;
-            const normalizedX = (column - (SURFACE_COLUMNS - 1) / 2) / (SURFACE_COLUMNS / 2);
+            const normalizedX = (column - (surfaceColumns - 1) / 2) / (surfaceColumns / 2);
             const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
             const surfaceY = -normalizedY;
             const tiltedY = surfaceY * tiltCosine + sphereZ * tiltSine;
@@ -164,7 +234,7 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
             const isFirst = rowColumn === 0;
             const isLast = rowColumn === rowWidth - 1;
             const isTop = row === 0;
-            const isBottom = row === SURFACE_ROW_WIDTHS.length - 1;
+            const isBottom = row === surfaceRowWidths.length - 1;
             const isContour = isFirst || isLast || isTop || isBottom;
             const glyph = isTop
                 ? isFirst
@@ -191,7 +261,7 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
                             ? '/'
                             : '|'
                       : planetSurfaceGlyph('Sol', longitude, latitude);
-            const cellX = (column - (SURFACE_COLUMNS - 1) / 2) * characterWidth;
+            const cellX = (column - (surfaceColumns - 1) / 2) * characterWidth;
             context.globalAlpha = opacity * sunSurfaceLight(sphereZ);
             context.fillStyle = isContour ? '#f59a23' : planetSurfaceColor('Sol', glyph, '#ffc12e');
             context.strokeText(glyph, cellX, cellY);

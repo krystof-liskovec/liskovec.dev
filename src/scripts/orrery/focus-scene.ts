@@ -25,8 +25,10 @@ import {
     sunSurfaceLight,
 } from './planet-textures';
 import { drawSagittariusGlow } from './sagittarius-renderer';
-import { drawSunAtmosphere } from './sun-renderer';
+import { drawSoftSceneMask, sceneMaskColor } from './scene-mask';
+import { SUN_MASK_COLOR, drawSunAtmosphere } from './sun-renderer';
 import type { CameraState, PointerState } from './runtime-state';
+import type { ProjectedComet } from './solar-system-scene';
 import type { FocusState, FocusTarget, Planet, ProjectedBody, Vec3 } from './types';
 
 type MoonOrbit = { angle: number; distance: number };
@@ -41,12 +43,15 @@ const sampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
 const nextSampledOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
 const liveMoonOrbitScratch: MoonOrbit = { angle: 0, distance: 1 };
 const LARGE_MOON_GLYPHS = new Set(['Ganymede', 'Titan', 'Titania', 'Triton', 'Charon']);
-
+const EARTH_MOON_PERIOD_DAYS = 27.321661;
+// Match the parent Earth view: the ISS close-up is intentionally 6x slower.
+const ISS_ORBIT_PERIOD_DAYS = (92.68 / 1440) * 6;
 type FocusSceneOptions = {
     width: number;
     height: number;
     objectFocus: FocusState;
     focusedPlanet: Planet | null;
+    projectedComet: ProjectedComet;
     bodies: ProjectedBody[];
     viewportCenterX: number;
     viewportCenterY: number;
@@ -64,6 +69,7 @@ type FocusSceneOptions = {
     showHoverVisuals: boolean;
     keyboardSelectionId: string | null;
     solveMoonOrbit: (moon: MajorMoon, target?: MoonOrbit) => MoonOrbit;
+    childSceneScale: number;
 };
 
 export const drawFocusScene = (context: CanvasRenderingContext2D, options: FocusSceneOptions): FocusTarget | null => {
@@ -72,6 +78,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         height,
         objectFocus,
         focusedPlanet,
+        projectedComet,
         bodies,
         viewportCenterX,
         viewportCenterY,
@@ -89,16 +96,50 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         showHoverVisuals,
         keyboardSelectionId,
         solveMoonOrbit,
+        childSceneScale,
     } = options;
     let activeFocusCandidate: FocusTarget | null = null;
+    const drawSoftMoonMask = (centerX: number, centerY: number, radiusX: number, radiusY: number, reveal: number) =>
+        drawSoftSceneMask(context, {
+            x: centerX,
+            y: centerY,
+            radiusX,
+            radiusY,
+            opacity: reveal,
+            color: sceneMaskColor(centerX, centerY, width, height, false),
+        });
     if (objectFocus.target && objectFocus.progress > 0.001) {
         const target = objectFocus.target;
         const focusProgress = visualTransitionProgress(objectFocus.progress, objectFocus.exiting);
         const focusEase = smoothstep(focusProgress);
+        const childVisualProgress = objectFocus.child
+            ? visualTransitionProgress(objectFocus.childProgress, objectFocus.childExiting)
+            : 0;
+        const childEase = smoothstep(childVisualProgress);
+        const childGlyphHandoff = objectFocus.child ? smoothstep(childEase / 0.24) : 0;
         const focusedPlanetBody = focusedPlanet ? bodies.find((body) => body.planet === focusedPlanet) : null;
-        const isLocalDestination = (target.kind === 'planet' && !!focusedPlanetBody) || target.kind === 'star';
-        const focusCenterX = focusedPlanetBody?.x ?? target.originX + (viewportCenterX - target.originX) * focusEase;
-        const focusCenterY = focusedPlanetBody?.y ?? target.originY + (viewportCenterY - target.originY) * focusEase;
+        const isLocalDestination =
+            (target.kind === 'planet' && !!focusedPlanetBody) || target.kind === 'star' || target.kind === 'comet';
+        // The parent detail remains on the parent focus rotation. A child
+        // rotation belongs to the moon/ISS close-up and should not spin the
+        // parent planet's surface, rings, or orbital context.
+        const focusLongitude = isLocalDestination ? objectFocus.longitude * planetSceneFocus : objectFocus.longitude;
+        const focusLatitude = isLocalDestination ? objectFocus.latitude * planetSceneFocus : objectFocus.latitude;
+        const childFocusLongitude = isLocalDestination
+            ? (objectFocus.longitude + (objectFocus.child ? objectFocus.childLongitude * childEase : 0)) *
+              planetSceneFocus
+            : objectFocus.longitude;
+        const childFocusLatitude = isLocalDestination
+            ? (objectFocus.latitude + (objectFocus.child ? objectFocus.childLatitude * childEase : 0)) *
+              planetSceneFocus
+            : objectFocus.latitude;
+        const detailFocusLongitude = objectFocus.child ? childFocusLongitude : focusLongitude;
+        const detailFocusLatitude = objectFocus.child ? childFocusLatitude : focusLatitude;
+        const focusedComet = target.kind === 'comet' ? projectedComet : null;
+        const focusCenterX =
+            focusedPlanetBody?.x ?? focusedComet?.x ?? target.originX + (viewportCenterX - target.originX) * focusEase;
+        const focusCenterY =
+            focusedPlanetBody?.y ?? focusedComet?.y ?? target.originY + (viewportCenterY - target.originY) * focusEase;
         const localFocusStartScale = target.kind === 'star' ? 0.24 : 0.1;
         const galacticViewportScale = width < 600 ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
         const galacticSourceFontSize = 7.8 * galacticViewportScale;
@@ -116,16 +157,20 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         const galacticBridgeScale = 1 + galacticBridgeGrowth * 1.4;
         const galacticMatchedScale = galacticStartScale * galacticBridgeScale;
         const galacticDetailGrowth = smoothstep((focusEase - 0.4) / 0.6);
-        const focusScale = isLocalDestination
-            ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
-            : target.kind === 'galactic'
-              ? galacticMatchedScale + galacticDetailGrowth * (1 - galacticMatchedScale)
-              : 0.18 + focusEase * 0.82;
+        const focusScale =
+            (isLocalDestination
+                ? localFocusStartScale + localSphereGrowth * (1 - localFocusStartScale)
+                : target.kind === 'galactic'
+                  ? galacticMatchedScale + galacticDetailGrowth * (1 - galacticMatchedScale)
+                  : 0.18 + focusEase * 0.82) * (isLocalDestination && objectFocus.child ? childSceneScale : 1);
         const objectReveal = isLocalDestination
             ? smoothstep((planetSceneFocus - 0.06) / 0.3)
             : target.kind === 'galactic'
               ? smoothstep((focusEase - 0.08) / 0.32)
               : focusEase;
+        // Keep the parent present as context during a moon/ISS handoff, but
+        // let the selected child take visual priority once its close-up grows.
+        const parentReveal = objectReveal * (1 - childEase * 0.67);
         // Galactic close-ups can use the page's identical #1d2021 background
         // directly. Painting another full-canvas layer is unnecessary and can
         // produce a one-frame compositing flash as that layer disappears.
@@ -139,13 +184,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         const drawFocusField = (radius: number, count: number, glyphs = ['.', ':', '*']) => {
             context.font = `${Math.max(5, (width < 600 ? 7 : 9) * focusScale)}px "DM Mono", monospace`;
             for (let index = 0; index < count; index++) {
-                const baseAngle = (index / count) * Math.PI * 2 + objectFocus.longitude;
+                const baseAngle = (index / count) * Math.PI * 2 + focusLongitude;
                 const spread = 0.48 + randomUnit(index + target.name.length * 37) * 0.55;
                 const fieldRadius = radius * spread * focusScale;
                 const x = focusCenterX + Math.cos(baseAngle) * fieldRadius;
-                const y =
-                    focusCenterY + Math.sin(baseAngle) * fieldRadius * (0.32 + Math.cos(objectFocus.latitude) * 0.3);
-                context.globalAlpha = objectReveal * (0.12 + randomUnit(index + 33) * 0.32);
+                const y = focusCenterY + Math.sin(baseAngle) * fieldRadius * (0.32 + Math.cos(focusLatitude) * 0.3);
+                context.globalAlpha = parentReveal * (0.12 + randomUnit(index + 33) * 0.32);
                 context.fillStyle = index % 17 === 0 ? target.color : '#665c54';
                 context.fillText(glyphs[index % glyphs.length], x, y);
             }
@@ -153,19 +197,26 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
         const focusedSphereColumns = width < 600 ? 37 : 49;
         const focusedSphereRows = width < 600 ? 19 : 25;
+        const parentDetailProgress = objectFocus.child ? childEase : 0;
         const focusedSphereFontSize = (width < 600 ? 10 : 12.5) * focusScale;
+        const enhancedSphereColumns = width < 600 ? 61 : 81;
+        const enhancedSphereRows = width < 600 ? 31 : 41;
+        const enhancedDensityScale = Math.min(
+            focusedSphereColumns / enhancedSphereColumns,
+            focusedSphereRows / enhancedSphereRows,
+        );
 
         const drawFocusedSphere = () => {
             const columns = focusedSphereColumns;
             const rows = focusedSphereRows;
             const fontSize = focusedSphereFontSize;
             context.font = `bold ${fontSize}px "DM Mono", monospace`;
-            const characterWidth = context.measureText('M').width * 0.76;
-            const lineHeight = fontSize * 0.82;
-            const spin = focusedRotation(target.name, rotationHours, reducedMotion) + objectFocus.longitude;
-            const latitudeTilt = objectFocus.latitude;
+            const spin = focusedRotation(target.name, rotationHours, reducedMotion) + focusLongitude;
+            const latitudeTilt = focusLatitude;
             const latitudeCosine = Math.cos(latitudeTilt);
             const latitudeSine = Math.sin(latitudeTilt);
+            const characterWidth = context.measureText('M').width * 0.76;
+            const lineHeight = fontSize * 0.82;
             const sphereWidth = columns * characterWidth;
             const sphereHeight = rows * lineHeight;
             if (target.kind === 'star') {
@@ -175,7 +226,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     radiusX: sphereWidth / 2,
                     radiusY: sphereHeight / 2,
                     fontSize,
-                    opacity: objectReveal,
+                    opacity: parentReveal,
                     seconds,
                     reducedMotion,
                     detailed: true,
@@ -187,8 +238,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 const ringBaseRotation = isUranus ? 72 * DEG : 0;
                 const ringBaseRotationCosine = Math.cos(ringBaseRotation);
                 const ringBaseRotationSine = Math.sin(ringBaseRotation);
-                const longitudeCosine = Math.cos(objectFocus.longitude);
-                const longitudeSine = Math.sin(objectFocus.longitude);
+                const longitudeCosine = Math.cos(focusLongitude);
+                const longitudeSine = Math.sin(focusLongitude);
                 const latitudeCosine = Math.cos(latitudeTilt);
                 const latitudeSine = Math.sin(latitudeTilt);
                 const bands = isUranus
@@ -231,7 +282,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                             continue;
                         // The two passes control occlusion only. A continuous
                         // depth gradient avoids a color seam at their boundary.
-                        context.globalAlpha = objectReveal * band.alpha * (0.86 + (tiltedZ / ringRadius) * 0.14);
+                        context.globalAlpha = parentReveal * band.alpha * (0.86 + (tiltedZ / ringRadius) * 0.14);
                         context.fillStyle = band.color;
                         const glyph = isUranus && sample % 4 === 0 ? '-' : band.glyph;
                         context.fillText(glyph, focusCenterX + rotatedX, focusCenterY + tiltedY);
@@ -239,31 +290,60 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 }
             };
             drawPlanetRings(false);
-            for (let row = 0; row < rows; row++) {
-                const normalizedY = (row + 0.5 - rows / 2) / (rows / 2);
-                const lineY = focusCenterY + (row - (rows - 1) / 2) * lineHeight;
-                for (let column = 0; column < columns; column++) {
-                    const normalizedX = (column + 0.5 - columns / 2) / (columns / 2);
-                    if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
-                    const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
-                    const latitudeY = normalizedY * latitudeCosine + sphereZ * latitudeSine;
-                    const latitudeZ = -normalizedY * latitudeSine + sphereZ * latitudeCosine;
-                    const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
-                    const latitude = Math.asin(-latitudeY);
-                    const character = planetSurfaceGlyph(target.name, longitude, latitude);
-                    context.globalAlpha =
-                        objectReveal *
-                        (target.kind === 'star'
-                            ? sunSurfaceLight(sphereZ)
-                            : planetSurfaceLight(normalizedX, normalizedY, sphereZ));
-                    context.fillStyle = planetSurfaceColor(target.name, character, target.color);
-                    context.fillText(character, focusCenterX + (column + 0.5 - columns / 2) * characterWidth, lineY);
+            // The surface is made of separated glyphs, so give the detailed
+            // sphere a matching opaque interior before painting those glyphs.
+            // Rear rings stay behind the mask; front rings are drawn afterward.
+            drawSoftSceneMask(context, {
+                x: focusCenterX,
+                y: focusCenterY,
+                radiusX: sphereWidth * 0.505,
+                radiusY: sphereHeight * 0.505,
+                opacity: parentReveal,
+                color: target.kind === 'star' ? SUN_MASK_COLOR : '#1d2021',
+            });
+            const drawSurface = (detailColumns: number, detailRows: number, detailFontSize: number, reveal: number) => {
+                if (reveal <= 0.001) return;
+                context.font = `bold ${detailFontSize}px "DM Mono", monospace`;
+                const detailCharacterWidth = context.measureText('M').width * 0.76;
+                const detailLineHeight = detailFontSize * 0.82;
+                for (let row = 0; row < detailRows; row++) {
+                    const normalizedY = (row + 0.5 - detailRows / 2) / (detailRows / 2);
+                    const lineY = focusCenterY + (row - (detailRows - 1) / 2) * detailLineHeight;
+                    for (let column = 0; column < detailColumns; column++) {
+                        const normalizedX = (column + 0.5 - detailColumns / 2) / (detailColumns / 2);
+                        if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
+                        const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
+                        const latitudeY = normalizedY * latitudeCosine + sphereZ * latitudeSine;
+                        const latitudeZ = -normalizedY * latitudeSine + sphereZ * latitudeCosine;
+                        const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
+                        const latitude = Math.asin(-latitudeY);
+                        const character = planetSurfaceGlyph(target.name, longitude, latitude);
+                        context.globalAlpha =
+                            reveal *
+                            (target.kind === 'star'
+                                ? sunSurfaceLight(sphereZ)
+                                : planetSurfaceLight(normalizedX, normalizedY, sphereZ));
+                        context.fillStyle = planetSurfaceColor(target.name, character, target.color);
+                        context.fillText(
+                            character,
+                            focusCenterX + (column + 0.5 - detailColumns / 2) * detailCharacterWidth,
+                            lineY,
+                        );
+                    }
                 }
-            }
+            };
+            drawSurface(columns, rows, fontSize, parentReveal * (1 - parentDetailProgress));
+            drawSurface(
+                enhancedSphereColumns,
+                enhancedSphereRows,
+                fontSize * enhancedDensityScale,
+                parentReveal * parentDetailProgress,
+            );
             drawPlanetRings(true);
         };
 
-        const earthSatelliteReveal = target.name === 'Earth' ? smoothstep((planetSceneFocus - 0.28) / 0.45) : 0;
+        const earthSatelliteReveal =
+            target.name === 'Earth' ? smoothstep((planetSceneFocus - 0.28) / 0.45) * (1 - childEase * 0.67) : 0;
         const focusedEarthRadius = (focusedSphereRows * focusedSphereFontSize * 0.82) / 2;
         const focusedOrbitOffset = (angle: number, radius: number, inclination: number, node: number, target: Vec3) => {
             target.x = Math.cos(angle) * radius;
@@ -271,14 +351,15 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             target.z = 0;
             rotateX(target, inclination, target);
             rotateZ(target, node, target);
-            rotateY(target, -objectFocus.longitude, target);
-            return rotateX(target, objectFocus.latitude, target);
+            rotateY(target, -focusLongitude, target);
+            return rotateX(target, focusLatitude, target);
         };
+        const baseFocusedEarthRadius = focusedEarthRadius / (objectFocus.child ? childSceneScale : 1);
         const focusedMoonRadius =
             width < 600
-                ? Math.min(focusedEarthRadius * 1.55, width * 0.42)
-                : Math.min(focusedEarthRadius * 1.65, height * 0.38);
-        const focusedMoonAngle = (moonElapsedDays / 27.321661) * Math.PI * 2;
+                ? Math.min(baseFocusedEarthRadius * 1.55, width * 0.42) * (objectFocus.child ? childSceneScale : 1)
+                : Math.min(baseFocusedEarthRadius * 1.65, height * 0.38) * (objectFocus.child ? childSceneScale : 1);
+        const focusedMoonAngle = (moonElapsedDays / EARTH_MOON_PERIOD_DAYS) * Math.PI * 2;
         const focusedMoonOffset = focusedOrbitOffset(
             focusedMoonAngle,
             focusedMoonRadius,
@@ -287,7 +368,9 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             focusedMoonOffsetScratch,
         );
         const focusedIssRadius = focusedEarthRadius * 1.13;
-        const focusedIssAngle = 1.2 + (reducedMotion ? 0 : seconds * ((Math.PI * 2) / 70));
+        const focusedIssAngle =
+            1.2 +
+            (reducedMotion ? 0 : ((moonElapsedDays % ISS_ORBIT_PERIOD_DAYS) / ISS_ORBIT_PERIOD_DAYS) * Math.PI * 2);
         const focusedIssOffset = focusedOrbitOffset(
             focusedIssAngle,
             focusedIssRadius,
@@ -334,6 +417,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
         const drawFocusedEarthSatellites = (foreground: boolean) => {
             if (earthSatelliteReveal <= 0.001) return;
+            const satelliteDetailScale = Math.min(0.34, 0.22 * focusScale);
             const drawOrbit = (
                 radius: number,
                 inclination: number,
@@ -373,16 +457,47 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
             if (focusedMoonOffset.z >= 0 === foreground) {
                 const moonFontSize = Math.max(5, (width < 600 ? 7 : 9) * focusScale);
-                context.globalAlpha = earthSatelliteReveal;
-                context.fillStyle = '#bdae93';
-                context.strokeStyle = '#1d2021';
-                context.lineWidth = 2;
-                context.font = `bold ${moonFontSize}px "DM Mono", monospace`;
-                [' .-. ', '(.:)', " '-' "].forEach((line, index) => {
-                    const lineY = focusedMoonPosition.y + (index - 1) * moonFontSize * 0.76;
-                    context.strokeText(line, focusedMoonPosition.x, lineY);
-                    context.fillText(line, focusedMoonPosition.x, lineY);
-                });
+                const selectedMoon = objectFocus.child?.id === 'moon';
+                const moonCompactReveal =
+                    earthSatelliteReveal *
+                    (objectFocus.child ? (selectedMoon ? 1 - childGlyphHandoff : 1 - childEase) : 1);
+                const moonDetailedReveal =
+                    earthSatelliteReveal *
+                    (objectFocus.child ? childEase * (selectedMoon ? 1 - childGlyphHandoff : 1) : 0);
+                if (moonCompactReveal > 0.001) {
+                    context.globalAlpha = moonCompactReveal;
+                    context.fillStyle = '#bdae93';
+                    context.strokeStyle = '#1d2021';
+                    context.lineWidth = 2;
+                    context.font = `bold ${moonFontSize}px "DM Mono", monospace`;
+                    drawSoftMoonMask(
+                        focusedMoonPosition.x,
+                        focusedMoonPosition.y,
+                        moonFontSize * 1.55,
+                        moonFontSize * 1.15,
+                        moonCompactReveal,
+                    );
+                    context.fillStyle = '#bdae93';
+                    [' .-. ', '(.:)', " '-' "].forEach((line, index) => {
+                        const lineY = focusedMoonPosition.y + (index - 1) * moonFontSize * 0.76;
+                        context.strokeText(line, focusedMoonPosition.x, lineY);
+                        context.fillText(line, focusedMoonPosition.x, lineY);
+                    });
+                }
+                if (moonDetailedReveal > 0.001) {
+                    drawFocusedMoon(context, {
+                        centerX: focusedMoonPosition.x,
+                        centerY: focusedMoonPosition.y,
+                        scale: satelliteDetailScale,
+                        reveal: moonDetailedReveal,
+                        longitude: detailFocusLongitude,
+                        latitude: detailFocusLatitude,
+                        rotationHours,
+                        reducedMotion,
+                        compact: width < 600,
+                        maskColor: sceneMaskColor(focusedMoonPosition.x, focusedMoonPosition.y, width, height, false),
+                    });
+                }
                 if (showHoverVisuals && hoveredFocusedEarthObject?.id === 'moon') {
                     context.fillStyle = '#ebdbb2';
                     context.fillText('[', focusedMoonPosition.x - 22 * focusScale, focusedMoonPosition.y);
@@ -391,13 +506,33 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             }
             if (focusedIssOffset.z >= 0 === foreground) {
                 const issFontSize = Math.max(5, (width < 600 ? 7 : 9) * focusScale);
-                context.globalAlpha = earthSatelliteReveal;
-                context.fillStyle = '#8ec07c';
-                context.strokeStyle = '#1d2021';
-                context.lineWidth = 2;
-                context.font = `bold ${issFontSize}px "DM Mono", monospace`;
-                context.strokeText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
-                context.fillText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
+                const selectedIss = objectFocus.child?.id === 'iss';
+                const issCompactReveal =
+                    earthSatelliteReveal *
+                    (objectFocus.child ? (selectedIss ? 1 - childGlyphHandoff : 1 - childEase) : 1);
+                const issDetailedReveal =
+                    earthSatelliteReveal *
+                    (objectFocus.child ? childEase * (selectedIss ? 1 - childGlyphHandoff : 1) : 0);
+                if (issCompactReveal > 0.001) {
+                    context.globalAlpha = issCompactReveal;
+                    context.fillStyle = '#8ec07c';
+                    context.strokeStyle = '#1d2021';
+                    context.lineWidth = 2;
+                    context.font = `bold ${issFontSize}px "DM Mono", monospace`;
+                    context.strokeText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
+                    context.fillText('=-[ISS]-=', focusedIssPosition.x, focusedIssPosition.y);
+                }
+                if (issDetailedReveal > 0.001) {
+                    drawFocusedIss(context, {
+                        centerX: focusedIssPosition.x,
+                        centerY: focusedIssPosition.y,
+                        scale: satelliteDetailScale,
+                        reveal: issDetailedReveal,
+                        longitude: detailFocusLongitude,
+                        latitude: detailFocusLatitude,
+                        compact: width < 600,
+                    });
+                }
                 if (showHoverVisuals && hoveredFocusedEarthObject?.id === 'iss') {
                     context.fillStyle = '#ebdbb2';
                     context.fillText('[', focusedIssPosition.x - 38 * focusScale, focusedIssPosition.y);
@@ -408,7 +543,9 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         };
 
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[target.name];
-        const majorMoonReveal = majorMoonSystem ? smoothstep((planetSceneFocus - 0.26) / 0.48) : 0;
+        const majorMoonReveal = majorMoonSystem
+            ? smoothstep((planetSceneFocus - 0.26) / 0.48) * (1 - childEase * 0.67)
+            : 0;
         const focusedParentRadius = (focusedSphereRows * focusedSphereFontSize * 0.82) / 2;
         const focusedMajorMoonOffset = (moon: MajorMoon, angle: number, radius: number, target: Vec3) => {
             target.x = Math.cos(angle) * radius;
@@ -419,8 +556,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             rotateZ(target, moon.node, target);
             rotateX(target, majorMoonSystem.inclination, target);
             rotateZ(target, majorMoonSystem.node, target);
-            rotateY(target, -objectFocus.longitude, target);
-            return rotateX(target, objectFocus.latitude, target);
+            rotateY(target, -focusLongitude, target);
+            return rotateX(target, focusLatitude, target);
         };
         const majorMoons = (majorMoonSystem?.moons ?? []).map((moon) => {
             const orbit = solveMoonOrbit(moon, liveMoonOrbitScratch);
@@ -461,6 +598,58 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
 
         const drawFocusedMajorMoons = (foreground: boolean) => {
             if (!majorMoonSystem || majorMoonReveal <= 0.001) return;
+            const drawDetailedMajorMoon = (moon: (typeof majorMoons)[number], reveal: number) => {
+                const isLargeMoon = LARGE_MOON_GLYPHS.has(moon.name);
+                const detailScale = Math.min(1.35, focusScale);
+                const columns = isLargeMoon ? 11 : 9;
+                const rows = isLargeMoon ? 7 : 5;
+                const fontSize = (isLargeMoon ? 6.3 : 5.3) * detailScale;
+                context.font = `bold ${fontSize}px "DM Mono", monospace`;
+                const characterWidth = context.measureText('M').width * 0.76;
+                const lineHeight = fontSize * 0.82;
+                const sphereWidth = columns * characterWidth;
+                const sphereHeight = rows * lineHeight;
+                const spin = focusedRotation(moon.name, rotationHours, reducedMotion) + focusLongitude;
+                const latitudeCosine = Math.cos(focusLatitude);
+                const latitudeSine = Math.sin(focusLatitude);
+
+                drawSoftMoonMask(moon.x, moon.y, sphereWidth * 0.505, sphereHeight * 0.505, reveal);
+
+                for (let row = 0; row < rows; row++) {
+                    const normalizedY = (row + 0.5 - rows / 2) / (rows / 2);
+                    const lineY = moon.y + (row - (rows - 1) / 2) * lineHeight;
+                    for (let column = 0; column < columns; column++) {
+                        const normalizedX = (column + 0.5 - columns / 2) / (columns / 2);
+                        if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
+                        const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
+                        const latitudeY = normalizedY * latitudeCosine + sphereZ * latitudeSine;
+                        const latitudeZ = -normalizedY * latitudeSine + sphereZ * latitudeCosine;
+                        const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
+                        const latitude = Math.asin(-latitudeY);
+                        const glyph = planetSurfaceGlyph(moon.name, longitude, latitude);
+                        const light = Math.min(1, planetSurfaceLight(normalizedX, normalizedY, sphereZ));
+                        context.globalAlpha = reveal * (0.4 + light * 0.6);
+                        context.fillStyle = planetSurfaceColor(moon.name, glyph, moon.color);
+                        context.fillText(glyph, moon.x + (column + 0.5 - columns / 2) * characterWidth, lineY);
+                    }
+                }
+                context.globalAlpha = 1;
+            };
+            const drawCompactMajorMoon = (moon: (typeof majorMoons)[number], reveal: number) => {
+                if (reveal <= 0.001) return;
+                const isLargeMoon = LARGE_MOON_GLYPHS.has(moon.name);
+                const moonFontSize = Math.max(7, (isLargeMoon ? 12 : 9) * focusScale);
+                context.globalAlpha = reveal;
+                context.fillStyle = moon.color;
+                context.strokeStyle = '#1d2021';
+                context.lineWidth = 2;
+                context.font = `bold ${moonFontSize}px "DM Mono", monospace`;
+                drawSoftMoonMask(moon.x, moon.y, moonFontSize * 0.58, moonFontSize * 0.58, reveal);
+                context.fillStyle = moon.color;
+                context.strokeText(moon.glyph, moon.x, moon.y);
+                context.fillText(moon.glyph, moon.x, moon.y);
+            };
+
             for (const moon of majorMoons) {
                 context.font = `${Math.max(5, (width < 600 ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
                 context.fillStyle = '#665c54';
@@ -498,15 +687,16 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     context.fillText(glyph, focusCenterX + offset.x, focusCenterY + offset.y);
                 }
                 if (moon.offset.z >= 0 !== foreground) continue;
-                context.globalAlpha = majorMoonReveal;
-                context.fillStyle = moon.color;
-                context.strokeStyle = '#1d2021';
-                context.lineWidth = 2;
-                const isLargeMoon = LARGE_MOON_GLYPHS.has(moon.name);
-                context.font = `bold ${Math.max(7, (isLargeMoon ? 12 : 9) * focusScale)}px "DM Mono", monospace`;
-                context.strokeText(moon.glyph, moon.x, moon.y);
-                context.fillText(moon.glyph, moon.x, moon.y);
+                const moonId = `moon:${target.name}:${moon.name}`;
+                const selectedChild = objectFocus.child?.id === moonId;
+                const compactReveal =
+                    majorMoonReveal * (objectFocus.child ? (selectedChild ? 1 - childGlyphHandoff : 1 - childEase) : 1);
+                const detailedReveal =
+                    majorMoonReveal * (objectFocus.child ? childEase * (selectedChild ? 1 - childGlyphHandoff : 1) : 0);
+                drawCompactMajorMoon(moon, compactReveal);
+                if (detailedReveal > 0.001) drawDetailedMajorMoon(moon, detailedReveal);
                 if (showHoverVisuals && moon === hoveredMajorMoon) {
+                    const isLargeMoon = LARGE_MOON_GLYPHS.has(moon.name);
                     const bracketOffset = Math.max(11, (isLargeMoon ? 17 : 13) * focusScale);
                     context.fillStyle = '#ebdbb2';
                     context.font = `bold ${Math.max(8, 10 * focusScale)}px "DM Mono", monospace`;
@@ -587,8 +777,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     scale: focusScale,
                     opacity: objectReveal,
                     seconds,
-                    longitude: objectFocus.longitude,
-                    latitude: objectFocus.latitude,
+                    longitude: focusLongitude,
+                    latitude: focusLatitude,
                     reducedMotion,
                     compact: width < 600,
                 });
@@ -601,8 +791,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     opacity: objectReveal,
                     transitionProgress: objectFocus.progress,
                     seconds,
-                    longitude: objectFocus.longitude,
-                    latitude: objectFocus.latitude,
+                    longitude: focusLongitude,
+                    latitude: focusLatitude,
                     reducedMotion,
                     compact: width < 600,
                 });
@@ -613,7 +803,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 context.fillStyle = target.color;
                 context.globalAlpha = objectReveal;
                 lines.forEach((line, index) => {
-                    const parallax = Math.sin(objectFocus.longitude + index * 0.7) * artFontSize * 0.55;
+                    const parallax = Math.sin(focusLongitude + index * 0.7) * artFontSize * 0.55;
                     context.fillText(
                         line,
                         focusCenterX + parallax,
@@ -666,7 +856,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             height - (hideCompactDetails ? 30 : target.fact ? 93 : 72),
             focusCenterY + (compact ? 150 : 205) * focusScale,
         );
-        const infoReveal = isLocalDestination ? smoothstep((planetSceneFocus - 0.45) / 0.4) : focusEase;
+        const infoReveal =
+            (isLocalDestination ? smoothstep((planetSceneFocus - 0.45) / 0.4) : focusEase) * (1 - childEase);
         context.globalAlpha = infoReveal;
         context.fillStyle = target.color;
         context.font = `bold ${compact ? 11 : 13}px "DM Mono", monospace`;
@@ -679,21 +870,23 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         }
         if (objectFocus.child && objectFocus.childProgress > 0.001) {
             const child = objectFocus.child;
-            const childVisualProgress = visualTransitionProgress(objectFocus.childProgress, objectFocus.childExiting);
-            const childEase = smoothstep(childVisualProgress);
             const childGrowth = smoothstep((childEase - 0.08) / 0.92) ** 1.45;
+            // The child renderer already has a viewport-sized detail pass. The
+            // camera scale belongs to the parent scene behind it; applying it a
+            // second time here would make the moon/ISS grow beyond the canvas.
             const childScale = 0.1 + childGrowth * 0.9;
             const childReveal = smoothstep((childEase - 0.06) / 0.3);
             const childCenterX = child.originX + (viewportCenterX - child.originX) * childEase;
             const childCenterY = child.originY + (viewportCenterY - child.originY) * childEase;
-            context.globalAlpha = childEase;
-            context.fillStyle = '#1d2021';
-            context.fillRect(0, 0, width, height);
+            // Keep the parent planet scene visible while the second focus grows.
+            // Planet close-ups do not paint a full-canvas mask, and the child
+            // focus should feel like the same camera continuing inward rather
+            // than a separate panel hiding the dense orbital backdrop.
 
             const childFieldCount = child.kind === 'station' ? 34 : 58;
             context.font = `${Math.max(5, (width < 600 ? 7 : 9) * childScale)}px "DM Mono", monospace`;
             for (let index = 0; index < childFieldCount; index++) {
-                const angle = (index / childFieldCount) * Math.PI * 2 + objectFocus.childLongitude;
+                const angle = (index / childFieldCount) * Math.PI * 2 + childFocusLongitude;
                 const radius = (width < 600 ? 155 : 245) * (0.48 + randomUnit(index + 2101) * 0.55) * childScale;
                 context.globalAlpha = childReveal * (0.12 + randomUnit(index + 2201) * 0.3);
                 context.fillStyle = index % 19 === 0 ? child.color : '#665c54';
@@ -711,11 +904,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         centerY: childCenterY,
                         scale: childScale,
                         reveal: childReveal,
-                        longitude: objectFocus.childLongitude,
-                        latitude: objectFocus.childLatitude,
+                        longitude: childFocusLongitude,
+                        latitude: childFocusLatitude,
                         rotationHours,
                         reducedMotion,
                         compact: width < 600,
+                        maskColor: sceneMaskColor(childCenterX, childCenterY, width, height, false),
                     });
                 } else {
                     const columns = width < 600 ? 37 : 49;
@@ -724,7 +918,14 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     context.font = `bold ${fontSize}px "DM Mono", monospace`;
                     const characterWidth = context.measureText('M').width * 0.76;
                     const lineHeight = fontSize * 0.82;
-                    const spin = focusedRotation(child.name, rotationHours, reducedMotion) + objectFocus.childLongitude;
+                    const spin = focusedRotation(child.name, rotationHours, reducedMotion) + childFocusLongitude;
+                    drawSoftMoonMask(
+                        childCenterX,
+                        childCenterY,
+                        columns * characterWidth * 0.505,
+                        rows * lineHeight * 0.505,
+                        childReveal,
+                    );
                     for (let row = 0; row < rows; row++) {
                         const normalizedY = (row + 0.5 - rows / 2) / (rows / 2);
                         const lineY = childCenterY + (row - (rows - 1) / 2) * lineHeight;
@@ -733,11 +934,9 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                             if (normalizedX ** 2 + normalizedY ** 2 > 1) continue;
                             const sphereZ = Math.sqrt(Math.max(0, 1 - normalizedX ** 2 - normalizedY ** 2));
                             const latitudeY =
-                                normalizedY * Math.cos(objectFocus.childLatitude) +
-                                sphereZ * Math.sin(objectFocus.childLatitude);
+                                normalizedY * Math.cos(childFocusLatitude) + sphereZ * Math.sin(childFocusLatitude);
                             const latitudeZ =
-                                -normalizedY * Math.sin(objectFocus.childLatitude) +
-                                sphereZ * Math.cos(objectFocus.childLatitude);
+                                -normalizedY * Math.sin(childFocusLatitude) + sphereZ * Math.cos(childFocusLatitude);
                             const longitude = Math.atan2(normalizedX, latitudeZ) + spin;
                             const latitude = Math.asin(-latitudeY);
                             context.globalAlpha = childReveal * (0.6 + sphereZ * 0.4);
@@ -756,8 +955,8 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     centerY: childCenterY,
                     scale: childScale,
                     reveal: childReveal,
-                    longitude: objectFocus.childLongitude,
-                    latitude: objectFocus.childLatitude,
+                    longitude: childFocusLongitude,
+                    latitude: childFocusLatitude,
                     compact: width < 600,
                 });
             }

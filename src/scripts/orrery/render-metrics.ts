@@ -11,6 +11,9 @@ export type RenderMetrics = {
     renderTop: number;
     renderRight: number;
     renderBottom: number;
+    starfieldBleedX: number;
+    starfieldBleedTop: number;
+    starfieldBleedBottom: number;
     dirty: boolean;
 };
 
@@ -39,6 +42,9 @@ export const createRenderMetrics = (
         renderTop: 0,
         renderRight: 0,
         renderBottom: 0,
+        starfieldBleedX: 0,
+        starfieldBleedTop: 0,
+        starfieldBleedBottom: 0,
         dirty: true,
     };
 
@@ -62,6 +68,12 @@ export const createRenderMetrics = (
         metrics.renderTop = -metrics.canvasOriginY;
         metrics.renderRight = metrics.renderWidth - metrics.canvasOriginX;
         metrics.renderBottom = metrics.renderHeight - metrics.canvasOriginY;
+        const styles = getComputedStyle(system);
+        const readPixelValue = (property: string) =>
+            Math.max(0, Number.parseFloat(styles.getPropertyValue(property)) || 0);
+        metrics.starfieldBleedX = readPixelValue('--starfield-bleed-x');
+        metrics.starfieldBleedTop = readPixelValue('--starfield-bleed-top');
+        metrics.starfieldBleedBottom = readPixelValue('--starfield-bleed-bottom');
         metrics.dirty = false;
     };
 

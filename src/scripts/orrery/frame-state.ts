@@ -9,8 +9,26 @@ export const updateSolarCamera = (options: {
     frameTime: number;
     frameDelta: number;
     reducedMotion: boolean;
+    pausePassiveRotation: boolean;
 }) => {
-    const { camera, pointer, seconds, frameTime, frameDelta, reducedMotion } = options;
+    const { camera, pointer, seconds, frameTime, frameDelta, reducedMotion, pausePassiveRotation } = options;
+    if (pausePassiveRotation) {
+        camera.passiveRotationPaused = true;
+        return;
+    }
+    if (camera.passiveRotationPaused) {
+        camera.passiveRotationPaused = false;
+        // Automatic angles are derived from elapsed time, so ease back to the
+        // current automatic pose after focus instead of snapping across the
+        // rotation accumulated while the close-up was open.
+        if (!camera.manual) {
+            camera.resetting = true;
+            camera.resetStartedAt = frameTime;
+            camera.resetPitch = camera.renderedPitch;
+            camera.resetYaw = camera.renderedYaw;
+            camera.resetRoll = camera.renderedRoll;
+        }
+    }
     if (camera.manual && !camera.dragging && !camera.resetting && !reducedMotion) {
         camera.roll += 0.000035 * frameDelta;
     }
@@ -53,9 +71,15 @@ export const updateGalaxyCamera = (options: {
     frameTime: number;
     frameDelta: number;
     reducedMotion: boolean;
+    pausePassiveRotation: boolean;
 }) => {
-    const { galaxyCamera, solarCamera, frameTime, frameDelta, reducedMotion } = options;
-    if (!(solarCamera.dragging && solarCamera.dragMode === 'galaxy') && !galaxyCamera.resetting && !reducedMotion) {
+    const { galaxyCamera, solarCamera, frameTime, frameDelta, reducedMotion, pausePassiveRotation } = options;
+    if (
+        !pausePassiveRotation &&
+        !(solarCamera.dragging && solarCamera.dragMode === 'galaxy') &&
+        !galaxyCamera.resetting &&
+        !reducedMotion
+    ) {
         galaxyCamera.rotation -= 0.0000025 * frameDelta;
     }
     if (!galaxyCamera.resetting) return;

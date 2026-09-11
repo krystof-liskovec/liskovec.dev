@@ -82,6 +82,8 @@ export const resolveFocusHit = (options: {
     projectedComet: ProjectedComet;
     centerX: number;
     centerY: number;
+    sunX?: number;
+    sunY?: number;
     renderedSunScale: number;
     introSunOpacity: number;
     findHoveredGalacticObject: (x: number, y: number) => ProjectedGalacticObject | null;
@@ -103,11 +105,13 @@ export const resolveFocusHit = (options: {
         projectedComet,
         centerX,
         centerY,
+        sunX = centerX,
+        sunY = centerY,
         renderedSunScale,
         introSunOpacity,
         findHoveredGalacticObject,
     } = options;
-    const pointerInsideSun = Math.hypot(centerX - x, centerY - y) < 48 * Math.max(0.55, Math.sqrt(renderedSunScale));
+    const pointerInsideSun = Math.hypot(sunX - x, sunY - y) < 48 * Math.max(0.55, Math.sqrt(renderedSunScale));
     const canHit = (pointerActive || forceActive) && !cameraDragging && !hasObjectFocus;
     const rawBodyHoverCandidate =
         canHit && localDetailOpacity > 0.45

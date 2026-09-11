@@ -27,6 +27,7 @@ export type CameraState = {
     resetYaw: number;
     resetRoll: number;
     automaticRollOffset: number;
+    passiveRotationPaused: boolean;
     lastX: number;
     lastY: number;
     pointerId: number;
@@ -86,11 +87,11 @@ export const GALACTIC_SPEED_PRESETS = [
 export const DEFAULT_GALACTIC_SPEED_PRESET = 1;
 
 export const ROTATION_SPEED_PRESETS = [
-    { hoursPerSecond: 1 / 3_600, label: '1×', description: 'realtime axial rotation' },
-    { hoursPerSecond: 1, label: '1h/s', description: 'one simulated hour per second' },
-    { hoursPerSecond: 6, label: '6h/s', description: 'six simulated hours per second' },
-    { hoursPerSecond: 12, label: '12h/s', description: 'twelve simulated hours per second' },
-    { hoursPerSecond: 24, label: '1d/s', description: 'one simulated day per second' },
+    { hoursPerSecond: 1 / 3_600, label: '1×', description: 'realtime local rotation and satellite motion' },
+    { hoursPerSecond: 1, label: '1h/s', description: 'one simulated local hour per second' },
+    { hoursPerSecond: 6, label: '6h/s', description: 'six simulated local hours per second' },
+    { hoursPerSecond: 12, label: '12h/s', description: 'twelve simulated local hours per second' },
+    { hoursPerSecond: 24, label: '1d/s', description: 'one simulated local day per second' },
 ] as const;
 export const DEFAULT_ROTATION_SPEED_PRESET = 1;
 
@@ -142,6 +143,7 @@ export const createRuntimeState = () => {
         resetYaw: 0,
         resetRoll: -12 * DEG,
         automaticRollOffset: 0,
+        passiveRotationPaused: false,
         lastX: 0,
         lastY: 0,
         pointerId: -1,

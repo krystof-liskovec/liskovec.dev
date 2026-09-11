@@ -16,6 +16,30 @@ export const COMPACT_PLANET_GRIDS: Record<
     Neptune: { columns: 9, rows: 5, rowWidths: [5, 7, 9, 7, 5], fontScale: 0.86 },
 };
 
+const DETAILED_NEIGHBOR_GRIDS: Record<
+    string,
+    { columns: number; rows: number; rowWidths: number[]; fontScale: number }
+> = {
+    Mercury: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.223 },
+    Venus: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.223 },
+    Earth: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.223 },
+    Mars: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.223 },
+    Jupiter: {
+        columns: 29,
+        rows: 15,
+        rowWidths: [9, 15, 19, 23, 25, 27, 29, 29, 29, 27, 25, 23, 19, 15, 9],
+        fontScale: 0.296,
+    },
+    Saturn: {
+        columns: 25,
+        rows: 13,
+        rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9],
+        fontScale: 0.295,
+    },
+    Uranus: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.31 },
+    Neptune: { columns: 25, rows: 13, rowWidths: [9, 15, 19, 21, 23, 25, 25, 25, 23, 21, 19, 15, 9], fontScale: 0.31 },
+};
+
 const INNER_PLANETS = new Set(['Mercury', 'Venus', 'Earth', 'Mars']);
 
 export const solarBodyViewportScale = (planetName: string, viewportGlyphScale: number, innerPlanetScale: number) =>
@@ -28,6 +52,9 @@ type SolarBodyOptions = {
     solarSystemScale: number;
     viewportGlyphScale: number;
     innerPlanetScale: number;
+    apparentBodyScale: number;
+    detailAppearanceReveal: number;
+    lodOpacity?: number;
     localDetailOpacity: number;
     planetSceneFocus: number;
     isHovered: boolean;
@@ -44,12 +71,31 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         solarSystemScale,
         viewportGlyphScale,
         innerPlanetScale,
+        apparentBodyScale,
+        detailAppearanceReveal,
         localDetailOpacity,
         planetSceneFocus,
         planetRotationOffset,
         planetTiltOffset,
         planetYawOffset,
     } = options;
+    if (detailAppearanceReveal > 0 && detailAppearanceReveal < 1) {
+        const lodOpacity = options.lodOpacity ?? 1;
+        drawSolarBody(context, body, {
+            ...options,
+            detailAppearanceReveal: 0,
+            lodOpacity: lodOpacity * (1 - detailAppearanceReveal),
+            isHovered: options.isHovered && detailAppearanceReveal < 0.5,
+        });
+        drawSolarBody(context, body, {
+            ...options,
+            detailAppearanceReveal: 1,
+            lodOpacity: lodOpacity * detailAppearanceReveal,
+            isHovered: options.isHovered && detailAppearanceReveal >= 0.5,
+        });
+        return;
+    }
+    const detailedAppearance = detailAppearanceReveal >= 1;
     const { planet } = body;
     const isFocusedPlanet = focusedPlanet === planet;
     const perspectiveScale = Math.max(0.68, Math.min(1.55, body.scale));
@@ -62,12 +108,20 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         (planet.easterEgg ? 16 : Math.max(6.2, 12.5 * planet.size * depthScale) * (isHovered ? 1.14 : 1)) *
         cosmicGlyphScale;
     const lines = planet.easterEgg || (fontSize < 9 && solarSystemScale < 0.45) ? [planet.glyph] : planet.sprite;
-    const compactGrid = solarSystemScale >= 0.45 && !planet.easterEgg ? COMPACT_PLANET_GRIDS[planet.name] : null;
+    const compactGrid =
+        solarSystemScale >= 0.45 && !planet.easterEgg
+            ? detailedAppearance
+                ? DETAILED_NEIGHBOR_GRIDS[planet.name]
+                : COMPACT_PLANET_GRIDS[planet.name]
+            : null;
     const hasCompactSphereRows = planet.name === 'Jupiter' || planet.name === 'Uranus' || planet.name === 'Neptune';
     const lineHeight = fontSize * (hasCompactSphereRows ? 0.68 : 0.78);
-    const bodyOpacity = body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : 1 - planetSceneFocus);
+    const surroundingBodyReveal = 1 - planetSceneFocus * 0.68;
+    const lodBodyReveal = detailedAppearance ? 1 : surroundingBodyReveal;
+    const bodyOpacity =
+        body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : lodBodyReveal) * (options.lodOpacity ?? 1);
     const focusedDetailReveal = isFocusedPlanet ? smoothstep((planetSceneFocus - 0.08) / 0.28) : 0;
-    const focusedSpriteScale = isFocusedPlanet ? 1 + planetSceneFocus * 2 : 1;
+    const focusedSpriteScale = isFocusedPlanet ? 1 + planetSceneFocus * 2 : apparentBodyScale;
     context.fillStyle = planet.color;
     context.shadowBlur = 0;
     context.strokeStyle = '#1d2021';
@@ -77,7 +131,9 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
 
     if (compactGrid) {
         const compactFontSize = fontSize * compactGrid.fontScale * focusedSpriteScale;
-        const compactLineHeight = compactFontSize * 0.72;
+        // The high-resolution neighbour uses the same cell proportions as the
+        // full focused sphere. The overview grid stays vertically compressed.
+        const compactLineHeight = compactFontSize * (detailedAppearance ? 0.82 : 0.72);
         context.font = `bold ${compactFontSize}px "DM Mono", monospace`;
         const characterWidth = context.measureText('M').width * 0.76;
         const sphereWidth = compactGrid.columns * characterWidth;
@@ -116,12 +172,13 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
                       { x: 0.79, y: 0.14, glyph: '=', color: '#e5e0d3', alpha: 0.78 },
                       { x: 0.88, y: 0.175, glyph: '-', color: '#cec8ba', alpha: 0.58 },
                   ];
+            const ringSamples = detailedAppearance ? 96 : 48;
             for (const band of bands) {
                 const ringRadius = sphereWidth * band.x;
                 const ringOpening = Math.min(0.95, (sphereHeight * band.y) / ringRadius);
                 const ringDepthScale = Math.sqrt(1 - ringOpening ** 2);
-                for (let sample = 0; sample < 48; sample += 2) {
-                    const angle = (sample / 48) * Math.PI * 2;
+                for (let sample = 0; sample < ringSamples; sample += 2) {
+                    const angle = (sample / ringSamples) * Math.PI * 2;
                     const ringDepth = Math.sin(angle) * ringRadius * ringDepthScale;
                     const ringMajor = Math.cos(angle) * ringRadius;
                     const ringMinor = Math.sin(angle) * ringRadius * ringOpening;

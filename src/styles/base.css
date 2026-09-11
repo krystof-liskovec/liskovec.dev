@@ -73,6 +73,8 @@ a {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    color: inherit;
+    text-decoration: none;
 }
 .brand-lockup .eyebrow {
     margin: 6px 0 0;

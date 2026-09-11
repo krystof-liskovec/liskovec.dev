@@ -7,7 +7,7 @@ import {
 } from './galaxy-scene-data';
 import { STARS } from './solar-scene-data';
 import { galacticPatternPhase, moveGalacticMaterial } from './galactic-simulation';
-export { drawGalaxyGlow } from './galaxy-glow-renderer';
+export { drawGalaxyArmsGlow, drawGalaxyCoreGlow, drawGalaxyGlow } from './galaxy-glow-renderer';
 import { createParticleGlyphDrawer, type ParticleGlyphDrawer } from './particle-glyph';
 import type { GalaxyParticleTransform, WebGLParticleRenderer } from './webgl-particle-renderer';
 

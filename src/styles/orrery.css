@@ -51,10 +51,11 @@
 .solar-system {
     --canvas-bleed-x: clamp(72px, 9vw, 132px);
     --canvas-bleed-y: clamp(96px, 14vh, 140px);
-    --scene-glow-bleed-y: clamp(180px, 26vh, 260px);
-    --scene-glow-x: 50%;
-    --scene-glow-y: 50%;
-    --scene-glow-offset-y: 0px;
+    --canvas-bleed-top: var(--canvas-bleed-y);
+    --canvas-bleed-bottom: var(--canvas-bleed-y);
+    --starfield-bleed-x: clamp(72px, 9vw, 132px);
+    --starfield-bleed-top: clamp(96px, 14vh, 140px);
+    --starfield-bleed-bottom: clamp(96px, 14vh, 140px);
     position: relative;
     z-index: 1;
     width: 100%;
@@ -64,24 +65,6 @@
     overflow: visible;
     font-family: var(--mono);
     background-color: var(--bg);
-}
-.solar-system::before {
-    position: absolute;
-    z-index: 0;
-    inset: calc(-1 * var(--scene-glow-bleed-y)) 0;
-    pointer-events: none;
-    content: '';
-    background-image: radial-gradient(
-        circle at var(--scene-glow-x) calc(var(--scene-glow-bleed-y) + var(--scene-glow-y) + var(--scene-glow-offset-y)),
-        rgba(254, 128, 25, 0.085) 0,
-        rgba(254, 128, 25, 0.045) 9%,
-        transparent 21%
-    );
-    opacity: 0;
-    transition: opacity 0.35s ease-out;
-}
-.solar-system.is-sun-visible::before {
-    opacity: 1;
 }
 .solar-system.is-canvas-focused {
     outline: 1px solid var(--orange);
@@ -103,8 +86,9 @@
     overflow: hidden;
     --canvas-bleed-x: 0px;
     --canvas-bleed-y: 0px;
-    --scene-glow-bleed-y: 0px;
-    --scene-glow-offset-y: 0px;
+    --starfield-bleed-x: 0px;
+    --starfield-bleed-top: 0px;
+    --starfield-bleed-bottom: 0px;
     background-color: var(--bg);
 }
 .solar-system:fullscreen canvas,
@@ -180,11 +164,11 @@
 .solar-system canvas {
     position: absolute;
     z-index: 1;
-    top: calc(-1 * var(--canvas-bleed-y));
+    top: calc(-1 * var(--canvas-bleed-top));
     left: calc(-1 * var(--canvas-bleed-x));
     display: block;
     width: calc(100% + var(--canvas-bleed-x) + var(--canvas-bleed-x));
-    height: calc(100% + var(--canvas-bleed-y) + var(--canvas-bleed-y));
+    height: calc(100% + var(--canvas-bleed-top) + var(--canvas-bleed-bottom));
     image-rendering: crisp-edges;
     image-rendering: pixelated;
     touch-action: pan-y pinch-zoom;
@@ -621,6 +605,9 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
            the edges without widening the page itself. */
         --canvas-bleed-x: 64px;
         --canvas-bleed-y: 90px;
+        --starfield-bleed-x: 64px;
+        --starfield-bleed-top: 90px;
+        --starfield-bleed-bottom: 90px;
         width: 100%;
         height: 100%;
         min-height: 360px;
@@ -853,11 +840,20 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     }
 }
 
-@media (max-width: 600px) {
-    .solar-system {
-        --scene-glow-x: 52%;
-        --scene-glow-y: 38%;
-    }
+/* Animated close-ups and galaxy zooms can use the full page as a backdrop
+   without changing the scene box that controls their apparent size. */
+.solar-system.is-canvas-expanded:not(:fullscreen):not(.is-fullscreen) {
+    --canvas-bleed-x: max(clamp(72px, 9vw, 132px), calc((100vw - min(1160px, calc(100vw - 56px))) / 2));
+    --canvas-bleed-top: max(clamp(96px, 14vh, 140px), var(--focus-viewport-bleed-top, 0px));
+    --canvas-bleed-bottom: max(clamp(96px, 14vh, 140px), var(--focus-viewport-bleed-bottom, 0px));
+}
+
+/* The focus canvas is intentionally allowed to paint to the viewport edge,
+   but it must never become a page-level scrollable overflow source. Keep this
+   clipping stable so toggling focus cannot make the layout reflow for a frame. */
+html,
+body {
+    overflow-x: clip;
 }
 
 @media (prefers-reduced-motion: reduce) {
