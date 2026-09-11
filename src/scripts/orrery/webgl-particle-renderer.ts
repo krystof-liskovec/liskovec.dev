@@ -566,6 +566,7 @@ export class WebGLParticleRenderer {
         outerRadius: number;
         innerPeriodDays: number;
         outerPeriodDays: number;
+        sampleStride: number;
         transform: SolarParticleTransform;
     }) {
         if (!this.solarAvailable || !this.gl) return false;
@@ -575,7 +576,7 @@ export class WebGLParticleRenderer {
         const atlas = this.getAtlas(normalizedFont, normalizedPixelRatio);
         const rgb = this.colorCache.get(options.color) ?? hexColor(options.color);
         this.colorCache.set(options.color, rgb);
-        const batchKey = `${options.fieldKey}|${atlas.key}|${options.compact ? 'compact' : 'full'}`;
+        const batchKey = `${options.fieldKey}|${atlas.key}|${options.compact ? 'compact' : 'full'}|${options.sampleStride}`;
         let batch = this.solarBatches.get(batchKey);
         if (!batch) {
             batch = {
@@ -618,7 +619,7 @@ export class WebGLParticleRenderer {
         if (batch.data.length === 0) {
             batch.data = new Float32Array(options.particles.length * SOLAR_FLOATS_PER_INSTANCE);
             for (let index = 0; index < options.particles.length; index++) {
-                if (options.compact && index % 2 !== 0) continue;
+                if (index % options.sampleStride !== 0) continue;
                 const particle = options.particles[index];
                 const glyphIndex = atlas.glyphs.get(particle.glyph);
                 if (glyphIndex === undefined) continue;

@@ -620,6 +620,16 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     .solar-system:not(:fullscreen):not(.is-fullscreen) .object-focus-return {
         left: max(16px, env(safe-area-inset-left));
     }
+    .solar-system:fullscreen,
+    .solar-system.is-fullscreen {
+        --canvas-bleed-x: 64px;
+        --canvas-bleed-y: 90px;
+        --canvas-bleed-top: 90px;
+        --canvas-bleed-bottom: 90px;
+        --starfield-bleed-x: 64px;
+        --starfield-bleed-top: 90px;
+        --starfield-bleed-bottom: 90px;
+    }
     .mobile-fullscreen-toggle {
         position: absolute;
         z-index: 7;
@@ -714,6 +724,12 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
         text-transform: uppercase;
         cursor: pointer;
     }
+    .solar-system:fullscreen .cosmic-zoom-control,
+    .solar-system.is-fullscreen .cosmic-zoom-control {
+        right: max(16px, env(safe-area-inset-right));
+        bottom: max(24px, env(safe-area-inset-bottom));
+        left: max(16px, env(safe-area-inset-left));
+    }
     .solar-system.is-object-focus .cosmic-zoom-switch {
         visibility: hidden;
         opacity: 0;
@@ -785,13 +801,50 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     }
     .cosmic-zoom-scale {
         width: 100%;
-        grid-template: 18px auto auto / auto 1fr auto;
+        min-width: 0;
+        grid-template-areas:
+            'galaxy slider sol'
+            'status status status'
+            'speed speed speed';
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: 18px auto auto;
         align-items: center;
         gap: 10px;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale,
+    .solar-system.is-fullscreen .cosmic-zoom-scale {
+        min-width: 0;
+        grid-template-areas:
+            'galaxy slider sol'
+            'status status status'
+            'speed speed speed';
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: 18px auto auto;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > span:first-child,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > span:first-child {
+        grid-area: galaxy;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > input,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > input {
+        grid-area: slider;
+        min-width: 0;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > span:nth-of-type(2),
+    .solar-system.is-fullscreen .cosmic-zoom-scale > span:nth-of-type(2) {
+        grid-area: sol;
     }
     .cosmic-zoom-scale > output,
     .cosmic-zoom-scale > .simulation-speed-control {
         grid-column: 2;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > output,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > output {
+        grid-area: status;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > .simulation-speed-control,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > .simulation-speed-control {
+        grid-area: speed;
     }
     .cosmic-zoom-control input {
         width: 100%;

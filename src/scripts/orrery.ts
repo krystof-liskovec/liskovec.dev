@@ -522,6 +522,8 @@ if (canvasElement && systemElement && canvasContext) {
         // The compact phone layout intentionally keeps the scene slightly higher
         // so the heading and controls have room around it.
         const compactViewport = width < 600;
+        const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
+        const fullscreenPhoneLayout = isFullscreen && Math.min(width, height) < 600;
         const viewportCenterX = compactViewport
             ? width * 0.52
             : Math.max(0, Math.min(width, window.innerWidth / 2 - systemLeft));
@@ -532,7 +534,11 @@ if (canvasElement && systemElement && canvasContext) {
         const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
-        const finalGalaxyRadius = Math.min(galaxyViewportWidth * 0.48, galaxyViewportHeight * 0.62);
+        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.9 : 1;
+        const finalGalaxyRadius = Math.min(
+            galaxyViewportWidth * 0.48 * fullscreenGalaxyScale,
+            galaxyViewportHeight * 0.62 * fullscreenGalaxyScale,
+        );
         const distantGalaxyRadius = Math.max(galaxyViewportWidth, galaxyViewportHeight) * 2.2;
         const galaxyRadius = finalGalaxyRadius + (distantGalaxyRadius - finalGalaxyRadius) * (1 - galaxyProgress) ** 2;
         updateGalaxyCamera({
@@ -979,7 +985,6 @@ if (canvasElement && systemElement && canvasContext) {
                 : null;
         const visibleHoveredSun =
             hoveredSun && (focusOcclusionDepth === null || focusedSun || 0 <= focusOcclusionDepth) ? hoveredSun : false;
-        const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
         getFocusCandidateAt = (clientX, clientY) => {
             const hit = resolveHitAt(clientX - systemLeft, clientY - systemTop, true);
             return createFocusCandidate({
@@ -1059,6 +1064,8 @@ if (canvasElement && systemElement && canvasContext) {
             innerPlanetScale,
             surroundingSunScale,
             compact: width < 600,
+            asteroidBeltOpacity: width < 600 && !isFullscreen ? 0.45 : 1,
+            asteroidBeltSampleStride: compactViewport ? (isFullscreen ? 2 : 3) : 1,
             localDetailOpacity,
             planetSceneFocus,
             introSunOpacity: intro.sun,

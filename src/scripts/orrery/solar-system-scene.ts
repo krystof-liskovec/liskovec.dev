@@ -141,6 +141,8 @@ export class SolarSystemSceneRenderer {
             compact: boolean;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            asteroidBeltOpacity: number;
+            asteroidBeltSampleStride: number;
             introSunOpacity: number;
             introDetailOpacity: number;
             pixelRatio: number;
@@ -213,6 +215,8 @@ export class SolarSystemSceneRenderer {
             solarSystemScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            asteroidBeltOpacity: number;
+            asteroidBeltSampleStride: number;
             cameraTransform: CameraTransform;
             introDetailOpacity: number;
             compact: boolean;
@@ -222,7 +226,16 @@ export class SolarSystemSceneRenderer {
             focusOcclusionDepth: number | null;
         },
     ) {
-        const { now, solarSystemScale, localDetailOpacity, planetSceneFocus, cameraTransform, compact } = options;
+        const {
+            now,
+            solarSystemScale,
+            localDetailOpacity,
+            planetSceneFocus,
+            cameraTransform,
+            compact,
+            asteroidBeltOpacity,
+            asteroidBeltSampleStride,
+        } = options;
         const elapsedDays = (now - J2000) / 86400000;
         const opacity = localDetailOpacity * (1 - planetSceneFocus) * options.introDetailOpacity;
         if (opacity <= 0.001) return;
@@ -242,6 +255,7 @@ export class SolarSystemSceneRenderer {
             options.particleRenderer,
             options.particleTransform,
             options.focusOcclusionDepth,
+            compact ? 2 : 1,
         );
         this.drawParticleField(
             context,
@@ -249,7 +263,7 @@ export class SolarSystemSceneRenderer {
             ASTEROID_BELT,
             cameraTransform,
             elapsedDays,
-            opacity,
+            opacity * asteroidBeltOpacity,
             Math.max(5.5, 7.5 * scaleRoot),
             ASTEROID_BELT_STYLE,
             compact,
@@ -257,6 +271,7 @@ export class SolarSystemSceneRenderer {
             options.particleRenderer,
             options.particleTransform,
             options.focusOcclusionDepth,
+            asteroidBeltSampleStride,
         );
         this.drawParticleField(
             context,
@@ -264,7 +279,7 @@ export class SolarSystemSceneRenderer {
             KUIPER_BELT,
             cameraTransform,
             elapsedDays,
-            opacity,
+            opacity * asteroidBeltOpacity,
             Math.max(6.5, 8.35 * scaleRoot),
             KUIPER_BELT_STYLE,
             compact,
@@ -272,6 +287,7 @@ export class SolarSystemSceneRenderer {
             options.particleRenderer,
             options.particleTransform,
             options.focusOcclusionDepth,
+            asteroidBeltSampleStride,
         );
         context.globalAlpha = 1;
     }
@@ -290,6 +306,7 @@ export class SolarSystemSceneRenderer {
         particleRenderer?: WebGLParticleRenderer | null,
         particleTransform?: SolarParticleTransform,
         focusOcclusionDepth: number | null = null,
+        sampleStride = compact ? 2 : 1,
     ) {
         const font = `${fontSize}px "DM Mono", monospace`;
         if (
@@ -310,6 +327,7 @@ export class SolarSystemSceneRenderer {
                 outerRadius: style.outerRadius,
                 innerPeriodDays: style.innerPeriodDays,
                 outerPeriodDays: style.outerPeriodDays,
+                sampleStride,
                 transform: particleTransform,
             })
         ) {
@@ -317,7 +335,7 @@ export class SolarSystemSceneRenderer {
         }
         const drawParticleGlyph = createParticleGlyphDrawer(context, particleRenderer, font, style.color, pixelRatio);
         for (let index = 0; index < particles.length; index++) {
-            if (compact && index % 2 !== 0) continue;
+            if (index % sampleStride !== 0) continue;
             const particle = particles[index];
             const radialProgress = Math.max(
                 0,
@@ -357,6 +375,8 @@ export class SolarSystemSceneRenderer {
             solarSystemScale: number;
             localDetailOpacity: number;
             planetSceneFocus: number;
+            asteroidBeltOpacity: number;
+            asteroidBeltSampleStride: number;
             introDetailOpacity: number;
             compact: boolean;
             pixelRatio: number;
@@ -386,7 +406,7 @@ export class SolarSystemSceneRenderer {
         );
         const elapsedDays = (options.now - J2000) / 86400000;
         for (let index = 0; index < JUPITER_TROJANS.length; index++) {
-            if (options.compact && index % 2 !== 0) continue;
+            if (index % options.asteroidBeltSampleStride !== 0) continue;
             const trojan = JUPITER_TROJANS[index];
             const libration = options.reducedMotion
                 ? 0
@@ -398,7 +418,12 @@ export class SolarSystemSceneRenderer {
             this.asteroidPoint.z = jupiter.world.z + trojan.z;
             const projected = options.cameraTransform(this.asteroidPoint, this.asteroidProjection);
             if (options.focusOcclusionDepth !== null && projected.z > options.focusOcclusionDepth) continue;
-            drawTrojanGlyph(trojan.glyph, projected.x, projected.y, opacity * (0.11 + trojan.phase * 0.22));
+            drawTrojanGlyph(
+                trojan.glyph,
+                projected.x,
+                projected.y,
+                opacity * options.asteroidBeltOpacity * (0.11 + trojan.phase * 0.22),
+            );
         }
         context.globalAlpha = 1;
     }
