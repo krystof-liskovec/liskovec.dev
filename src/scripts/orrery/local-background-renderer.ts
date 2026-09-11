@@ -17,6 +17,8 @@ export const drawLocalStarfield = (
         seconds: number;
         reducedMotion: boolean;
         opacity: number;
+        starDensity: number;
+        starScale: number;
         renderLeft: number;
         renderTop: number;
         renderRight: number;
@@ -36,6 +38,8 @@ export const drawLocalStarfield = (
         seconds,
         reducedMotion,
         opacity,
+        starDensity,
+        starScale,
         renderLeft,
         renderTop,
         renderRight,
@@ -55,9 +59,11 @@ export const drawLocalStarfield = (
 
     for (const glyph of STAR_GLYPHS) {
         const color = glyph === '+' ? '#fabd2f' : '#928374';
-        const font = `${glyph === '+' ? 14 : 11}px "DM Mono", monospace`;
+        const font = `${(glyph === '+' ? 14 : 11) * starScale}px "DM Mono", monospace`;
         const drawStarGlyph = createParticleGlyphDrawer(context, particleRenderer, font, color, pixelRatio);
-        for (const star of STARS) {
+        for (let starIndex = 0; starIndex < STARS.length; starIndex++) {
+            if (starIndex >= Math.ceil(STARS.length * starDensity)) continue;
+            const star = STARS[starIndex];
             if (star.glyph !== glyph) continue;
             const pulse = reducedMotion ? 0.45 : 0.5 + 0.5 * Math.sin(seconds * star.speed * 2.2 + star.phase);
             const glyphAlpha = (0.16 + pulse * (glyph === '+' ? 0.82 : 0.46)) * opacity;

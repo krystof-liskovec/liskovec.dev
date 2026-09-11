@@ -617,8 +617,8 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
         width: auto;
         margin-inline: calc(-1 * max(16px, env(safe-area-inset-left))) calc(-1 * max(16px, env(safe-area-inset-right)));
     }
-    .object-focus-return {
-        left: 0;
+    .solar-system:not(:fullscreen):not(.is-fullscreen) .object-focus-return {
+        left: max(16px, env(safe-area-inset-left));
     }
     .mobile-fullscreen-toggle {
         position: absolute;

@@ -864,6 +864,8 @@ if (canvasElement && systemElement && canvasContext) {
             seconds,
             reducedMotion,
             opacity: localSkyOpacity * intro.stars,
+            starDensity: width < 600 ? 0.52 : 1,
+            starScale: width < 600 ? 0.78 : 1,
             renderLeft: -starfieldBleedX,
             renderTop: -starfieldBleedTop,
             renderRight: width + starfieldBleedX,
