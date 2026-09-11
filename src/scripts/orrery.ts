@@ -385,7 +385,7 @@ if (canvasElement && systemElement && canvasContext) {
         } = renderMetrics;
         const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
         const fullscreenPhoneLayout = isFullscreen && Math.min(width, height) < 600;
-        const fullscreenSolarSystemScale = fullscreenPhoneLayout ? 0.7 : 1;
+        const fullscreenSolarSystemScale = fullscreenPhoneLayout ? 0.8 : 1;
         const fullscreenGalaxyGlyphScale = fullscreenPhoneLayout ? 0.8 : 1;
         const fullscreenGalaxyRenderScale = fullscreenSolarSystemScale * fullscreenGalaxyGlyphScale;
         const compactViewport = width < 600 || fullscreenPhoneLayout;
