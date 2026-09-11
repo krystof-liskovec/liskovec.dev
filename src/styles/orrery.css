@@ -962,6 +962,83 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     }
 }
 
+/* Keep the fullscreen phone control vertical even after the device rotates
+   into landscape, where a width-only mobile media query no longer matches. */
+.solar-system.is-phone-fullscreen .cosmic-zoom-control {
+    top: 50%;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: auto;
+    left: auto;
+    transform: translateY(-50%);
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale {
+    width: auto;
+    grid-template-areas:
+        'galaxy'
+        'slider'
+        'sol'
+        'status'
+        'speed';
+    grid-template-columns: auto;
+    grid-template-rows: auto 220px auto auto auto;
+    gap: 9px;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > span:first-child,
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > input,
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > span:nth-of-type(2),
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > output,
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > .simulation-speed-control {
+    min-width: 0;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > span:first-child {
+    grid-area: galaxy;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > input {
+    grid-area: slider;
+    width: 18px;
+    height: 220px;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    background: linear-gradient(to top, var(--orange) 0 var(--zoom-progress), #665c54 var(--zoom-progress) 100%)
+        center / 4px 100% no-repeat;
+    cursor: ns-resize;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale::before {
+    grid-area: slider;
+    width: 4px;
+    height: 100%;
+    content: '';
+    background: #665c54;
+    pointer-events: none;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > span:nth-of-type(2) {
+    grid-area: sol;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > output {
+    grid-area: status;
+    width: auto;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-scale > .simulation-speed-control {
+    grid-area: speed;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-control input::-webkit-slider-runnable-track {
+    width: 4px;
+    height: 100%;
+    background: #665c54;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-control input::-moz-range-track {
+    width: 4px;
+    height: 100%;
+    background: #665c54;
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-control input::-moz-range-progress {
+    background: var(--orange);
+}
+.solar-system.is-phone-fullscreen .cosmic-zoom-control input::-webkit-slider-thumb {
+    margin-top: 0;
+    margin-left: -5px;
+}
+
 /* Animated close-ups and galaxy zooms can use the full page as a backdrop
    without changing the scene box that controls their apparent size. */
 .solar-system.is-canvas-expanded:not(:fullscreen):not(.is-fullscreen) {

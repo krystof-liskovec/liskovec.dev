@@ -98,13 +98,16 @@ export const bindOrreryInteractions = ({
     const isFullscreen = () => document.fullscreenElement === system || fallbackFullscreen;
     const updateZoomOrientation = () => {
         if (!zoomInput) return;
-        const isPhoneLayout = window.matchMedia('(max-width: 700px)').matches;
-        const isHorizontal = isFullscreen() ? !isPhoneLayout : isPhoneLayout;
+        const isHorizontal = isFullscreen()
+            ? Math.min(window.innerWidth, window.innerHeight) > 700
+            : window.matchMedia('(max-width: 700px)').matches;
         zoomInput.setAttribute('aria-orientation', isHorizontal ? 'horizontal' : 'vertical');
     };
     const updateFullscreenControl = () => {
         const active = isFullscreen();
+        const phoneFullscreen = active && Math.min(window.innerWidth, window.innerHeight) <= 700;
         system.classList.toggle('is-fullscreen', active);
+        system.classList.toggle('is-phone-fullscreen', phoneFullscreen);
         document.documentElement.classList.toggle('is-orrery-fullscreen', active);
         updateZoomOrientation();
         if (!mobileFullscreenToggle) return;
@@ -154,7 +157,7 @@ export const bindOrreryInteractions = ({
         if (document.fullscreenElement !== system) screen.orientation?.unlock?.();
     });
     updateFullscreenControl();
-    window.addEventListener('resize', updateZoomOrientation, { passive: true });
+    window.addEventListener('resize', updateFullscreenControl, { passive: true });
 
     const updateSimulationSpeedControl = (presetIndex: number) => {
         const control =
