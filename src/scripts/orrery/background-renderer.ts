@@ -121,6 +121,8 @@ export const drawGalaxyBackdrop = (
         pixelRatio: number;
         particleRenderer?: WebGLParticleRenderer | null;
         galaxyTransform?: GalaxyParticleTransform;
+        compact?: boolean;
+        sceneScale?: number;
     },
 ) => {
     const {
@@ -140,6 +142,8 @@ export const drawGalaxyBackdrop = (
         pixelRatio,
         particleRenderer,
         galaxyTransform,
+        compact = width < 600,
+        sceneScale = 1,
     } = options;
     if (alpha <= 0.001) return;
 
@@ -148,7 +152,7 @@ export const drawGalaxyBackdrop = (
     const patternSine = Math.sin(patternPhase);
     const galaxyRenderer = particleRenderer && galaxyTransform ? particleRenderer : null;
 
-    const diskFont = `${width < 600 ? 6.5 : 8}px "DM Mono", monospace`;
+    const diskFont = `${(compact ? 6.5 : 8) * sceneScale}px "DM Mono", monospace`;
     const drawDiskGlyph = galaxyRenderer?.getGalaxyGlyphDrawer({
         fieldKey: 'galactic-disk',
         font: diskFont,
@@ -176,7 +180,7 @@ export const drawGalaxyBackdrop = (
         }
     }
 
-    const nebulaFont = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+    const nebulaFont = `${(compact ? 7 : 9) * sceneScale}px "DM Mono", monospace`;
     const drawNebulaGlyph = galaxyRenderer?.getGalaxyGlyphDrawer({
         fieldKey: 'galactic-nebulae',
         font: nebulaFont,
@@ -226,8 +230,7 @@ export const drawGalaxyBackdrop = (
         }
     }
 
-    const starFont = `${width < 600 ? 8 : 10}px "DM Mono", monospace`;
-    const compact = width < 600;
+    const starFont = `${(compact ? 8 : 10) * sceneScale}px "DM Mono", monospace`;
     const drawStarGlyph = galaxyRenderer?.getGalaxyGlyphDrawer({
         fieldKey: `galaxy-stars-${compact ? 'compact' : 'full'}`,
         font: starFont,
@@ -286,7 +289,7 @@ export const drawGalaxyBackdrop = (
         }
     }
 
-    const dustFont = `${width < 600 ? 7 : 9}px "DM Mono", monospace`;
+    const dustFont = `${(compact ? 7 : 9) * sceneScale}px "DM Mono", monospace`;
     const drawDustGlyph = galaxyRenderer?.getGalaxyGlyphDrawer({
         fieldKey: 'galactic-dust',
         font: dustFont,
@@ -351,7 +354,7 @@ export const drawGalaxyBackdrop = (
 
     context.globalAlpha = alpha;
     context.fillStyle = '#fabd2f';
-    context.font = `${width < 600 ? 10 : 13}px "DM Mono", monospace`;
+    context.font = `${(compact ? 10 : 13) * sceneScale}px "DM Mono", monospace`;
     context.fillText('{:*:::*:}', coreX, coreY);
     context.globalAlpha = 1;
 };

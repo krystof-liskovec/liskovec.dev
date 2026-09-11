@@ -319,7 +319,8 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
 }
 .solar-system.is-object-focus .cosmic-zoom-scale > span:not(.sr-only),
 .solar-system.is-object-focus .cosmic-zoom-scale > input,
-.solar-system.is-object-focus .cosmic-zoom-scale > output {
+.solar-system.is-object-focus .cosmic-zoom-scale > output,
+.solar-system.is-object-focus .cosmic-zoom-scale::before {
     opacity: 0;
     pointer-events: none;
 }

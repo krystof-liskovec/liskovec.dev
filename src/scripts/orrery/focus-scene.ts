@@ -98,6 +98,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         solveMoonOrbit,
         childSceneScale,
     } = options;
+    const compactViewport = width < 600 || (isFullscreen && Math.min(width, height) < 600);
     let activeFocusCandidate: FocusTarget | null = null;
     const drawSoftMoonMask = (centerX: number, centerY: number, radiusX: number, radiusY: number, reveal: number) =>
         drawSoftSceneMask(context, {
@@ -141,14 +142,14 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         const focusCenterY =
             focusedPlanetBody?.y ?? focusedComet?.y ?? target.originY + (viewportCenterY - target.originY) * focusEase;
         const localFocusStartScale = target.kind === 'star' ? 0.24 : 0.1;
-        const galacticViewportScale = width < 600 ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
+        const galacticViewportScale = compactViewport ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
         const galacticSourceFontSize = 7.8 * galacticViewportScale;
         const galacticSourceWidth =
             (target.sourceSprite?.reduce((longest, line) => Math.max(longest, line.length), 1) ?? 1) *
             galacticSourceFontSize *
             0.31;
         const galacticSourceHeight = ((target.sourceSprite?.length ?? 1) * galacticSourceFontSize * 0.9) / 2;
-        const galacticFocusedRadius = width < 600 ? 112 : 190;
+        const galacticFocusedRadius = compactViewport ? 112 : 190;
         const galacticStartScale = Math.max(
             0.06,
             Math.min(0.22, Math.max(galacticSourceWidth, galacticSourceHeight) / galacticFocusedRadius),
@@ -182,7 +183,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         context.globalAlpha = objectReveal;
 
         const drawFocusField = (radius: number, count: number, glyphs = ['.', ':', '*']) => {
-            context.font = `${Math.max(5, (width < 600 ? 7 : 9) * focusScale)}px "DM Mono", monospace`;
+            context.font = `${Math.max(5, (compactViewport ? 7 : 9) * focusScale)}px "DM Mono", monospace`;
             for (let index = 0; index < count; index++) {
                 const baseAngle = (index / count) * Math.PI * 2 + focusLongitude;
                 const spread = 0.48 + randomUnit(index + target.name.length * 37) * 0.55;
@@ -195,12 +196,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             }
         };
 
-        const focusedSphereColumns = width < 600 ? 37 : 49;
-        const focusedSphereRows = width < 600 ? 19 : 25;
+        const focusedSphereColumns = compactViewport ? 37 : 49;
+        const focusedSphereRows = compactViewport ? 19 : 25;
         const parentDetailProgress = objectFocus.child ? childEase : 0;
-        const focusedSphereFontSize = (width < 600 ? 10 : 12.5) * focusScale;
-        const enhancedSphereColumns = width < 600 ? 61 : 81;
-        const enhancedSphereRows = width < 600 ? 31 : 41;
+        const focusedSphereFontSize = (compactViewport ? 10 : 12.5) * focusScale;
+        const enhancedSphereColumns = compactViewport ? 61 : 81;
+        const enhancedSphereRows = compactViewport ? 31 : 41;
         const enhancedDensityScale = Math.min(
             focusedSphereColumns / enhancedSphereColumns,
             focusedSphereRows / enhancedSphereRows,
@@ -356,7 +357,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         };
         const baseFocusedEarthRadius = focusedEarthRadius / (objectFocus.child ? childSceneScale : 1);
         const focusedMoonRadius =
-            width < 600
+            compactViewport
                 ? Math.min(baseFocusedEarthRadius * 1.55, width * 0.42) * (objectFocus.child ? childSceneScale : 1)
                 : Math.min(baseFocusedEarthRadius * 1.65, height * 0.38) * (objectFocus.child ? childSceneScale : 1);
         const focusedMoonAngle = (moonElapsedDays / EARTH_MOON_PERIOD_DAYS) * Math.PI * 2;
@@ -426,7 +427,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 color: string,
                 alpha: number,
             ) => {
-                context.font = `${Math.max(5, (width < 600 ? 7 : 8) * focusScale)}px "DM Mono", monospace`;
+                context.font = `${Math.max(5, (compactViewport ? 7 : 8) * focusScale)}px "DM Mono", monospace`;
                 context.fillStyle = color;
                 for (let sample = 0; sample < samples; sample += 2) {
                     const offset = focusedOrbitOffset(
@@ -456,7 +457,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             drawOrbit(focusedIssRadius, 44 * DEG, 24 * DEG, 72, '#665c54', 0.52);
 
             if (focusedMoonOffset.z >= 0 === foreground) {
-                const moonFontSize = Math.max(5, (width < 600 ? 7 : 9) * focusScale);
+                const moonFontSize = Math.max(5, (compactViewport ? 7 : 9) * focusScale);
                 const selectedMoon = objectFocus.child?.id === 'moon';
                 const moonCompactReveal =
                     earthSatelliteReveal *
@@ -494,7 +495,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         latitude: detailFocusLatitude,
                         rotationHours,
                         reducedMotion,
-                        compact: width < 600,
+                        compact: compactViewport,
                         maskColor: sceneMaskColor(focusedMoonPosition.x, focusedMoonPosition.y, width, height, false),
                     });
                 }
@@ -505,7 +506,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 }
             }
             if (focusedIssOffset.z >= 0 === foreground) {
-                const issFontSize = Math.max(5, (width < 600 ? 7 : 9) * focusScale);
+                const issFontSize = Math.max(5, (compactViewport ? 7 : 9) * focusScale);
                 const selectedIss = objectFocus.child?.id === 'iss';
                 const issCompactReveal =
                     earthSatelliteReveal *
@@ -530,7 +531,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         reveal: issDetailedReveal,
                         longitude: detailFocusLongitude,
                         latitude: detailFocusLatitude,
-                        compact: width < 600,
+                        compact: compactViewport,
                     });
                 }
                 if (showHoverVisuals && hoveredFocusedEarthObject?.id === 'iss') {
@@ -651,7 +652,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             };
 
             for (const moon of majorMoons) {
-                context.font = `${Math.max(5, (width < 600 ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
+                context.font = `${Math.max(5, (compactViewport ? 6.5 : 8) * focusScale)}px "DM Mono", monospace`;
                 context.fillStyle = '#665c54';
                 for (let sample = 0; sample < 96; sample += 2) {
                     const sampledOrbit = solveKeplerOrbit(
@@ -710,7 +711,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         if (target.kind === 'star' || target.kind === 'planet' || target.kind === 'moon') {
             if (target.kind !== 'star')
                 drawFocusField(
-                    width < 600 ? 145 : 225,
+                    compactViewport ? 145 : 225,
                     target.name === 'Earth' ? 28 : target.name === 'Jupiter' || target.name === 'Saturn' ? 18 : 24,
                     ['.', ':'],
                 );
@@ -746,7 +747,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                 }
             }
             drawFocusField(
-                width < 600 ? 145 : 235,
+                compactViewport ? 145 : 235,
                 target.kind === 'galactic' ? 32 : 62,
                 target.kind === 'galactic' ? ['.', ':', '*'] : ['.', '-'],
             );
@@ -780,7 +781,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     longitude: focusLongitude,
                     latitude: focusLatitude,
                     reducedMotion,
-                    compact: width < 600,
+                    compact: compactViewport,
                 });
             const renderedComet =
                 target.kind === 'comet' &&
@@ -794,11 +795,11 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     longitude: focusLongitude,
                     latitude: focusLatitude,
                     reducedMotion,
-                    compact: width < 600,
+                    compact: compactViewport,
                 });
             if (!renderedGalacticObject && !renderedComet) {
                 const lines = FOCUSED_ART[target.name] ?? [target.name];
-                const artFontSize = (width < 600 ? 14 : 22) * focusScale;
+                const artFontSize = (compactViewport ? 14 : 22) * focusScale;
                 context.font = `bold ${artFontSize}px "DM Mono", monospace`;
                 context.fillStyle = target.color;
                 context.globalAlpha = objectReveal;
@@ -847,7 +848,7 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             });
         }
 
-        const compact = width < 600;
+        const compact = compactViewport;
         const hideCompactDetails =
             compact &&
             !isFullscreen &&
@@ -884,10 +885,10 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             // than a separate panel hiding the dense orbital backdrop.
 
             const childFieldCount = child.kind === 'station' ? 34 : 58;
-            context.font = `${Math.max(5, (width < 600 ? 7 : 9) * childScale)}px "DM Mono", monospace`;
+            context.font = `${Math.max(5, (compactViewport ? 7 : 9) * childScale)}px "DM Mono", monospace`;
             for (let index = 0; index < childFieldCount; index++) {
                 const angle = (index / childFieldCount) * Math.PI * 2 + childFocusLongitude;
-                const radius = (width < 600 ? 155 : 245) * (0.48 + randomUnit(index + 2101) * 0.55) * childScale;
+                const radius = (compactViewport ? 155 : 245) * (0.48 + randomUnit(index + 2101) * 0.55) * childScale;
                 context.globalAlpha = childReveal * (0.12 + randomUnit(index + 2201) * 0.3);
                 context.fillStyle = index % 19 === 0 ? child.color : '#665c54';
                 context.fillText(
@@ -908,13 +909,13 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                         latitude: childFocusLatitude,
                         rotationHours,
                         reducedMotion,
-                        compact: width < 600,
+                        compact: compactViewport,
                         maskColor: sceneMaskColor(childCenterX, childCenterY, width, height, false),
                     });
                 } else {
-                    const columns = width < 600 ? 37 : 49;
-                    const rows = width < 600 ? 19 : 25;
-                    const fontSize = (width < 600 ? 10 : 12.5) * childScale;
+                    const columns = compactViewport ? 37 : 49;
+                    const rows = compactViewport ? 19 : 25;
+                    const fontSize = (compactViewport ? 10 : 12.5) * childScale;
                     context.font = `bold ${fontSize}px "DM Mono", monospace`;
                     const characterWidth = context.measureText('M').width * 0.76;
                     const lineHeight = fontSize * 0.82;
@@ -957,15 +958,15 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
                     reveal: childReveal,
                     longitude: childFocusLongitude,
                     latitude: childFocusLatitude,
-                    compact: width < 600,
+                        compact: compactViewport,
                 });
             }
 
-            const childInfoY = Math.min(height - 72, childCenterY + (width < 600 ? 150 : 205) * childScale);
+            const childInfoY = Math.min(height - 72, childCenterY + (compactViewport ? 150 : 205) * childScale);
             const childInfoReveal = smoothstep((childEase - 0.45) / 0.4);
             context.globalAlpha = childInfoReveal;
             context.fillStyle = child.color;
-            context.font = `bold ${width < 600 ? 11 : 13}px "DM Mono", monospace`;
+            context.font = `bold ${compactViewport ? 11 : 13}px "DM Mono", monospace`;
             context.fillText(`[ ${child.name.toUpperCase()} ]`, viewportCenterX, childInfoY);
             context.fillStyle = '#a89984';
             context.font = '12px "DM Mono", monospace';

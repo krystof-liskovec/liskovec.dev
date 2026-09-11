@@ -383,13 +383,22 @@ if (canvasElement && systemElement && canvasContext) {
             starfieldBleedTop,
             starfieldBleedBottom,
         } = renderMetrics;
+        const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
+        const fullscreenPhoneLayout = isFullscreen && Math.min(width, height) < 600;
+        const fullscreenSolarSystemScale = fullscreenPhoneLayout ? 0.7 : 1;
+        const fullscreenGalaxyGlyphScale = fullscreenPhoneLayout ? 0.8 : 1;
+        const fullscreenGalaxyRenderScale = fullscreenSolarSystemScale * fullscreenGalaxyGlyphScale;
+        const compactViewport = width < 600 || fullscreenPhoneLayout;
         // Orbital spacing has to contract on a phone so Neptune remains visible.
         // Scale the ASCII bodies with it, instead of leaving desktop-sized glyphs
-        // crowded into the smaller scene.
-        const viewportGlyphScale = isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, width / 700));
-        const innerPlanetScale = width < 600 ? 0.84 : 1;
+        // crowded into the smaller scene. Fullscreen uses the same multiplier for
+        // orbital spacing, body glyphs, masks, and Sol so the scene scales as one
+        // unit rather than only moving the orbits inward.
+        const viewportGlyphScale =
+            (isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, width / 700))) * fullscreenSolarSystemScale;
+        const innerPlanetScale = compactViewport ? 0.84 : 1;
         const mobileSunProgress = Math.max(0, Math.min(1, (width - 430) / 270));
-        const viewportSunScale = 0.52 + mobileSunProgress * 0.48;
+        const viewportSunScale = (0.52 + mobileSunProgress * 0.48) * fullscreenSolarSystemScale;
         const dpr = Math.min(MAX_CANVAS_DPR, Math.max(1, window.devicePixelRatio || 1));
         const pixelWidth = Math.max(1, Math.round(renderWidth * dpr));
         const pixelHeight = Math.max(1, Math.round(renderHeight * dpr));
@@ -521,9 +530,6 @@ if (canvasElement && systemElement && canvasContext) {
         // the full scene box, which can extend below the fold on shorter laptops.
         // The compact phone layout intentionally keeps the scene slightly higher
         // so the heading and controls have room around it.
-        const compactViewport = width < 600;
-        const isFullscreen = document.fullscreenElement === system || system.classList.contains('is-fullscreen');
-        const fullscreenPhoneLayout = isFullscreen && Math.min(width, height) < 600;
         const viewportCenterX = compactViewport
             ? width * 0.52
             : Math.max(0, Math.min(width, window.innerWidth / 2 - systemLeft));
@@ -531,15 +537,15 @@ if (canvasElement && systemElement && canvasContext) {
         const viewportCenterY = compactViewport
             ? height * 0.38
             : Math.max(height * 0.18, Math.min(height * 0.5, desktopCenterY));
-        const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
+        const usesMobileCanvasBleed = compactViewport && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
-        const fullscreenGalaxyScale = 1;
+        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.7 : 1;
         const finalGalaxyRadius = Math.min(
             galaxyViewportWidth * 0.48 * fullscreenGalaxyScale,
             galaxyViewportHeight * 0.62 * fullscreenGalaxyScale,
         );
-        const distantGalaxyRadius = Math.max(galaxyViewportWidth, galaxyViewportHeight) * 2.2;
+        const distantGalaxyRadius = Math.max(galaxyViewportWidth, galaxyViewportHeight) * 2.2 * fullscreenGalaxyScale;
         const galaxyRadius = finalGalaxyRadius + (distantGalaxyRadius - finalGalaxyRadius) * (1 - galaxyProgress) ** 2;
         updateGalaxyCamera({
             galaxyCamera,
@@ -605,9 +611,8 @@ if (canvasElement && systemElement && canvasContext) {
         }
         // Leave enough room for Neptune even at the nearest point in the projection.
         const baseWorldScale =
-            (width < 600 ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50)) *
+            (compactViewport ? Math.min(width / 116, height / 54) : Math.min(width / 104, height / 50)) *
             (isOgPreview ? 1.1 : 1);
-        const fullscreenSolarSystemScale = fullscreenPhoneLayout ? 0.7 : 1;
         // Move the system camera toward every local focus target at the same
         // rate. The detailed focused sphere is scaled independently in
         // focus-scene, but its surrounding scene still needs the full camera
@@ -687,8 +692,8 @@ if (canvasElement && systemElement && canvasContext) {
             // station. Recompute that anchor from the live simulated orbit so
             // the camera follows the object rather than the original click point.
             const parentFocusScale = 0.1 + localSphereGrowth * 0.9;
-            const parentRows = width < 600 ? 19 : 25;
-            const parentFontSize = (width < 600 ? 10 : 12.5) * parentFocusScale;
+            const parentRows = compactViewport ? 19 : 25;
+            const parentFontSize = (compactViewport ? 10 : 12.5) * parentFocusScale;
             const parentRadius = (parentRows * parentFontSize * 0.82) / 2;
             const orientChildOffset = (inclination: number, node: number) => {
                 rotateX(focusedChildOffsetScratch, inclination, focusedChildOffsetScratch);
@@ -701,7 +706,7 @@ if (canvasElement && systemElement && canvasContext) {
             focusedChildOffsetScratch.z = 0;
             if (focusedPlanet.name === 'Earth' && objectFocus.child.id === 'moon') {
                 const moonRadius =
-                    width < 600
+                    compactViewport
                         ? Math.min(parentRadius * 1.55, width * 0.42)
                         : Math.min(parentRadius * 1.65, height * 0.38);
                 const moonAngle = (focusedMoonElapsedDays / EARTH_MOON_PERIOD_DAYS) * Math.PI * 2;
@@ -835,6 +840,8 @@ if (canvasElement && systemElement && canvasContext) {
                 pixelRatio: pixelWidth / renderWidth,
                 particleRenderer: activeParticleRenderer,
                 galaxyTransform: galaxyParticleTransform,
+                compact: compactViewport,
+                sceneScale: fullscreenGalaxyRenderScale,
             });
         };
 
@@ -876,8 +883,8 @@ if (canvasElement && systemElement && canvasContext) {
             seconds,
             reducedMotion,
             opacity: localSkyOpacity * intro.stars,
-            starDensity: width < 600 ? 0.52 : 1,
-            starScale: width < 600 ? 0.78 : 1,
+            starDensity: compactViewport ? 0.52 : 1,
+            starScale: compactViewport ? 0.78 : 1,
             renderLeft: -starfieldBleedX,
             renderTop: -starfieldBleedTop,
             renderRight: width + starfieldBleedX,
@@ -920,7 +927,7 @@ if (canvasElement && systemElement && canvasContext) {
             focusedPlanetName: focusedPlanet?.name ?? null,
             focusOcclusionDepth,
             introProgress: intro.orbits,
-            compact: width < 600,
+            compact: compactViewport,
         });
 
         const localPointerX = pointer.clientX - systemLeft;
@@ -1069,8 +1076,8 @@ if (canvasElement && systemElement && canvasContext) {
             viewportGlyphScale,
             innerPlanetScale,
             surroundingSunScale,
-            compact: width < 600,
-            asteroidBeltOpacity: width < 600 && !isFullscreen ? 0.45 : 1,
+            compact: compactViewport,
+            asteroidBeltOpacity: compactViewport && !isFullscreen ? 0.45 : 1,
             asteroidBeltSampleStride: compactViewport ? (isFullscreen ? 2 : 3) : 1,
             localDetailOpacity,
             planetSceneFocus,
@@ -1105,6 +1112,8 @@ if (canvasElement && systemElement && canvasContext) {
             renderRight,
             renderBottom,
             isOgPreview,
+            compact: compactViewport,
+            sceneScale: fullscreenGalaxyRenderScale,
         });
         drawSolMarker(context, {
             alpha: galaxyAlpha,
@@ -1112,6 +1121,7 @@ if (canvasElement && systemElement && canvasContext) {
             galaxyProgress,
             x: centerX,
             y: centerY,
+            scale: fullscreenGalaxyRenderScale,
         });
 
         if (showHoverVisuals) {
@@ -1124,7 +1134,7 @@ if (canvasElement && systemElement && canvasContext) {
                 hoveredGalacticObject,
                 sunX: centerX,
                 sunY: centerY,
-                compact: width < 600 && !isFullscreen,
+                compact: compactViewport && !isFullscreen,
             });
         }
 

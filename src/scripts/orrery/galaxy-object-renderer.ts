@@ -165,6 +165,8 @@ export class GalaxyObjectRenderer {
             renderRight: number;
             renderBottom: number;
             isOgPreview: boolean;
+            compact?: boolean;
+            sceneScale?: number;
         },
     ) {
         const {
@@ -181,12 +183,14 @@ export class GalaxyObjectRenderer {
             renderRight,
             renderBottom,
             isOgPreview,
+            compact = width < 600,
+            sceneScale = 1,
         } = options;
         if (opacity <= 0.001) return;
         // The galaxy contracts substantially on phones while the canvas glyphs
         // would otherwise retain their desktop pixel size. Scale landmarks with
         // the available width so nearby real-world positions stay legible.
-        const viewportScale = width < 600 ? Math.max(0.54, Math.min(0.68, width / 680)) : 1;
+        const viewportScale = (compact ? Math.max(0.54, Math.min(0.68, width / 680)) : 1) * sceneScale;
 
         for (let index = 0; index < this.objects.length; index++) {
             const galacticObject = this.objects[index];
@@ -250,20 +254,27 @@ export class GalaxyObjectRenderer {
 
 export const drawSolMarker = (
     context: CanvasRenderingContext2D,
-    options: { alpha: number; localDetailOpacity: number; galaxyProgress: number; x: number; y: number },
+    options: {
+        alpha: number;
+        localDetailOpacity: number;
+        galaxyProgress: number;
+        x: number;
+        y: number;
+        scale?: number;
+    },
 ) => {
-    const { alpha, localDetailOpacity, galaxyProgress, x, y } = options;
+    const { alpha, localDetailOpacity, galaxyProgress, x, y, scale = 1 } = options;
     if (alpha <= 0.001) return;
 
     const markerAlpha = alpha * (1 - localDetailOpacity * 0.75);
     context.globalAlpha = markerAlpha;
     context.fillStyle = '#fabd2f';
-    context.font = 'bold 12px "DM Mono", monospace';
+    context.font = `bold ${12 * scale}px "DM Mono", monospace`;
     context.fillText('+', x, y);
     if (galaxyProgress > 0.62) {
         context.globalAlpha = markerAlpha * smoothstep((galaxyProgress - 0.62) / 0.25);
-        context.font = '9px "DM Mono", monospace';
-        context.fillText('[ SOL / YOU ARE HERE ]', x, y + 18);
+        context.font = `${9 * scale}px "DM Mono", monospace`;
+        context.fillText('[ SOL / YOU ARE HERE ]', x, y + 18 * scale);
     }
     context.globalAlpha = 1;
 };
