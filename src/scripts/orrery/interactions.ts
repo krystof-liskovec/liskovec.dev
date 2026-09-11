@@ -98,7 +98,8 @@ export const bindOrreryInteractions = ({
     const isFullscreen = () => document.fullscreenElement === system || fallbackFullscreen;
     const updateZoomOrientation = () => {
         if (!zoomInput) return;
-        const isHorizontal = isFullscreen() || window.matchMedia('(max-width: 700px)').matches;
+        const isPhoneLayout = window.matchMedia('(max-width: 700px)').matches;
+        const isHorizontal = isFullscreen() ? !isPhoneLayout : isPhoneLayout;
         zoomInput.setAttribute('aria-orientation', isHorizontal ? 'horizontal' : 'vertical');
     };
     const updateFullscreenControl = () => {

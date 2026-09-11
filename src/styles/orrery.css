@@ -830,9 +830,76 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
         grid-area: slider;
         min-width: 0;
     }
+    .solar-system:fullscreen .cosmic-zoom-scale::before,
+    .solar-system.is-fullscreen .cosmic-zoom-scale::before {
+        grid-area: slider;
+        width: 100%;
+        height: 4px;
+        content: '';
+        background: #665c54;
+        pointer-events: none;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > input,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > input {
+        min-width: 140px;
+        z-index: 1;
+    }
     .solar-system:fullscreen .cosmic-zoom-scale > span:nth-of-type(2),
     .solar-system.is-fullscreen .cosmic-zoom-scale > span:nth-of-type(2) {
         grid-area: sol;
+    }
+    .solar-system:fullscreen .cosmic-zoom-control,
+    .solar-system.is-fullscreen .cosmic-zoom-control {
+        top: 50%;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: auto;
+        left: auto;
+        transform: translateY(-50%);
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale,
+    .solar-system.is-fullscreen .cosmic-zoom-scale {
+        width: auto;
+        grid-template-areas:
+            'galaxy'
+            'slider'
+            'sol'
+            'status'
+            'speed';
+        grid-template-columns: auto;
+        grid-template-rows: auto 220px auto auto auto;
+        gap: 9px;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale > input,
+    .solar-system.is-fullscreen .cosmic-zoom-scale > input {
+        width: 18px;
+        min-width: 0;
+        height: 220px;
+        writing-mode: vertical-lr;
+        direction: rtl;
+        background: linear-gradient(to top, var(--orange) 0 var(--zoom-progress), #665c54 var(--zoom-progress) 100%)
+            center / 4px 100% no-repeat;
+        cursor: ns-resize;
+    }
+    .solar-system:fullscreen .cosmic-zoom-scale::before,
+    .solar-system.is-fullscreen .cosmic-zoom-scale::before {
+        width: 4px;
+        height: 100%;
+    }
+    .solar-system:fullscreen .cosmic-zoom-control input::-webkit-slider-runnable-track,
+    .solar-system.is-fullscreen .cosmic-zoom-control input::-webkit-slider-runnable-track {
+        width: 4px;
+        height: 100%;
+        background: #665c54;
+    }
+    .solar-system:fullscreen .cosmic-zoom-control input::-moz-range-track,
+    .solar-system.is-fullscreen .cosmic-zoom-control input::-moz-range-track {
+        width: 4px;
+        height: 100%;
+        background: #665c54;
+    }
+    .solar-system:fullscreen .cosmic-zoom-control input::-moz-range-progress,
+    .solar-system.is-fullscreen .cosmic-zoom-control input::-moz-range-progress {
+        background: var(--orange);
     }
     .cosmic-zoom-scale > output,
     .cosmic-zoom-scale > .simulation-speed-control {
@@ -858,10 +925,12 @@ html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
     .cosmic-zoom-control input::-webkit-slider-runnable-track {
         width: 100%;
         height: 4px;
+        background: #665c54;
     }
     .cosmic-zoom-control input::-moz-range-track {
         width: 100%;
         height: 4px;
+        background: #665c54;
     }
     .cosmic-zoom-control input::-moz-range-progress {
         background: transparent;

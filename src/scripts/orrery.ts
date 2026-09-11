@@ -534,7 +534,7 @@ if (canvasElement && systemElement && canvasContext) {
         const usesMobileCanvasBleed = width < 600 && !system.classList.contains('is-fullscreen');
         const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
         const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
-        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.9 : 1;
+        const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.7 : 1;
         const finalGalaxyRadius = Math.min(
             galaxyViewportWidth * 0.48 * fullscreenGalaxyScale,
             galaxyViewportHeight * 0.62 * fullscreenGalaxyScale,
