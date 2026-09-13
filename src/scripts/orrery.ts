@@ -10,6 +10,7 @@ import { OrreryIntroController } from './orrery/intro-controller';
 import {
     DEG,
     J2000,
+    exponentialResponse,
     rotateX,
     rotateY,
     rotateZ,
@@ -337,13 +338,14 @@ if (canvasElement && systemElement && canvasContext) {
             scheduleRender();
             return;
         }
-        const frameDelta = Math.min(40, lastFrameAt ? frameTime - lastFrameAt : 16.67);
+        const elapsedMs = lastFrameAt ? frameTime - lastFrameAt : 1000 / 60;
+        const frameDelta = Math.min(40, elapsedMs);
         lastFrameAt = frameTime;
         // Scene expansion toggles the canvas bleed class. Apply that state
         // before reading the canvas bounds so the first frame of every zoom
         // transition uses one coherent origin instead of painting once with
         // the previous geometry.
-        focusController.update(frameDelta, reducedMotion);
+        focusController.update(elapsedMs, reducedMotion);
         // Do not toggle this class in the pointer event that begins focus. Its
         // wider CSS canvas would stretch the old backing bitmap until this RAF.
         // Changing it here lets resize and redraw happen in the same paint.
@@ -396,8 +398,7 @@ if (canvasElement && systemElement && canvasContext) {
         // orbital spacing, body glyphs, masks, and Sol so the scene scales as one
         // unit rather than only moving the orbits inward.
         const viewportGlyphScale =
-            (isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, objectViewportWidth / 700))) *
-            fullscreenSolarSystemScale;
+            (isOgPreview ? 1.6 : Math.min(1, Math.max(0.61, objectViewportWidth / 700))) * fullscreenSolarSystemScale;
         const innerPlanetScale = compactViewport ? 0.84 : 1;
         const mobileSunProgress = Math.max(0, Math.min(1, (objectViewportWidth - 430) / 270));
         const viewportSunScale = (0.52 + mobileSunProgress * 0.48) * fullscreenSolarSystemScale;
@@ -455,7 +456,8 @@ if (canvasElement && systemElement && canvasContext) {
         pointer.x += (pointer.targetX - pointer.x) * 0.055;
         pointer.y += (pointer.targetY - pointer.y) * 0.055;
         const seconds = frameTime / 1000;
-        cosmicZoom.current += (cosmicZoom.target - cosmicZoom.current) * (reducedMotion ? 1 : 0.055);
+        cosmicZoom.current +=
+            (cosmicZoom.target - cosmicZoom.current) * (reducedMotion ? 1 : exponentialResponse(elapsedMs, 0.0034));
         const outwardZoom = Math.max(0, cosmicZoom.current);
         const focusedPlanet =
             objectFocus.target?.kind === 'planet'
@@ -707,10 +709,9 @@ if (canvasElement && systemElement && canvasContext) {
             focusedChildOffsetScratch.y = 0;
             focusedChildOffsetScratch.z = 0;
             if (focusedPlanet.name === 'Earth' && objectFocus.child.id === 'moon') {
-                const moonRadius =
-                    compactViewport
-                        ? Math.min(parentRadius * 1.55, width * 0.42)
-                        : Math.min(parentRadius * 1.65, height * 0.38);
+                const moonRadius = compactViewport
+                    ? Math.min(parentRadius * 1.55, width * 0.42)
+                    : Math.min(parentRadius * 1.65, height * 0.38);
                 const moonAngle = (focusedMoonElapsedDays / EARTH_MOON_PERIOD_DAYS) * Math.PI * 2;
                 focusedChildOffsetScratch.x = Math.cos(moonAngle) * moonRadius;
                 focusedChildOffsetScratch.y = Math.sin(moonAngle) * moonRadius;
@@ -922,6 +923,7 @@ if (canvasElement && systemElement && canvasContext) {
 
         solarSystemModel.projectOrbits({
             cameraTransform,
+            bounds: renderMetrics,
             plutoUnlocked: easterEgg.unlocked,
             plutoReveal,
             localDetailOpacity,
@@ -1054,6 +1056,10 @@ if (canvasElement && systemElement && canvasContext) {
         solarSystemRenderer.draw(context, {
             farMarks,
             nearMarks,
+            renderLeft,
+            renderTop,
+            renderRight,
+            renderBottom,
             bodies,
             cameraTransform,
             solveMoonOrbit: solveSolarMoonOrbit,

@@ -17,6 +17,8 @@ export type RenderMetrics = {
     dirty: boolean;
 };
 
+export type RenderBounds = Pick<RenderMetrics, 'renderLeft' | 'renderTop' | 'renderRight' | 'renderBottom'>;
+
 export type RenderMetricsController = {
     metrics: RenderMetrics;
     invalidate: () => void;

@@ -1,7 +1,10 @@
 import { decorativeRotation, planetSurfaceColor, planetSurfaceGlyph, sunSurfaceLight } from './planet-textures';
 import { drawSoftSceneMask } from './scene-mask';
+import { isOutsideRenderBounds } from './math';
+import type { RenderBounds } from './render-metrics';
 
 type SunRenderOptions = {
+    bounds: RenderBounds;
     x: number;
     y: number;
     scale: number;
@@ -189,6 +192,20 @@ export function drawSun(context: CanvasRenderingContext2D, options: SunRenderOpt
         planetTiltOffset * SUN_CAMERA_SURFACE_INFLUENCE,
         seconds,
     );
+    // Keep camera smoothing current while skipping hidden surface/corona work.
+    // The outermost streamer reaches at most 1.503 times the sphere radius.
+    if (
+        isOutsideRenderBounds(
+            x,
+            y,
+            surfaceColumns * characterWidth * 0.5 * 0.9 * 1.6 + fontSize * 2,
+            surfaceRowWidths.length * lineHeight * 0.5 * 1.6 + fontSize * 2,
+            options.bounds,
+        )
+    ) {
+        context.restore();
+        return;
+    }
     const spin = decorativeRotation('Sol', seconds, reducedMotion) + cameraSurface.rotation;
     const tiltCosine = Math.cos(cameraSurface.tilt);
     const tiltSine = Math.sin(cameraSurface.tilt);

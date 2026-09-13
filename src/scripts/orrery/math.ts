@@ -1,7 +1,18 @@
 import type { Planet, Vec3 } from './types';
+import type { RenderBounds } from './render-metrics';
 
 export const DEG = Math.PI / 180;
 export const J2000 = Date.UTC(2000, 0, 1, 12);
+
+// Response is per millisecond, so dropped frames do not lengthen a transition.
+export const exponentialResponse = (elapsedMs: number, response: number) =>
+    -Math.expm1(-Math.max(0, elapsedMs) * response);
+
+export const isOutsideRenderBounds = (x: number, y: number, radiusX: number, radiusY: number, bounds: RenderBounds) =>
+    x + radiusX < bounds.renderLeft ||
+    x - radiusX > bounds.renderRight ||
+    y + radiusY < bounds.renderTop ||
+    y - radiusY > bounds.renderBottom;
 
 export const shortestAngleDifference = (from: number, to: number) =>
     Math.atan2(Math.sin(to - from), Math.cos(to - from));

@@ -1,5 +1,6 @@
 import type { CameraState, CosmicZoomState } from './runtime-state';
 import type { FocusState, FocusTarget } from './types';
+import { exponentialResponse } from './math';
 
 type SetZoomLocation = (state: string, copy: string) => void;
 
@@ -83,7 +84,7 @@ export class FocusController {
         const targetProgress = this.state.exiting ? 0 : 1;
         const response = this.state.target.kind === 'galactic' && !this.state.exiting ? 0.0044 : 0.0034;
         this.state.progress +=
-            (targetProgress - this.state.progress) * (reducedMotion ? 1 : Math.min(0.11, frameDelta * response));
+            (targetProgress - this.state.progress) * (reducedMotion ? 1 : exponentialResponse(frameDelta, response));
         if (!this.state.exiting || this.state.progress >= 0.06) return;
 
         this.state.target = null;
@@ -104,7 +105,7 @@ export class FocusController {
         if (!this.state.child) return;
         const targetProgress = this.state.childExiting ? 0 : 1;
         this.state.childProgress +=
-            (targetProgress - this.state.childProgress) * (reducedMotion ? 1 : Math.min(0.11, frameDelta * 0.0034));
+            (targetProgress - this.state.childProgress) * (reducedMotion ? 1 : exponentialResponse(frameDelta, 0.0034));
         if (!this.state.childExiting || this.state.childProgress >= 0.06) return;
 
         this.state.child = null;

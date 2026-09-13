@@ -1,6 +1,7 @@
 import { MAJOR_MOON_SYSTEMS, PLANETS, PLANETARY_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
-import { DEG, J2000, rotateX, rotateZ, smoothstep, solveKeplerOrbit } from './math';
+import { DEG, J2000, isOutsideRenderBounds, rotateX, rotateZ, smoothstep, solveKeplerOrbit } from './math';
+import type { RenderBounds } from './render-metrics';
 import { ASTEROID_BELT, JUPITER_TROJANS, KUIPER_BELT, ZODIACAL_DUST, type SolarParticle } from './solar-scene-data';
 import { createParticleGlyphDrawer } from './particle-glyph';
 import { drawSoftSceneMask, sceneMaskColor } from './scene-mask';
@@ -111,7 +112,7 @@ export class SolarSystemSceneRenderer {
 
     draw(
         context: CanvasRenderingContext2D,
-        options: {
+        options: RenderBounds & {
             farMarks: OrbitMark[];
             nearMarks: OrbitMark[];
             bodies: ProjectedBody[];
@@ -509,7 +510,7 @@ export class SolarSystemSceneRenderer {
 
     private drawBodies(
         context: CanvasRenderingContext2D,
-        options: {
+        options: RenderBounds & {
             bodies: ProjectedBody[];
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
@@ -608,12 +609,14 @@ export class SolarSystemSceneRenderer {
         };
 
         const drawBody = (body: ProjectedBody) => {
+            if (body.reveal * localDetailOpacity <= 0.001) return;
             const apparentBodyScale = apparentScaleFor(body);
             const detailAppearanceReveal =
                 body === closestDetailBody ? smoothstep((planetSceneFocus - 0.08) / 0.72) : 0;
             this.drawPlanetShadow(context, body, apparentBodyScale, detailAppearanceReveal, options);
             this.drawPlanetarySystem(context, body, false, apparentBodyScale, options);
             drawSolarBody(context, body, {
+                bounds: options,
                 focusedPlanet,
                 seconds,
                 reducedMotion,
@@ -656,6 +659,7 @@ export class SolarSystemSceneRenderer {
             options.focusOcclusionDepth === null || focusedSun || 0 <= options.focusOcclusionDepth;
         if (sunPassesFocusOcclusion) {
             drawSun(context, {
+                bounds: options,
                 x: sunX,
                 y: sunY,
                 scale: renderedSunScale * options.surroundingSunScale ** 2 * focusedSunBridgeScale ** 2,
@@ -694,7 +698,7 @@ export class SolarSystemSceneRenderer {
         body: ProjectedBody,
         apparentBodyScale: number,
         detailAppearanceReveal: number,
-        options: {
+        options: RenderBounds & {
             focusedPlanet: Planet | null;
             solarSystemScale: number;
             viewportGlyphScale: number;
@@ -715,6 +719,7 @@ export class SolarSystemSceneRenderer {
             body.planet.name === 'Jupiter' || body.planet.name === 'Saturn' || body.planet.name === 'Uranus';
         const radiusX = (isGiant ? 16 : 11) * glyphScale;
         const radiusY = (isGiant ? 11 : 8) * glyphScale;
+        if (isOutsideRenderBounds(body.x, body.y, radiusX, radiusY, options)) return;
         // This ellipse is an opaque occlusion mask for the orbit marks and
         // particles behind a planet. Match the page's local background glow so
         // the mask does not appear as a second, darker planet-sized circle.
@@ -753,7 +758,7 @@ export class SolarSystemSceneRenderer {
         body: ProjectedBody,
         foreground: boolean,
         apparentBodyScale: number,
-        options: {
+        options: RenderBounds & {
             focusedPlanet: Planet | null;
             cameraTransform: CameraTransform;
             solveMoonOrbit: SolveMoonOrbit;
@@ -772,6 +777,7 @@ export class SolarSystemSceneRenderer {
         if (opacity <= 0.01) return;
         const majorMoonSystem = MAJOR_MOON_SYSTEMS[body.planet.name];
         const systemGlyphSize = Math.max(8, 9.5 * Math.sqrt(options.solarSystemScale)) * apparentBodyScale;
+        const padding = Math.max(12, systemGlyphSize * options.viewportGlyphScale);
         context.font = `bold ${systemGlyphSize * options.viewportGlyphScale}px "DM Mono", monospace`;
 
         for (let moonIndex = 0; moonIndex < system.radii.length; moonIndex++) {
@@ -795,6 +801,9 @@ export class SolarSystemSceneRenderer {
             const moon = options.cameraTransform(this.moonWorld, this.moonProjection);
             if (options.focusOcclusionDepth !== null && moon.z > options.focusOcclusionDepth) continue;
             if (moon.z >= body.z !== foreground) continue;
+            // Cull each satellite independently: a moon may still be visible
+            // even when its parent planet is outside the canvas.
+            if (isOutsideRenderBounds(moon.x, moon.y, padding, padding, options)) continue;
 
             context.globalAlpha = opacity;
             context.fillStyle = '#bdae93';

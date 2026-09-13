@@ -1,5 +1,6 @@
 import { PLANETS } from './catalog';
-import { heliocentricPosition, orbitalPoint, smoothstep, solveOrbit } from './math';
+import { heliocentricPosition, isOutsideRenderBounds, orbitalPoint, smoothstep, solveOrbit } from './math';
+import type { RenderBounds } from './render-metrics';
 import { ORBIT_POINTS, ORBIT_SAMPLES } from './solar-scene-data';
 import type { Planet, ProjectedBody, Vec3 } from './types';
 
@@ -21,8 +22,8 @@ export class SolarSystemModel {
     private readonly nextOrbitProjection = { x: 0, y: 0, z: 0, scale: 1 };
     private readonly focusedOrbit = { angle: 0, distance: 1 };
     private readonly focusedWorld = { x: 0, y: 0, z: 0 };
-    private readonly focusedNextWorld = { x: 0, y: 0, z: 0 };
     private readonly focusedProjection = { x: 0, y: 0, z: 0, scale: 1 };
+    private readonly focusedOrbitPoints = new Map<Planet, Vec3[]>();
     private readonly orbitSolutions = PLANETS.map(() => ({ angle: 0, distance: 1 }));
     private readonly bodyPool: ProjectedBody[] = PLANETS.map((planet) => ({
         planet,
@@ -35,7 +36,7 @@ export class SolarSystemModel {
         scale: 1,
     }));
     private readonly orbitMarkPool: OrbitMark[] = Array.from(
-        { length: PLANETS.length * FOCUSED_ORBIT_SAMPLES },
+        { length: FOCUSED_ORBIT_SAMPLES + (PLANETS.length - 1) * ORBIT_SAMPLES },
         () => ({
             x: 0,
             y: 0,
@@ -49,6 +50,7 @@ export class SolarSystemModel {
 
     projectOrbits(options: {
         cameraTransform: CameraTransform;
+        bounds: RenderBounds;
         plutoUnlocked: boolean;
         plutoReveal: number;
         localDetailOpacity: number;
@@ -60,6 +62,7 @@ export class SolarSystemModel {
     }) {
         const {
             cameraTransform,
+            bounds,
             plutoUnlocked,
             plutoReveal,
             localDetailOpacity,
@@ -71,25 +74,22 @@ export class SolarSystemModel {
         } = options;
         this.farMarks.length = 0;
         this.nearMarks.length = 0;
+        if (localDetailOpacity <= 0.001) return;
         let markCount = 0;
 
         PLANETS.forEach((planet, planetIndex) => {
             if (planet.easterEgg && !plutoUnlocked) return;
             const introReveal = smoothstep((introProgress - planetIndex * 0.055) / 0.58);
+            if (introReveal <= 0.001) return;
             const isFocusedOrbit = focusedPlanetName === planet.name;
             const sampleCount = isFocusedOrbit ? FOCUSED_ORBIT_SAMPLES : ORBIT_SAMPLES;
+            const orbitPoints = isFocusedOrbit ? this.getFocusedOrbitPoints(planet) : ORBIT_POINTS[planetIndex];
             let previousGlyph: string | null = null;
             for (let sample = 0; sample < sampleCount; sample++) {
                 if (!isFocusedOrbit && (sample + planetIndex) % 3 === 0) continue;
                 const baseSample = isFocusedOrbit ? Math.floor(sample / FOCUSED_ORBIT_SUBDIVISIONS) : sample;
-                const projectedWorld = isFocusedOrbit
-                    ? this.projectOrbitPoint(planet, sample, sampleCount, this.focusedWorld)
-                    : ORBIT_POINTS[planetIndex][sample];
-                const nextWorld = isFocusedOrbit
-                    ? this.projectOrbitPoint(planet, (sample + 1) % sampleCount, sampleCount, this.focusedNextWorld)
-                    : ORBIT_POINTS[planetIndex][(sample + 1) % ORBIT_SAMPLES];
-                const projected = cameraTransform(projectedWorld, this.orbitProjection);
-                const next = cameraTransform(nextWorld, this.nextOrbitProjection);
+                const projected = cameraTransform(orbitPoints[sample], this.orbitProjection);
+                const next = cameraTransform(orbitPoints[(sample + 1) % sampleCount], this.nextOrbitProjection);
                 // An orbit lane is represented by the glyph at its starting
                 // point. Do not let a single near-side mark leak through just
                 // because the adjacent sample crosses back behind the focus.
@@ -111,6 +111,9 @@ export class SolarSystemModel {
                       (compact && baseSample % 4 === 3 && !directionChanged)
                     : (sample + planetIndex) % 3 === 0 || (compact && sample % 4 === 3 && !directionChanged);
                 if (!isFocusedOrbit && compact && sample % 4 === 3 && !directionChanged) continue;
+                // Keep direction tracking above this check so clipping cannot
+                // change the sparse glyph pattern when an arc returns to view.
+                if (isOutsideRenderBounds(projected.x, projected.y, 24, 24, bounds)) continue;
                 const mark = this.orbitMarkPool[markCount++];
                 mark.x = projected.x;
                 mark.y = projected.y;
@@ -131,10 +134,19 @@ export class SolarSystemModel {
         });
     }
 
-    private projectOrbitPoint(planet: Planet, sample: number, sampleCount: number, target: Vec3) {
-        const trueAnomaly = (sample / sampleCount) * Math.PI * 2;
-        const normalizedDistance = (1 - planet.e ** 2) / (1 + planet.e * Math.cos(trueAnomaly));
-        return orbitalPoint(planet, trueAnomaly, normalizedDistance, target);
+    private getFocusedOrbitPoints(planet: Planet) {
+        let points = this.focusedOrbitPoints.get(planet);
+        if (!points) {
+            // Orbit geometry is fixed; only its camera projection changes.
+            // Build each dense lane on demand to keep overview startup light.
+            points = Array.from({ length: FOCUSED_ORBIT_SAMPLES }, (_, sample) => {
+                const trueAnomaly = (sample / FOCUSED_ORBIT_SAMPLES) * Math.PI * 2;
+                const normalizedDistance = (1 - planet.e ** 2) / (1 + planet.e * Math.cos(trueAnomaly));
+                return orbitalPoint(planet, trueAnomaly, normalizedDistance);
+            });
+            this.focusedOrbitPoints.set(planet, points);
+        }
+        return points;
     }
 
     projectBodies(options: {

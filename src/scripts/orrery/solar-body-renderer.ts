@@ -1,4 +1,5 @@
-import { DEG, smoothstep } from './math';
+import { DEG, isOutsideRenderBounds, smoothstep } from './math';
+import type { RenderBounds } from './render-metrics';
 import { decorativeRotation, planetSurfaceColor, planetSurfaceGlyph, planetSurfaceLight } from './planet-textures';
 import type { Planet, ProjectedBody } from './types';
 
@@ -46,6 +47,7 @@ export const solarBodyViewportScale = (planetName: string, viewportGlyphScale: n
     viewportGlyphScale * (INNER_PLANETS.has(planetName) ? innerPlanetScale : 1);
 
 type SolarBodyOptions = {
+    bounds: RenderBounds;
     focusedPlanet: Planet | null;
     seconds: number;
     reducedMotion: boolean;
@@ -79,6 +81,8 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         planetTiltOffset,
         planetYawOffset,
     } = options;
+    const focusedDetailReveal = focusedPlanet === body.planet ? smoothstep((planetSceneFocus - 0.08) / 0.28) : 0;
+    if (body.reveal * localDetailOpacity * (options.lodOpacity ?? 1) * (1 - focusedDetailReveal) <= 0.001) return;
     if (detailAppearanceReveal > 0 && detailAppearanceReveal < 1) {
         const lodOpacity = options.lodOpacity ?? 1;
         drawSolarBody(context, body, {
@@ -120,7 +124,6 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
     const lodBodyReveal = detailedAppearance ? 1 : surroundingBodyReveal;
     const bodyOpacity =
         body.reveal * localDetailOpacity * (isFocusedPlanet ? 1 : lodBodyReveal) * (options.lodOpacity ?? 1);
-    const focusedDetailReveal = isFocusedPlanet ? smoothstep((planetSceneFocus - 0.08) / 0.28) : 0;
     const focusedSpriteScale = isFocusedPlanet ? 1 + planetSceneFocus * 2 : apparentBodyScale;
     context.fillStyle = planet.color;
     context.shadowBlur = 0;
@@ -138,6 +141,23 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
         const characterWidth = context.measureText('M').width * 0.76;
         const sphereWidth = compactGrid.columns * characterWidth;
         const sphereHeight = compactGrid.rows * compactLineHeight;
+        // Rings can turn out of their default horizontal pose. Bound their
+        // full radius in both axes, including glyphs and hover brackets.
+        const ringRadius =
+            planet.name === 'Saturn' ? sphereWidth * 1.085 : planet.name === 'Uranus' ? sphereWidth * 0.74 : 0;
+        const padding = Math.max(12, compactFontSize * 1.6, fontSize * 0.72) + 8;
+        if (
+            isOutsideRenderBounds(
+                body.x,
+                body.y,
+                Math.max(sphereWidth / 2, ringRadius) + padding,
+                Math.max(sphereHeight / 2, ringRadius) + padding,
+                options.bounds,
+            )
+        ) {
+            context.globalAlpha = 1;
+            return;
+        }
         const spin = decorativeRotation(planet.name, seconds, reducedMotion) + planetRotationOffset;
         const tiltCosine = Math.cos(planetTiltOffset);
         const tiltSine = Math.sin(planetTiltOffset);
@@ -271,12 +291,28 @@ export const drawSolarBody = (context: CanvasRenderingContext2D, body: Projected
     } else {
         context.font = `bold ${fontSize * focusedSpriteScale}px "DM Mono", monospace`;
         context.lineWidth = Math.max(2, fontSize * 0.2);
+        for (const line of lines) spriteWidth = Math.max(spriteWidth, context.measureText(line).width);
+        const padding = Math.max(12, fontSize * focusedSpriteScale) + 8;
+        const hoverRadius = isHovered
+            ? spriteWidth * (planet.name === 'Saturn' ? 0.88 : planet.name === 'Uranus' ? 0.74 : 0.5)
+            : 0;
+        if (
+            isOutsideRenderBounds(
+                body.x,
+                body.y,
+                Math.max(spriteWidth / 2, hoverRadius) + padding,
+                (lines.length * lineHeight * focusedSpriteScale) / 2 + padding,
+                options.bounds,
+            )
+        ) {
+            context.globalAlpha = 1;
+            return;
+        }
         lines.forEach((line, index) => {
             const lineY = body.y + (index - (lines.length - 1) / 2) * lineHeight * focusedSpriteScale;
             if (!planet.easterEgg) context.strokeText(line, body.x, lineY);
             context.fillText(line, body.x, lineY);
         });
-        for (const line of lines) spriteWidth = Math.max(spriteWidth, context.measureText(line).width);
     }
     if (isHovered) {
         context.fillStyle = '#ebdbb2';
