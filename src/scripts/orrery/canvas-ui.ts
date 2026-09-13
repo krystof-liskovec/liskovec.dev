@@ -1,3 +1,4 @@
+import { localize } from './i18n';
 type ReadoutOptions = {
     lines: string[];
     anchorX: number;
@@ -11,7 +12,7 @@ type ReadoutOptions = {
 
 export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutOptions) {
     const {
-        lines,
+        lines: sourceLines,
         anchorX,
         anchorY,
         viewportWidth,
@@ -23,6 +24,20 @@ export function drawReadout(context: CanvasRenderingContext2D, options: ReadoutO
     context.save();
     context.font = '12px "DM Mono", monospace';
     const horizontalPadding = 22;
+    const maxLineWidth = Math.max(1, viewportWidth - 16 - horizontalPadding);
+    const lines = sourceLines.flatMap(source => {
+        const wrapped: string[] = [];
+        let line = '';
+        for (const word of localize(source).split(/\s+/)) {
+            const next = line ? `${line} ${word}` : word;
+            if (line && context.measureText(next).width > maxLineWidth) {
+                wrapped.push(line);
+                line = word;
+            } else line = next;
+        }
+        wrapped.push(line);
+        return wrapped;
+    });
     const contentWidth = Math.max(...lines.map((line) => context.measureText(line).width), 0);
     const width = Math.min(Math.ceil(contentWidth + horizontalPadding), viewportWidth - 16);
     const height = lines.length * 16 + 18;

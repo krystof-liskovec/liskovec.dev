@@ -1,3 +1,4 @@
+import { localize } from './i18n';
 import { FOCUSED_ART, MAJOR_MOON_SYSTEMS } from './catalog';
 import type { MajorMoon } from './catalog';
 import { drawReadout } from './canvas-ui';
@@ -865,12 +866,12 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
         context.globalAlpha = infoReveal;
         context.fillStyle = target.color;
         context.font = `bold ${compact ? 11 : 13}px "DM Mono", monospace`;
-        context.fillText(`[ ${target.name.toUpperCase()} ]`, viewportCenterX, infoY);
+        context.fillText(localize(`[ ${target.name.toUpperCase()} ]`), viewportCenterX, infoY, width - 32);
         if (!hideCompactDetails) {
             context.fillStyle = '#a89984';
             context.font = '12px "DM Mono", monospace';
-            context.fillText(`${target.subtitle} · ${target.detail}`, viewportCenterX, infoY + 21);
-            if (target.fact) context.fillText(target.fact, viewportCenterX, infoY + 42);
+            context.fillText(localize(`${target.subtitle} · ${target.detail}`), viewportCenterX, infoY + 21, width - 32);
+            if (target.fact) context.fillText(localize(target.fact), viewportCenterX, infoY + 42, width - 32);
         }
         if (objectFocus.child && objectFocus.childProgress > 0.001) {
             const child = objectFocus.child;
@@ -970,10 +971,10 @@ export const drawFocusScene = (context: CanvasRenderingContext2D, options: Focus
             context.globalAlpha = childInfoReveal;
             context.fillStyle = child.color;
             context.font = `bold ${compactViewport ? 11 : 13}px "DM Mono", monospace`;
-            context.fillText(`[ ${child.name.toUpperCase()} ]`, viewportCenterX, childInfoY);
+            context.fillText(localize(`[ ${child.name.toUpperCase()} ]`), viewportCenterX, childInfoY, width - 32);
             context.fillStyle = '#a89984';
             context.font = '12px "DM Mono", monospace';
-            context.fillText(`${child.subtitle} · ${child.detail}`, viewportCenterX, childInfoY + 21);
+            context.fillText(localize(`${child.subtitle} · ${child.detail}`), viewportCenterX, childInfoY + 21, width - 32);
         }
         context.globalAlpha = 1;
     }

@@ -1,19 +1,88 @@
 ---
-const onHomepage = Astro.url.pathname === '/';
-const onBlog = Astro.url.pathname.startsWith('/blog');
+import { getLocale, getTranslator, localizedPath, stripLocale, locales, localeNames, type Locale } from '../i18n';
+interface Props {
+    languages?: Locale[];
+}
+const { languages = [...locales] } = Astro.props;
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+const path = stripLocale(Astro.url.pathname);
+const onHomepage = path === '/';
+const onBlog = path.startsWith('/blog');
 ---
 
 <header class="site-header">
-    <a class="brand-lockup" href="/" aria-label="Kryštof Lískovec home">
+    <a class="brand-lockup" href={localizedPath('/', locale)} aria-label={t('Kryštof Lískovec home')}>
         <span class="wordmark"><span>/home/</span>krystof-liskovec</span>
-        <p class="eyebrow">devops · software developer</p>
+        <p class="eyebrow">{t('devops · software developer')}</p>
     </a>
-    <nav aria-label="Primary navigation">
-        <a href={onHomepage ? '#about' : '/#about'}>[ about ]</a>
-        <a
-            href={onHomepage ? '#contact' : '/#contact'}
-            aria-current={onHomepage && Astro.url.hash === '#contact' ? 'page' : undefined}>[ contact ]</a
-        >
-        <a href="/blog" aria-current={onBlog ? 'page' : undefined}>[ blog ]</a>
-    </nav>
+    <div class="header-controls">
+        <nav aria-label={t('Primary navigation')}>
+            <a href={onHomepage ? '#about' : localizedPath('/#about', locale)}>[ {t('about')} ]</a>
+            <a
+                href={onHomepage ? '#contact' : localizedPath('/#contact', locale)}
+                aria-current={onHomepage && Astro.url.hash === '#contact' ? 'page' : undefined}>[ {t('contact')} ]</a
+            >
+            <a href={localizedPath('/blog/', locale)} aria-current={onBlog ? 'page' : undefined}>[ {t('blog')} ]</a>
+        </nav>
+        <details class="language-switcher">
+            <summary aria-label={`${t('Language')}: ${localeNames[locale]}`}>
+                [ <span data-current-language>{locale}</span>
+                <span aria-hidden="true">▾</span> ]
+            </summary>
+            <nav class="language-menu" aria-label={t('Language')}>
+                {
+                    locales.map((language) => (
+                        <a
+                            href={localizedPath(languages.includes(language) ? path : '/blog/', language)}
+                            lang={language}
+                            hreflang={language}
+                            data-language={language}
+                            data-preserve-hash={languages.includes(language) ? '' : undefined}
+                            aria-label={localeNames[language]}
+                            aria-current={language === locale ? 'page' : undefined}
+                        >
+                            <span aria-hidden="true">{language}</span> {localeNames[language]}
+                        </a>
+                    ))
+                }
+            </nav>
+        </details>
+    </div>
 </header>
+
+<script>
+    const switcher = document.querySelector<HTMLDetailsElement>('.language-switcher');
+    const summary = switcher?.querySelector('summary');
+    document.addEventListener('click', (event) => {
+        if (event.target instanceof Node && !switcher?.contains(event.target) && switcher) switcher.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && switcher?.open) {
+            switcher.open = false;
+            summary?.focus();
+        }
+    });
+    // Keep section anchors when changing language. Real URLs also work without JavaScript.
+    document.querySelectorAll<HTMLAnchorElement>('[data-language]').forEach((link) => {
+        const rememberLanguage = () => {
+            const destination = new URL(link.href);
+            const language = link.dataset.language;
+            if (language === 'en' || language === 'de' || language === 'cs') {
+                try {
+                    localStorage.setItem('liskovec-language', language);
+                } catch {
+                    // An explicit English entry must not immediately auto-switch
+                    // back to the browser language when storage is unavailable.
+                    if (language === 'en' && destination.pathname === '/') destination.searchParams.set('lang', 'en');
+                }
+            }
+            if (link.hasAttribute('data-preserve-hash')) destination.hash = location.hash;
+            link.href = destination.href;
+        };
+        link.addEventListener('click', rememberLanguage);
+        link.addEventListener('auxclick', (event) => {
+            if (event.button === 1) rememberLanguage();
+        });
+    });
+</script>

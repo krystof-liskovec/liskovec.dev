@@ -1,0 +1,518 @@
+---
+import { getLocale, getTranslator, localizedPath } from '../i18n';
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+import Layout from '../layouts/Layout.astro';
+import PostList from './PostList.astro';
+import SiteShell from './SiteShell.astro';
+import { getCollection } from 'astro:content';
+import '../styles/site.css';
+import { translateDisplay } from '../scripts/orrery/i18n';
+const animationText = (text: string) => translateDisplay(text, locale);
+
+const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && data.featured && data.locale === locale))
+    .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf())
+    .slice(0, 3);
+const homeUrl = new URL(localizedPath('/', locale), Astro.site ?? Astro.url).href;
+const personId = `${homeUrl}#person`;
+const profileStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${homeUrl}#profile`,
+    url: homeUrl,
+    name: t("Kryštof Lískovec | DevOps & Software Developer"),
+    mainEntity: {
+        '@type': 'Person',
+        '@id': personId,
+        name: 'Kryštof Lískovec',
+        givenName: 'Kryštof',
+        familyName: 'Lískovec',
+        url: homeUrl,
+        jobTitle: t("Software Developer"),
+        description:
+            t("Software developer from the Czech Republic working across DevOps, reliable systems, services, internal tools, and deployment automation."),
+        homeLocation: {
+            '@type': 'Country',
+            name: t("Czech Republic"),
+        },
+        knowsAbout: ['DevOps', t("Software development"), 'Linux', t("Containers"), 'CI/CD', t("Infrastructure automation")],
+    },
+};
+---
+
+<Layout
+    title={t("Kryštof Lískovec | DevOps & Software Developer")}
+    description={t("Software developer working across DevOps, reliable systems, services, internal tools, and deployment automation.")}
+    structuredData={profileStructuredData}
+    resetScrollOnReload
+>
+    <SiteShell>
+        <section class="solar-hero">
+            <div class="solar-heading">
+                <h1>
+                    <span class="solar-heading-lead" id="solar-heading-lead">{t("somewhere")}</span><br /><span
+                        class="zoom-location-frame"><span id="zoom-location">{t("in the solar system.")}</span></span
+                    >
+                </h1>
+            </div>
+            <div
+                class="solar-system"
+                id="solar-system"
+                aria-label={t("A live, approximate ASCII visualization of the Solar System and the Milky Way galaxy")}
+            >
+                <div class="solar-static" aria-hidden="true">
+                    <pre>
+                                      .  {animationText("Neptune").toLowerCase()}
+                              .  {animationText("Uranus").toLowerCase()}
+                       ===o===  {animationText("Saturn").toLowerCase()}
+                  O  {animationText("Jupiter").toLowerCase()}
+              .  {animationText("Mars").toLowerCase()}       .  {animationText("Earth").toLowerCase()}
+           .  {animationText("Venus").toLowerCase()}   .  {animationText("Mercury").toLowerCase()}
+                        .---.
+                       ( {t("SOL")} )
+                        '---'</pre>
+                </div>
+                <p class="sr-only">
+                    {t("An interactive ASCII visualization of the Solar System and the Milky Way galaxy introduces Kryštof Lískovec’s portfolio. Use the zoom controls to move between the Solar System and the Milky Way galaxy, and use the arrow keys to turn the current view. The portfolio content continues below with information about his DevOps and software development work, technical skills, blog posts, and contact details.")}
+                </p>
+                <p class="sr-only" id="solar-canvas-help">
+                    {t("Focus the Solar System and Milky Way galaxy animation with Tab. Press Enter to choose a planet, use the arrow keys to move between planets or Sol, and press Enter again to zoom in. In a focused planetary scene, use Tab or the arrow keys to choose a moon or station. Press Escape to zoom out and Space to return to camera controls.")}
+                </p>
+                <canvas class="galaxy-glow-canvas" id="galaxy-glow-canvas" aria-hidden="true"></canvas>
+                <canvas class="solar-gpu-canvas" id="solar-gpu-canvas" aria-hidden="true"></canvas>
+                <canvas
+                    id="solar-canvas"
+                    role="img"
+                    aria-label={t("Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions")}
+                    aria-describedby="solar-canvas-help"
+                    aria-keyshortcuts="Enter Escape Space Tab Shift+Tab ArrowLeft ArrowRight ArrowUp ArrowDown"
+                    tabindex="0"></canvas>
+                <button class="object-focus-return" id="object-focus-return" type="button" hidden>{t("[ ← return ]")}</button>
+                <button
+                    class="mobile-fullscreen-toggle"
+                    id="mobile-fullscreen-toggle"
+                    type="button"
+                    aria-label={t("Open fullscreen animation")}
+                    aria-pressed="false"><span class="mobile-fullscreen-icon" aria-hidden="true">⛶</span></button
+                >
+                <div class="mobile-orientation-hint" role="status" aria-live="polite">
+                    <span aria-hidden="true">↔</span> {t("tilt phone sideways")} <span aria-hidden="true">↔</span>
+                </div>
+                <div class="cosmic-zoom-control" role="group" aria-label={t("Cosmic zoom controls")}>
+                    <label class="sr-only" for="cosmic-zoom">{t("Zoom between the Solar System and the Milky Way")}</label>
+                    <div class="cosmic-zoom-scale">
+                        <span aria-hidden="true">{t("MILKY WAY")}</span>
+                        <input
+                            id="cosmic-zoom"
+                            type="range"
+                            min="0"
+                            max="100"
+                            value="0"
+                            step="1"
+                            aria-orientation="vertical"
+                            aria-valuenow="0"
+                            aria-valuetext={t("0%, local system")}
+                            aria-controls="solar-system"
+                        />
+                        <span aria-hidden="true">{t("SOL")}</span>
+                        <output id="cosmic-zoom-status" for="cosmic-zoom">{t("LOCAL SYSTEM")}</output>
+                        <div class="simulation-speed-control">
+                            <span class="sr-only" id="simulation-speed-label">{t("Simulation speed")}</span>
+                            <div class="simulation-speed-picker" data-speed-mode="solar">
+                                <button
+                                    class="simulation-speed"
+                                    id="solar-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="solar-simulation-speed-menu"
+                                    data-value="1">{animationText("1h/s")}</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="solar-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">{animationText("1h/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >{animationText("12h/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >{animationText("7d/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="4"
+                                        >{animationText("30d/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="5"
+                                        >{animationText("1y/s")}</button
+                                    >
+                                </div>
+                            </div>
+                            <div class="simulation-speed-picker" data-speed-mode="galactic" hidden>
+                                <button
+                                    class="simulation-speed"
+                                    id="galactic-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="galactic-simulation-speed-menu"
+                                    data-value="1">{animationText("1My/s")}</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="galactic-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">{animationText("1My/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >{animationText("5My/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >{animationText("10My/s")}</button
+                                    >
+                                </div>
+                            </div>
+                            <div class="simulation-speed-picker" data-speed-mode="rotation" hidden>
+                                <button
+                                    class="simulation-speed"
+                                    id="rotation-simulation-speed"
+                                    type="button"
+                                    aria-labelledby="simulation-speed-label"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="rotation-simulation-speed-menu"
+                                    data-value="1">{animationText("1h/s")}</button
+                                >
+                                <div
+                                    class="simulation-speed-menu"
+                                    id="rotation-simulation-speed-menu"
+                                    role="listbox"
+                                    aria-labelledby="simulation-speed-label"
+                                    hidden
+                                >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="0"
+                                        >1×</button
+                                    >
+                                    <button
+                                        class="simulation-speed-option"
+                                        type="button"
+                                        role="option"
+                                        data-value="1"
+                                        aria-selected="true">{animationText("1h/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="2"
+                                        >6h/s</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="3"
+                                        >{animationText("12h/s")}</button
+                                    >
+                                    <button class="simulation-speed-option" type="button" role="option" data-value="4"
+                                        >{animationText("1d/s")}</button
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <label class="cosmic-zoom-switch">
+                    <span class="cosmic-zoom-switch-label cosmic-zoom-switch-solar">{t("SOL")}</span>
+                    <input
+                        id="cosmic-zoom-switch"
+                        type="checkbox"
+                        role="switch"
+                        aria-label={t("Switch between the Solar System and the Milky Way")}
+                        aria-checked="false"
+                        aria-controls="solar-system"
+                    />
+                    <span class="cosmic-zoom-switch-track" aria-hidden="true"><span></span></span>
+                    <span class="cosmic-zoom-switch-label cosmic-zoom-switch-galaxy">{t("GALAXY")}</span>
+                </label>
+                <div class="solar-caption">
+                    <div class="solar-caption-primary">
+                        <span id="camera-stats" translate="no">{animationText("PITCH +58.0° · YAW +0.0° · ROLL −12.0°")}</span>
+                        <div class="solar-time-controls">
+                            <span id="solar-time" translate="no">{t("UTC / BROWSER TIME")}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-footer"><a href="#about">{t("↓ scroll to learn more")}</a></div>
+        </section>
+        <div class="profile-layout">
+            <section class="content-section" id="about">
+                <div class="section-label">
+                    <a class="section-label-anchor" href="#about">{t("01 / about me")}</a>
+                </div><div class="about-grid">
+                    <h2>{t("i build reliable software and the systems it runs on.")}</h2>
+                    <div class="about-copy">
+                        <p>
+                            {t("hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic working across devops, infrastructure, and generally software development. my story began in backend development and gradually expanded into devops.")}
+                        </p><p>
+                            {t("these days my work sits between both. i still write code, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, faster and more maintainable setups.")}
+                        </p><p>
+                            {t("outside of work, i’m usually somewhere around Linux, my homelab, or open-source projects.")}
+                        </p>
+                        <p class="about-cv-link">
+                            <a href={locale === "en" ? "/cv.pdf" : `/cv-${locale}.pdf`} target="_blank" rel="noopener noreferrer">{t("cv")} <span>↗</span></a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+            <div class="utility-grid">
+                <section class="about-toolbox" id="skills">
+                    <div class="section-label">
+                        <a class="section-label-anchor" href="#skills">{t("02 / toolbox")}</a>
+                    </div><div class="skill-groups">
+                        <div>
+                            <span>{t("operations")}</span><p>
+                                Linux &lt;3&nbsp;· Docker&nbsp;· GitLab CI/CD&nbsp;· IaC&nbsp;· Nginx&nbsp;·
+                                Consul&nbsp;· OpenBao&nbsp;· Sonatype Nexus&nbsp;· n8n
+                            </p>
+                        </div><div>
+                            <span>{t("data")}</span><p>
+                                PostgreSQL&nbsp;· MySQL&nbsp;· MongoDB&nbsp;· Elasticsearch&nbsp;· Redis&nbsp;· Kibana
+                            </p>
+                        </div><div><span>{t("backend")}</span><p>Go &lt;3&nbsp;· NestJS&nbsp;· Symfony</p></div><div>
+                            <span>{t("frontend")}</span><p>React&nbsp;· Svelte&nbsp;· Astro</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="about-contact" id="contact">
+                    <div class="section-label">
+                        <a class="section-label-anchor" href="#contact">{t("03 / contact")}</a>
+                    </div>
+                    <div class="contact-links">
+                        <a href="mailto:krystof@liskovec.dev">{t("email")} <span>↗</span></a>
+                        <a href="https://github.com/krystof-liskovec" target="_blank" rel="noopener noreferrer"
+                            >github <span>↗</span></a
+                        >
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="content-section" id="blog">
+            <div class="section-label">
+                <a class="section-label-anchor" href="#blog">{t("04 / featured posts")}</a>
+            </div><PostList posts={featuredPosts} /><div class="blog-actions">
+                <a class="blog-link" href={localizedPath("/blog/", locale)}>{t("[ visit the blog → ]")}</a>
+            </div>
+        </section>
+    </SiteShell>
+</Layout>
+
+<script>
+    const solarHeadingLead = document.querySelector<HTMLElement>('#solar-heading-lead');
+    const zoomLocation = document.querySelector<HTMLElement>('#zoom-location');
+    const initialLead = solarHeadingLead?.textContent ?? '';
+    const initialLocation = zoomLocation?.textContent ?? '';
+    const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
+    const solarSystem = document.querySelector<HTMLElement>('#solar-system');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const initialHashTarget = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
+    const isAnchorEntry = Boolean(initialHashTarget);
+
+    if (isAnchorEntry) document.documentElement.setAttribute('data-orrery-anchor-entry', '');
+    if (!reducedMotion && !isAnchorEntry) {
+        solarHeading?.classList.add('is-intro-running');
+        solarSystem?.classList.add('is-intro-running');
+    }
+    document.documentElement.setAttribute('data-orrery-heading-managed', '');
+
+    const createIntroTypewriter = (element: HTMLElement) => {
+        const TYPE_DELAY_MS = 32;
+        let timer = 0;
+        let run = 0;
+
+        const setText = (target: string, onComplete?: () => void) => {
+            run += 1;
+            const activeRun = run;
+            window.clearTimeout(timer);
+
+            if (reducedMotion) {
+                element.textContent = target;
+                element.classList.remove('is-typing');
+                onComplete?.();
+                return;
+            }
+
+            let visibleLength = 0;
+            element.classList.add('is-typing');
+            const step = () => {
+                if (activeRun !== run) return;
+                if (visibleLength < target.length) {
+                    visibleLength += 1;
+                    element.textContent = target.slice(0, visibleLength);
+                    timer = window.setTimeout(step, TYPE_DELAY_MS);
+                    return;
+                }
+                element.classList.remove('is-typing');
+                onComplete?.();
+            };
+            step();
+        };
+
+        return { setText };
+    };
+
+    let headingFinished = false;
+    const headingLeadWriter = solarHeadingLead ? createIntroTypewriter(solarHeadingLead) : null;
+    const zoomLocationWriter = zoomLocation ? createIntroTypewriter(zoomLocation) : null;
+    const loadOrrery = () => void import('../scripts/orrery.ts');
+    // Give the completed heading a real paint opportunity before the heavy
+    // interactive scene module begins evaluating on throttled devices.
+    const ORRERY_BOOT_DELAY_MS = 320;
+    const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+    };
+    const scheduleOrrery = () => {
+        if (isAnchorEntry) {
+            loadOrrery();
+            return;
+        }
+        window.setTimeout(() => {
+            if (idleWindow.requestIdleCallback) {
+                idleWindow.requestIdleCallback(loadOrrery, { timeout: 1200 });
+                return;
+            }
+            loadOrrery();
+        }, ORRERY_BOOT_DELAY_MS);
+    };
+    let pageLoaded = document.readyState === 'complete';
+    let orreryStarted = false;
+    const maybeStartOrrery = () => {
+        if (!pageLoaded || orreryStarted) return;
+        if (!headingFinished) return;
+        orreryStarted = true;
+        requestAnimationFrame(() => requestAnimationFrame(scheduleOrrery));
+    };
+    const finishHeading = () => {
+        headingFinished = true;
+        maybeStartOrrery();
+    };
+    window.addEventListener(
+        'load',
+        () => {
+            pageLoaded = true;
+            maybeStartOrrery();
+        },
+        { once: true },
+    );
+
+    if (isAnchorEntry) {
+        if (solarHeadingLead) solarHeadingLead.textContent = initialLead;
+        if (zoomLocation) zoomLocation.textContent = initialLocation;
+        finishHeading();
+    } else if (solarHeadingLead && zoomLocation) {
+        solarHeadingLead.textContent = '';
+        zoomLocation.textContent = '';
+        headingLeadWriter?.setText(initialLead, () => {
+            zoomLocationWriter?.setText(initialLocation, finishHeading);
+        });
+    } else {
+        finishHeading();
+    }
+
+    let arrivalFrame = 0;
+    const showSectionArrival = (section: HTMLElement) => {
+        section.classList.remove('is-arriving');
+        void section.offsetWidth;
+        section.classList.add('is-arriving');
+        section.querySelector('.section-label')?.addEventListener(
+            'animationend',
+            () => {
+                section.classList.remove('is-arriving');
+            },
+            { once: true },
+        );
+        window.setTimeout(() => section.classList.remove('is-arriving'), 1000);
+    };
+
+    const waitForScrollEnd = (section: HTMLElement) => {
+        cancelAnimationFrame(arrivalFrame);
+        const startedAt = performance.now();
+        let previousY = window.scrollY;
+        let moved = false;
+        let stableFrames = 0;
+        const check = () => {
+            const currentY = window.scrollY;
+            if (Math.abs(currentY - previousY) > 0.5) {
+                moved = true;
+                stableFrames = 0;
+            } else {
+                stableFrames += 1;
+            }
+            previousY = currentY;
+            const elapsed = performance.now() - startedAt;
+            if ((moved && stableFrames >= 4) || (!moved && elapsed > 140) || elapsed > 1600) {
+                showSectionArrival(section);
+                return;
+            }
+            arrivalFrame = requestAnimationFrame(check);
+        };
+        arrivalFrame = requestAnimationFrame(check);
+    };
+
+    const getAnchorSection = (hash: string) => {
+        const section = document.getElementById(hash.slice(1));
+        return section?.classList.contains('content-section') || section?.id === 'contact' || section?.id === 'skills'
+            ? section
+            : null;
+    };
+
+    document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
+        link.addEventListener('click', () => {
+            if (window.location.hash === link.hash) {
+                const section = getAnchorSection(link.hash);
+                if (section) waitForScrollEnd(section);
+            }
+        });
+    });
+
+    const updateNavigationState = () => {
+        document.querySelectorAll<HTMLAnchorElement>('nav a').forEach((link) => {
+            if (link.getAttribute('href') === '#contact') {
+                if (window.location.hash === '#contact') link.setAttribute('aria-current', 'page');
+                else link.removeAttribute('aria-current');
+            }
+        });
+    };
+
+    window.addEventListener('hashchange', () => {
+        updateNavigationState();
+        const section = getAnchorSection(window.location.hash);
+        if (section) waitForScrollEnd(section);
+    });
+    updateNavigationState();
+
+    if (window.location.hash) {
+        const initialSection = getAnchorSection(window.location.hash);
+        if (initialSection) {
+            waitForScrollEnd(initialSection);
+        }
+    }
+</script>

@@ -1,3 +1,4 @@
+import { localize } from './orrery/i18n';
 import { MAJOR_MOON_SYSTEMS, PLANETS } from './orrery/catalog';
 import type { MajorMoon } from './orrery/catalog';
 import { drawLocalStarfield } from './orrery/local-background-renderer';
@@ -258,7 +259,7 @@ if (canvasElement && systemElement && canvasContext) {
     const setZoomLocation = (state: string, copy: string) => {
         if (!zoomLocation || state === zoomLocationState) return;
         zoomLocationState = state;
-        zoomLocationWriter?.setText(copy);
+        zoomLocationWriter?.setText(localize(copy));
     };
 
     const updateCameraStats = () => {
@@ -267,17 +268,17 @@ if (canvasElement && systemElement && canvasContext) {
         if (objectFocus.target && objectFocus.progress > 0.5) {
             const pitch = objectFocus.child ? objectFocus.childLatitude : objectFocus.latitude;
             const yaw = objectFocus.child ? objectFocus.childLongitude : objectFocus.longitude;
-            cameraStats.textContent = `PITCH ${signedDegrees(pitch)} · YAW ${signedDegrees(yaw)} · ROLL +0.0°`;
+            cameraStats.textContent = localize(`PITCH ${signedDegrees(pitch)} · YAW ${signedDegrees(yaw)} · ROLL +0.0°`);
             return;
         }
 
         if (cosmicZoom.current > 0.5) {
             const projectedTilt = Math.max(-1, Math.min(1, 0.58 * galaxyCamera.tilt));
-            cameraStats.textContent = `PITCH ${signedDegrees(Math.asin(projectedTilt))} · YAW +0.0° · ROLL ${signedDegrees(galaxyCamera.rotation)}`;
+            cameraStats.textContent = localize(`PITCH ${signedDegrees(Math.asin(projectedTilt))} · YAW +0.0° · ROLL ${signedDegrees(galaxyCamera.rotation)}`);
             return;
         }
 
-        cameraStats.textContent = `PITCH ${signedDegrees(camera.renderedPitch)} · YAW ${signedDegrees(camera.renderedYaw)} · ROLL ${signedDegrees(camera.renderedRoll)}`;
+        cameraStats.textContent = localize(`PITCH ${signedDegrees(camera.renderedPitch)} · YAW ${signedDegrees(camera.renderedYaw)} · ROLL ${signedDegrees(camera.renderedRoll)}`);
     };
 
     const focusController = new FocusController(
@@ -542,8 +543,19 @@ if (canvasElement && systemElement && canvasContext) {
             ? height * 0.38
             : Math.max(height * 0.18, Math.min(height * 0.5, desktopCenterY));
         const usesMobileCanvasBleed = compactViewport && !system.classList.contains('is-fullscreen');
-        const galaxyViewportWidth = usesMobileCanvasBleed ? renderWidth : width;
-        const galaxyViewportHeight = usesMobileCanvasBleed ? renderHeight : height;
+        // Desktop galaxy zooms paint across the viewport, so frame the disk
+        // against that space rather than the narrower portfolio hero box.
+        const usesDesktopGalaxyViewport = !compactViewport && !isOgPreview && window.innerWidth > 700;
+        const galaxyViewportWidth = usesMobileCanvasBleed
+            ? renderWidth
+            : usesDesktopGalaxyViewport
+              ? window.innerWidth
+              : width;
+        const galaxyViewportHeight = usesMobileCanvasBleed
+            ? renderHeight
+            : usesDesktopGalaxyViewport
+              ? window.innerHeight
+              : height;
         const fullscreenGalaxyScale = fullscreenPhoneLayout ? 0.7 : 1;
         const finalGalaxyRadius = Math.min(
             galaxyViewportWidth * 0.48 * fullscreenGalaxyScale,
@@ -1165,7 +1177,7 @@ if (canvasElement && systemElement && canvasContext) {
         }
         if (clock && currentSecond !== lastClockSecond) {
             if (cosmicZoom.current > 0.5) {
-                clock.textContent = `GALACTIC EPOCH / ${formatGalacticEpoch(elapsedGalacticYears)}`;
+                clock.textContent = localize(`GALACTIC EPOCH / ${formatGalacticEpoch(elapsedGalacticYears)}`);
             } else {
                 const clockMode = orbitClock.active && !orbitClock.returning ? ' SIM' : '';
                 clock.textContent = formatLocalDateTime(now) + clockMode;

@@ -1,3 +1,4 @@
+import { localize } from './i18n';
 import { DEG } from './math';
 import { MAJOR_MOON_SYSTEMS, PLANETS } from './catalog';
 import type {
@@ -115,7 +116,7 @@ export const bindOrreryInteractions = ({
         if (fullscreenIcon) fullscreenIcon.textContent = active ? '×' : '⛶';
         mobileFullscreenToggle.setAttribute(
             'aria-label',
-            active ? 'Exit fullscreen animation' : 'Open fullscreen animation',
+            localize(active ? 'Exit fullscreen animation' : 'Open fullscreen animation'),
         );
         mobileFullscreenToggle.setAttribute('aria-pressed', String(active));
     };
@@ -174,8 +175,8 @@ export const bindOrreryInteractions = ({
                   ? GALACTIC_SPEED_PRESETS[presetIndex]
                   : ROTATION_SPEED_PRESETS[presetIndex];
         control.dataset.value = String(presetIndex);
-        control.textContent = preset.label;
-        control.setAttribute('aria-label', `Simulation speed: ${preset.description}`);
+        control.textContent = localize(preset.label);
+        control.setAttribute('aria-label', localize(`Simulation speed: ${preset.description}`));
         const options = control.parentElement?.querySelectorAll<HTMLButtonElement>('.simulation-speed-option') ?? [];
         options.forEach((option) => {
             option.toggleAttribute('aria-selected', Number(option.dataset.value) === presetIndex);
@@ -345,7 +346,7 @@ export const bindOrreryInteractions = ({
             const selectedName = keyboardNavigation.selectedId === 'star:Sol' ? 'Sol' : keyboardNavigation.selectedId;
             canvas.setAttribute(
                 'aria-label',
-                `${selectedName} selected. Use arrow keys to choose a solar system object, then press Enter to zoom in.`,
+                localize(`${selectedName} selected. Use arrow keys to choose a solar system object, then press Enter to zoom in.`),
             );
         } else if (keyboardNavigation.mode === 'child-selection' && keyboardNavigation.selectedId) {
             const selectedName =
@@ -356,12 +357,12 @@ export const bindOrreryInteractions = ({
                       : (keyboardNavigation.selectedId.split(':').at(-1) ?? 'moon');
             canvas.setAttribute(
                 'aria-label',
-                `${selectedName} selected. Use Tab or arrow keys to choose a nearby object, then press Enter to zoom in.`,
+                localize(`${selectedName} selected. Use Tab or arrow keys to choose a nearby object, then press Enter to zoom in.`),
             );
         } else {
             canvas.setAttribute(
                 'aria-label',
-                'Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions',
+                localize('Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions'),
             );
         }
     };
@@ -809,7 +810,7 @@ export const bindOrreryInteractions = ({
         setSimulationControlMode(target < 0.5 ? 'solar' : 'galactic');
         const location = target < 0.5 ? ['solar', 'in the solar system.'] : ['milky-way', 'in the Milky Way.'];
         setZoomLocation(location[0], location[1]);
-        const status = target < 0.3 ? 'LOCAL SYSTEM' : target < 0.72 ? 'INTERSTELLAR' : 'MILKY WAY';
+        const status = localize(target < 0.3 ? 'LOCAL SYSTEM' : target < 0.72 ? 'INTERSTELLAR' : 'MILKY WAY');
         const value = Math.round(target * 100);
         if (zoomStatus) zoomStatus.value = status;
         if (zoomInput) {

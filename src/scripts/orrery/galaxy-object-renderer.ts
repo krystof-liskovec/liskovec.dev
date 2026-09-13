@@ -1,3 +1,4 @@
+import { localize } from './i18n';
 import { GALACTIC_OBJECTS } from './catalog';
 import { smoothstep } from './math';
 import { galacticPositionFromSun } from './galaxy-model';
@@ -274,7 +275,7 @@ export const drawSolMarker = (
     if (galaxyProgress > 0.62) {
         context.globalAlpha = markerAlpha * smoothstep((galaxyProgress - 0.62) / 0.25);
         context.font = `${9 * scale}px "DM Mono", monospace`;
-        context.fillText('[ SOL / YOU ARE HERE ]', x, y + 18 * scale);
+        context.fillText(localize('[ SOL / YOU ARE HERE ]'), x, y + 18 * scale);
     }
     context.globalAlpha = 1;
 };

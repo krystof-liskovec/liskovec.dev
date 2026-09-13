@@ -1,1 +1,1 @@
-export const getBlogSlug = (id: string) => id.replace(/^\d{3}-/, '');
+export const getBlogSlug = (id: string) => id.replace(/^(de|cs)\//, '').replace(/^\d{3}-/, '');

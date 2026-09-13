@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the two Markdown CVs as single-page A4 PDFs.
+"""Render both Markdown CVs in English, German, and Czech as single-page A4 PDFs.
 
 Requires ReportLab and the Liberation Sans fonts. Uses Poppler for validation.
 Run from any directory: python3 cv/build_cv.py
@@ -27,7 +27,7 @@ MARGIN = 38
 WIDTH = A4[0] - 2 * MARGIN - 12
 NAVY = colors.HexColor("#234D68")
 RULE = colors.HexColor("#C7D4DE")
-DATED_HEADING = re.compile(r"^(.*?) \((\w+ \d{4} – (?:\w+ \d{4}|Present))\)$")
+DATED_HEADING = re.compile(r"^(.*?) \(([^()]*\d{4} – [^()]+)\)$")
 
 
 def plain(text):
@@ -117,7 +117,7 @@ class SectionHeading(Flowable):
         self.canv.line(start, 11, self.width, 11)
 
 
-def build(source, destination):
+def build(source, destination, language="en"):
     raw = source.read_text(encoding="utf-8")
     lines = [line.strip() for line in raw.splitlines()
              if line.strip() and not line.startswith("<!--")]
@@ -171,7 +171,8 @@ def build(source, destination):
         leftMargin=MARGIN, rightMargin=MARGIN,
         topMargin=37, bottomMargin=37,
         title=f"Kryštof Lískovec - {lines[1]}",
-        author="Kryštof Lískovec", subject="English CV",
+        author="Kryštof Lískovec",
+        subject={"en": "English CV", "de": "Deutscher Lebenslauf", "cs": "Český životopis"}[language],
     )
     doc.build(story)
     info = subprocess.check_output(["pdfinfo", str(destination)], text=True)
@@ -210,8 +211,10 @@ def main():
         pdfmetrics.registerFont(TTFont(f"CV-{weight}", str(font_dir / f"LiberationSans-{weight}.ttf")))
     OUTPUT.mkdir(parents=True, exist_ok=True)
     for role in ["devops", "backend"]:
-        filename = "cv.pdf" if role == "devops" else "cv-backend.pdf"
-        build(CV_ROOT / f"cv-{role}-en.md", OUTPUT / filename)
+        for language in ["en", "de", "cs"]:
+            stem = "cv" if role == "devops" else "cv-backend"
+            suffix = "" if language == "en" else f"-{language}"
+            build(CV_ROOT / f"cv-{role}-{language}.md", OUTPUT / f"{stem}{suffix}.pdf", language)
 
 
 if __name__ == "__main__":

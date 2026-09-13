@@ -19,12 +19,35 @@ writes the 2× result to `public/og-default.png`.
 
 Set `SITE_URL` when the public domain changes. It controls canonical URLs, social metadata, structured data, the sitemap, RSS links, and `robots.txt`. The deployment currently uses `https://liskovec.pages.dev` until the custom domain is ready. Redirect the temporary `pages.dev` hostname permanently to the custom domain after the move so only one public origin remains indexable.
 
+## Languages
+
+English uses the original URLs; German and Czech use `/de/` and `/cs/`.
+The compact `[ en ▾ ]` language menu keeps the current page and section.
+On the root homepage, the saved manual choice takes precedence over the browser's
+preferred supported language, with English as the fallback. Direct localized URLs
+and blog links are never automatically redirected. Manual choices are remembered
+in local storage; if storage is blocked, choosing English uses `?lang=en` to
+prevent switching straight back to the browser language.
+Navigation, metadata, RSS, accessibility instructions, and astronomy readouts
+are translated. Shared pages live in `src/components/*Page.astro`; site copy and
+URL helpers live in `src/i18n/index.ts`, with animation copy in
+`src/scripts/orrery/i18n.ts`. Simulation object names remain English identifiers.
+
+Place translated posts in `src/content/blog/de/` or `src/content/blog/cs/`, using
+the same numbered filename as the English original and a `locale: de` or
+`locale: cs` frontmatter field. Translate titles, summaries, body text, tags, and
+image descriptions; leave code samples intact. Publish translations alongside
+the original by setting `draft: false` in each file. RSS and featured lists only
+include posts in the selected language. If a translation is not published yet,
+the switcher links to that language's blog instead of a missing article.
+
 ## Writing blog posts
 
 Posts live in `src/content/blog`. A post supports this frontmatter:
 
 ```yaml
 title: A useful title
+locale: en # default; use de or cs for translated posts
 description: A short, page-specific summary.
 published: 2026-08-23
 updated: 2026-08-24 # optional
@@ -157,9 +180,12 @@ The `.woodpecker.yml` workflow builds the CV PDFs and Astro site in the same
 pipeline, then deploys `dist/` to Cloudflare Pages after every push to `main`.
 The CV sources and PDF builder live under `cv/`; generated PDFs are written to
 `public/` for the `/cv.pdf` and `/cv-backend.pdf` links.
-Run `python3 cv/build_cv.py` before `npm run build` to refresh both downloads
+Run `python3 cv/build_cv.py` before `npm run build` to refresh all six downloads
 locally. The generator preserves inline parenthesized dates, the English/German/Czech
 language order, and navy email and website links.
+German and Czech downloads use `/cv-de.pdf`, `/cv-cs.pdf`,
+`/cv-backend-de.pdf`, and `/cv-backend-cs.pdf`; each homepage links to its
+matching DevOps CV. The deployment builds all language variants automatically.
 
 Create these repository secrets in Woodpecker before enabling the workflow:
 

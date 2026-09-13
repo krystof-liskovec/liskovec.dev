@@ -1,16 +1,18 @@
 ---
 import SiteFooter from './SiteFooter.astro';
 import SiteHeader from './SiteHeader.astro';
+import type { Locale } from '../i18n';
 
 interface Props {
     mainClass?: string;
+    languages?: Locale[];
 }
 
-const { mainClass } = Astro.props;
+const { mainClass, languages } = Astro.props;
 ---
 
 <div class="site-shell">
-    <SiteHeader />
+    <SiteHeader languages={languages} />
     <main class={mainClass}>
         <slot />
     </main>

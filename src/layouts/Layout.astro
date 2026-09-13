@@ -1,5 +1,9 @@
 ---
+import { getLocale, getTranslator, localizedPath, locales, ogLocales, type Locale } from '../i18n';
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
 interface Props {
+    languages?: Locale[];
     title?: string;
     description?: string;
     image?: string;
@@ -17,10 +21,12 @@ interface Props {
 }
 
 const {
-    title = 'Kryštof Lískovec | DevOps & Software Developer',
-    description = 'Kryštof Lískovec is a software developer working across DevOps, reliable systems, internal tools, and useful software.',
+    title = t('Kryštof Lískovec | DevOps & Software Developer'),
+    description = t(
+        'Kryštof Lískovec is a software developer working across DevOps, reliable systems, internal tools, and useful software.',
+    ),
     image = '/og-default.png?v=2',
-    imageAlt = 'A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec',
+    imageAlt = t('A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec'),
     imageWidth = image.startsWith('/og-default.png') ? 2400 : 1200,
     imageHeight = image.startsWith('/og-default.png') ? 1260 : 630,
     type = 'website',
@@ -31,21 +37,58 @@ const {
     tags = [],
     structuredData,
     resetScrollOnReload = false,
+    languages = [...locales],
 } = Astro.props;
 
 const siteUrl = Astro.site ?? Astro.url;
-const rssUrl = new URL('/rss.xml', siteUrl);
+const rssUrl = new URL(localizedPath('/rss.xml', locale), siteUrl);
 const canonicalUrl = canonical === false ? null : new URL(canonical, siteUrl);
 const socialImageUrl = new URL(image, siteUrl);
 const serializedStructuredData = structuredData ? JSON.stringify(structuredData).replaceAll('<', '\\u003c') : null;
 ---
 
 <!doctype html>
-<html lang="en" data-reset-scroll-on-reload={resetScrollOnReload ? '' : undefined}>
+<html lang={locale} data-reset-scroll-on-reload={resetScrollOnReload ? '' : undefined}>
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#1d2021" />
+        <script is:inline>
+            (() => {
+                // Only the unprefixed entry page negotiates a language.
+                // Deep links, including /de/ and /cs/, stay as requested.
+                if (location.pathname !== '/') return;
+                const supported = ['en', 'de', 'cs'];
+                const storageKey = 'liskovec-language';
+                const destination = new URL(location.href);
+                const explicit = destination.searchParams.get('lang');
+                let saved = null;
+                try {
+                    saved = localStorage.getItem(storageKey);
+                } catch {}
+                let language;
+                if (supported.includes(explicit)) {
+                    language = explicit;
+                    try {
+                        localStorage.setItem(storageKey, language);
+                        destination.searchParams.delete('lang');
+                        history.replaceState(history.state, '', destination);
+                    } catch {
+                        // Keep the explicit choice in the URL when storage is blocked.
+                    }
+                } else if (supported.includes(saved)) {
+                    language = saved;
+                } else {
+                    language =
+                        (navigator.languages?.length ? navigator.languages : [navigator.language])
+                            .map((value) => value?.toLowerCase().split('-')[0])
+                            .find((value) => supported.includes(value)) ?? 'en';
+                }
+                if (language === 'en') return;
+                destination.pathname = `/${language}/`;
+                location.replace(destination.href);
+            })();
+        </script>
         <link rel="preload" href="/fonts/dm-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin />
         <link rel="preload" href="/fonts/dm-mono-500-latin.woff2" as="font" type="font/woff2" crossorigin />
         <link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -71,14 +114,40 @@ const serializedStructuredData = structuredData ? JSON.stringify(structuredData)
         </style>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="alternate" type="application/rss+xml" title="Kryštof Liskovec’s blog" href={rssUrl} />
+        <link rel="alternate" type="application/rss+xml" title={t('Kryštof Liskovec’s blog')} href={rssUrl} />
         {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+        {
+            canonicalUrl &&
+                languages.map((language) => (
+                    <link
+                        rel="alternate"
+                        hreflang={language}
+                        href={new URL(localizedPath(canonicalUrl.pathname, language), siteUrl)}
+                    />
+                ))
+        }
+        {
+            canonicalUrl && (
+                <link
+                    rel="alternate"
+                    hreflang="x-default"
+                    href={
+                        new URL(localizedPath(canonicalUrl.pathname, languages.includes('en') ? 'en' : locale), siteUrl)
+                    }
+                />
+            )
+        }
         <meta name="generator" content={Astro.generator} />
         <meta name="description" content={description} />
         {noindex && <meta name="robots" content="noindex, follow" />}
         <meta property="og:type" content={type} />
         <meta property="og:site_name" content="Kryštof Liskovec" />
-        <meta property="og:locale" content="en_US" />
+        <meta property="og:locale" content={ogLocales[locale]} />
+        {
+            languages
+                .filter((language) => language !== locale)
+                .map((language) => <meta property="og:locale:alternate" content={ogLocales[language]} />)
+        }
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}

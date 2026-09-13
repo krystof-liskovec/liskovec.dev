@@ -1,3 +1,4 @@
+import { localize } from './i18n';
 import type { CameraState, CosmicZoomState } from './runtime-state';
 import type { FocusState, FocusTarget } from './types';
 import { exponentialResponse } from './math';
@@ -31,7 +32,7 @@ export class FocusController {
         if (this.returnButton) {
             this.returnButton.hidden = false;
             this.returnButton.classList.remove('is-transitioning');
-            this.returnButton.textContent = '[ ← return ]';
+            this.returnButton.textContent = localize('[ ← return ]');
         }
         if (this.zoomInput) this.zoomInput.disabled = true;
         if (this.zoomSwitch) this.zoomSwitch.disabled = true;
@@ -50,7 +51,7 @@ export class FocusController {
         this.clearCandidate();
         if (this.returnButton) {
             this.returnButton.classList.remove('is-transitioning');
-            this.returnButton.textContent = '[ ← return ]';
+            this.returnButton.textContent = localize('[ ← return ]');
         }
         this.setZoomLocation(`focus:${target.id}`, target.kind === 'moon' ? `near ${target.name}.` : 'aboard the ISS.');
     }
@@ -113,7 +114,7 @@ export class FocusController {
         this.state.childExiting = false;
         if (this.returnButton) {
             this.returnButton.disabled = false;
-            this.returnButton.textContent = '[ ← return ]';
+            this.returnButton.textContent = localize('[ ← return ]');
             this.returnButton.classList.remove('is-transitioning');
         }
         const parent = this.state.target;

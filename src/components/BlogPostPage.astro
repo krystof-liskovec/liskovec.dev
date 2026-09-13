@@ -1,0 +1,100 @@
+---
+import { getLocale, getTranslator, localizedPath, dateLocales } from '../i18n';
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+import type { CollectionEntry } from 'astro:content';
+import { getCollection, render } from 'astro:content';
+import { getBlogSlug } from '../lib/blog';
+import Layout from '../layouts/Layout.astro';
+import SiteShell from './SiteShell.astro';
+import '../styles/site.css';
+
+
+interface Props {
+    post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const slug = getBlogSlug(post.id);
+const languages = (await getCollection('blog', ({ data }) => !data.draft))
+    .filter(entry => getBlogSlug(entry.id) === slug)
+    .map(entry => entry.data.locale);
+const { Content } = await render(post);
+const published = new Intl.DateTimeFormat(dateLocales[locale], {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+}).format(post.data.published);
+const updated = post.data.updated
+    ? new Intl.DateTimeFormat(dateLocales[locale], {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+      }).format(post.data.updated)
+    : null;
+const siteUrl = Astro.site ?? Astro.url;
+const canonicalUrl = new URL(localizedPath(`/blog/${slug}/`, locale), siteUrl).href;
+const homeUrl = new URL(localizedPath('/', locale), siteUrl).href;
+const articleImageUrl = post.data.image ? new URL(post.data.image, siteUrl).href : undefined;
+const articleStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    inLanguage: locale,
+    '@id': `${canonicalUrl}#article`,
+    mainEntityOfPage: canonicalUrl,
+    url: canonicalUrl,
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: post.data.published.toISOString(),
+    dateModified: (post.data.updated ?? post.data.published).toISOString(),
+    author: {
+        '@type': 'Person',
+        '@id': `${homeUrl}#person`,
+        name: 'Kryštof Lískovec',
+        url: homeUrl,
+    },
+    isPartOf: {
+        '@type': 'Blog',
+        '@id': `${new URL(localizedPath('/blog/', locale), siteUrl).href}#blog`,
+    },
+    keywords: post.data.tags,
+    ...(articleImageUrl ? { image: articleImageUrl } : {}),
+};
+---
+
+<Layout
+    title={`${post.data.title} | Kryštof Lískovec`}
+    description={post.data.description}
+    image={post.data.image}
+    imageAlt={post.data.imageAlt ?? post.data.title}
+    type="article"
+    publishedTime={post.data.published.toISOString()}
+    modifiedTime={(post.data.updated ?? post.data.published).toISOString()}
+    tags={post.data.tags}
+    structuredData={articleStructuredData}
+    languages={languages}
+>
+    <SiteShell mainClass="post-page" languages={languages}>
+        <article>
+            <a class="post-back" href={localizedPath("/blog/", locale)}>{t("[ ← ALL POSTS ]")}</a>
+            <header class="post-header">
+                <div class="post-meta">
+                    <span>
+                        <time datetime={post.data.published.toISOString()}>{published}</time>
+                        {updated && <time datetime={post.data.updated!.toISOString()}> · {t("updated")} {updated}</time>}
+                    </span><span>{post.data.tags.join(' · ')}</span>
+                </div>
+                <h1>{post.data.title}</h1>
+                <p>{post.data.description}</p>
+            </header>
+            {
+                post.data.image && (
+                    <figure class="post-cover">
+                        <img src={post.data.image} alt={post.data.imageAlt ?? ''} />
+                    </figure>
+                )
+            }
+            <div class="post-body"><Content /></div>
+        </article>
+    </SiteShell>
+</Layout>

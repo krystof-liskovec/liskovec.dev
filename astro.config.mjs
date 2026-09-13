@@ -21,5 +21,10 @@ const ogPreviewDevRoute = {
 // https://astro.build/config
 export default defineConfig({
     site: siteUrl,
-    integrations: [sitemap(), ogPreviewDevRoute],
+    integrations: [
+        sitemap({
+            i18n: { defaultLocale: 'en', locales: { en: 'en', de: 'de', cs: 'cs' } },
+        }),
+        ogPreviewDevRoute,
+    ],
 });

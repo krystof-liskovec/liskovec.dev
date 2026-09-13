@@ -1,4 +1,8 @@
+---
+import { getLocale, getTranslator } from '../i18n';
+const t = getTranslator(getLocale(Astro.url.pathname));
+---
 <footer>
     <span>© 2026 Kryštof Lískovec</span>
-    <span>made with curiosity + caffeine</span>
+    <span>{t('made with curiosity + caffeine')}</span>
 </footer>

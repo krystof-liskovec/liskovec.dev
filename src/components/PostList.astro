@@ -1,15 +1,18 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getBlogSlug } from '../lib/blog';
+import { getLocale, getTranslator, localizedPath, dateLocales } from '../i18n';
 
 interface Props {
     posts: CollectionEntry<'blog'>[];
     emptyMessage?: string;
 }
 
-const { posts, emptyMessage = 'Nothing here yet.' } = Astro.props;
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+const { posts, emptyMessage = t('Nothing here yet.') } = Astro.props;
 const formatDate = (date: Date) =>
-    new Intl.DateTimeFormat('en-GB', {
+    new Intl.DateTimeFormat(dateLocales[locale], {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
@@ -20,7 +23,7 @@ const formatDate = (date: Date) =>
     {
         posts.length > 0 ? (
             posts.map((post) => (
-                <a class="post-card" href={`/blog/${getBlogSlug(post.id)}`}>
+                <a class="post-card" href={localizedPath(`/blog/${getBlogSlug(post.id)}/`, locale)}>
                     <div class="post-card-media">
                         <img
                             src={post.data.image ?? '/og-default.png?v=2'}

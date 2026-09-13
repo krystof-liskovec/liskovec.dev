@@ -1,0 +1,236 @@
+---
+import { getLocale, getTranslator, localizedPath } from '../i18n';
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+import Layout from '../layouts/Layout.astro';
+import SiteShell from './SiteShell.astro';
+import '../styles/site.css';
+---
+
+<Layout
+    title={t('404 | Not Found | Kryštof Lískovec')}
+    description={t('The requested page could not be found.')}
+    canonical={false}
+    noindex
+>
+    <SiteShell mainClass="not-found-page">
+        <section class="not-found">
+            <div class="not-found-scene" aria-hidden="true">
+                <pre
+                    class="not-found-art not-found-lander">
+                                              ______
+                                             /      \
+                                             | ??!! |
+                                             \______/
+                                          o
+                  ____           _      ·
+             ____/___ `--.____.--')   ·
+                    .- (  ) -.
+         .-.   _.--/  _|..|_  \--._   .-.
+        (O).)-| |  \   |  |   /  | |-(.(O)
+         `-'  '-'-._\_/    \_/_.-'-'  `-'
+             _| |   '-.____.-'   | |_
+          .-' | |     | __ |     | | '-.
+         /.--.' |     |/  \|     | '.--.\
+        | (  )  '.    |\__/|    .'  (  ) |
+         \'.___.''-. _|____|_ .-''.___.'/
+          '---._|_____|----|_____|_.---'
+            /  /       |::|      \  \
+           /  /   x    |::|   x   \  \
+          /__/_________|::|________\__\
+         /  /          |::|         \  \
+        /  /           |::|          \  \
+     _.-'-/           _|::|_          \-' -._
+    '-----'          '------'         '-----'
+<!--<pre class="not-found-art not-found-planet">▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ▁</pre>-->
+                </pre>
+                <pre
+                    class="not-found-art not-found-moon">
+  +                     .           +
+      .-'----'-.
+    .'  o  .    '.                .                  +
+   / .      O  o  \
+. |    o  .      . |     +
+  | .      o   O   |              .      .
+   \  O  .     o  /                              .
+    '.    o  .  .'
+      '-.____.-'
++                                 .
+
+             .                      +
+
+      +                       .
+
+
+
+
+
+
+
+
+
+
+<!--<pre class="not-found-art not-found-planet">_____/▔▔▔▔\_/▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔</pre>-->
+                </pre>
+            </div>
+            <p class="eyebrow">{t('404 - not found')}</p>
+            <h1>{t('your lander drifted')}<br /><span>{t('somewhere else…')}</span></h1>
+            <nav class="not-found-links" aria-label={t('404 navigation')}>
+                <a class="blog-link" href={localizedPath('/', locale)}>{t('[ return home → ]')}</a>
+                <a class="blog-link" href={localizedPath('/blog/', locale)}>{t('[ visit the blog → ]')}</a>
+            </nav>
+        </section>
+    </SiteShell>
+</Layout>
+
+<script>
+    import { getLocale, getTranslator, localizedPath, ogLocales } from '../i18n';
+    // Static hosts serve the root 404 document for unknown localized URLs.
+    // Match that document to the requested language without changing its status.
+    const language = getLocale(location.pathname);
+    if (language !== document.documentElement.lang) {
+        const t = getTranslator(language);
+        document.documentElement.lang = language;
+        document.title = t('404 | Not Found | Kryštof Lískovec');
+        document
+            .querySelectorAll<HTMLMetaElement>(
+                'meta[name="description"], meta[property="og:description"], meta[name="twitter:description"]',
+            )
+            .forEach((meta) => {
+                meta.content = t('The requested page could not be found.');
+            });
+        document
+            .querySelectorAll<HTMLMetaElement>('meta[property="og:title"], meta[name="twitter:title"]')
+            .forEach((meta) => {
+                meta.content = document.title;
+            });
+        const ogLocale = document.querySelector<HTMLMetaElement>('meta[property="og:locale"]');
+        if (ogLocale) ogLocale.content = ogLocales[language];
+        document.querySelectorAll('[property="og:locale:alternate"]').forEach((meta) => meta.remove());
+        const scene = document.querySelector('.not-found');
+        const eyebrow = scene?.querySelector('.eyebrow');
+        if (eyebrow) eyebrow.textContent = t('404 - not found');
+        const heading = scene?.querySelector('h1');
+        if (heading) {
+            heading.replaceChildren(document.createTextNode(t('your lander drifted')), document.createElement('br'));
+            const ending = document.createElement('span');
+            ending.textContent = t('somewhere else…');
+            heading.append(ending);
+        }
+        const errorNav = scene?.querySelector('nav');
+        errorNav?.setAttribute('aria-label', t('404 navigation'));
+        errorNav?.querySelectorAll<HTMLAnchorElement>('a').forEach((link, index) => {
+            link.href = localizedPath(index === 0 ? '/' : '/blog/', language);
+            link.textContent = t(index === 0 ? '[ return home → ]' : '[ visit the blog → ]');
+        });
+        const brand = document.querySelector<HTMLAnchorElement>('.brand-lockup');
+        if (brand) {
+            brand.href = localizedPath('/', language);
+            brand.setAttribute('aria-label', t('Kryštof Lískovec home'));
+            const subtitle = brand.querySelector('.eyebrow');
+            if (subtitle) subtitle.textContent = t('devops · software developer');
+        }
+        const nav = document.querySelector('.header-controls > nav');
+        nav?.setAttribute('aria-label', t('Primary navigation'));
+        nav?.querySelectorAll<HTMLAnchorElement>('a').forEach((link, index) => {
+            const labels = ['about', 'contact', 'blog'];
+            const paths = ['/#about', '/#contact', '/blog/'];
+            link.href = localizedPath(paths[index], language);
+            link.textContent = `[ ${t(labels[index])} ]`;
+        });
+        const languageNav = document.querySelector('.language-menu');
+        languageNav?.setAttribute('aria-label', t('Language'));
+        const languageSummary = document.querySelector('.language-switcher summary');
+        languageSummary?.setAttribute('aria-label', `${t('Language')}: ${language}`);
+        const currentLanguage = document.querySelector('[data-current-language]');
+        if (currentLanguage) currentLanguage.textContent = language;
+        languageNav?.querySelectorAll<HTMLAnchorElement>('a').forEach((link) => {
+            if (link.dataset.language === language) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+        });
+        const footer = document.querySelector('footer span:last-child');
+        if (footer) footer.textContent = t('made with curiosity + caffeine');
+        const rss = document.querySelector<HTMLLinkElement>('link[type="application/rss+xml"]');
+        if (rss) {
+            rss.href = localizedPath('/rss.xml', language);
+            rss.title = t('Kryštof Liskovec’s blog');
+        }
+        document
+            .querySelectorAll<HTMLMetaElement>('meta[property="og:image:alt"], meta[name="twitter:image:alt"]')
+            .forEach((meta) => {
+                meta.content = t('A Gruvbox-inspired ASCII solar system orrery beside the name Kryštof Lískovec');
+            });
+    }
+</script>
+
+<style>
+    .not-found-page {
+        display: grid;
+        min-height: calc(100svh - 160px);
+        align-items: center;
+    }
+
+    .not-found {
+        max-width: 760px;
+        padding: 90px 0 120px;
+    }
+
+    .not-found-scene {
+        display: flex;
+        align-items: flex-start;
+        gap: clamp(4px, 1vw, 30px);
+        margin: 0 0 40px;
+    }
+
+    .not-found-art {
+        margin: 0;
+        color: var(--orange);
+        font: clamp(7px, 0.85vw, 10px) / 1.12 var(--mono);
+        white-space: pre;
+    }
+
+    .not-found-moon {
+        margin-top: 27px;
+        color: var(--fg);
+        font-size: clamp(6px, 0.75vw, 9px);
+    }
+
+    .not-found-planet {
+        color: var(--muted);
+        font-size: clamp(6px, 0.75vw, 9px);
+        letter-spacing: 2px;
+    }
+
+    .not-found-lander {
+        transform: rotate(-25deg);
+    }
+
+    .not-found h1 {
+        margin: 16px 0 24px;
+        font-size: clamp(42px, 7vw, 84px);
+    }
+
+    .not-found h1 span {
+        color: var(--orange);
+    }
+
+    .not-found > p:not(.eyebrow) {
+        max-width: 460px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .not-found-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin-top: 36px;
+    }
+
+    @media (max-width: 700px) {
+        .not-found {
+            padding: 70px 0 90px;
+        }
+    }
+</style>
