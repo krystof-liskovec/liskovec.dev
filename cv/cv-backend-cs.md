@@ -21,7 +21,7 @@ DevOps inženýr (září 2024 – dosud)
 
 Backendový vývojář (červenec 2021 – srpen 2024)
 
-- Pro klienta s více než 40 weby jsem nahradil placené našeptávání adres (zhruba 2 880–3 360 € ročně) REST API v Go a Elasticsearch
+- Pro klienta s více než 40 weby jsem nahradil placené našeptávání adres (zhruba 70–82 tisíc Kč ročně) REST API v Go a Elasticsearch
 - Zautomatizoval jsem import českých a slovenských adres a vyladil indexy Elasticsearch pro našeptávání, které si poradí i s překlepy
 - Výdejní boxy několika dopravců jsem sloučil do jednoho API, takže je možné hledat na jednom místě místo přes samostatné widgety
 - V NestJS a Puppeteer jsem vytvořil službu, která crawlerům vrací vyrenderované HTML z cache bez nutnosti přepisovat stávající aplikace ve Vue.js
