@@ -17,7 +17,7 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 DevOps-Ingenieur (Sept 2024 – heute)
 
 - CI/CD-Einrichtung für neue Projekte mit wiederverwendbaren, konfigurierbaren GitLab-Komponenten für Nuxt, NestJS und Go von bis zu einer Stunde auf meist 5–10 Minuten verkürzt
-- Modularen Backup-Assistenten entwickelt, der resticprofile-Konfigurationen für Datenbanken und Dateien erzeugt; sie werden in Git verwaltet und per CI/CD auf die Server verteilt, wo sie getrennte Backups in Backblaze B2 steuern
+- Modularen Backup-Assistenten entwickelt: resticprofile-Konfigurationen für Datenbanken und Dateien in Git verwaltet und per CI/CD für getrennte Backblaze-B2-Backups verteilt
 - Eigene Infrastruktur mit Ansible und in Git verwalteten Docker-Compose-Dateien eingerichtet; damit Bash-Skripte ersetzt, Deployments reproduzierbar gemacht und langfristige Kosten besser kontrolliert
 - Graylog, eine OpenTelemetry-Pipeline und GlitchTip für zentrale Logs, Telemetrie und die Erfassung von Anwendungsfehlern eingebunden
 - Container-Deployments mit Docker-Healthchecks automatisiert; fehlerhafte Releases werden verworfen, bevor sie die laufende Version ersetzen
