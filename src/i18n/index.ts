@@ -94,8 +94,8 @@ const translations: Record<string, readonly [string, string]> = {
         "blog"
     ],
     "made with curiosity + caffeine": [
-        "mit neugier + koffein gemacht",
-        "vytvořeno se zvědavostí + kofeinem"
+        "mit neugier + koffein gebaut",
+        "postaveno ze zvědavosti + kofeinu"
     ],
     "somewhere": [
         "irgendwo",
@@ -106,16 +106,16 @@ const translations: Record<string, readonly [string, string]> = {
         "ve sluneční soustavě."
     ],
     "A live, approximate ASCII visualization of the Solar System and the Milky Way galaxy": [
-        "Eine laufende, vereinfachte ASCII-Visualisierung des Sonnensystems und der Milchstraße",
-        "Živá přibližná ASCII vizualizace sluneční soustavy a Mléčné dráhy"
+        "Eine animierte ASCII-Ansicht von Sonnensystem und Milchstraße mit ungefähren Positionen",
+        "Animovaný ASCII pohled na sluneční soustavu a Mléčnou dráhu s přibližnými polohami"
     ],
     "An interactive ASCII visualization of the Solar System and the Milky Way galaxy introduces Kryštof Lískovec’s portfolio. Use the zoom controls to move between the Solar System and the Milky Way galaxy, and use the arrow keys to turn the current view. The portfolio content continues below with information about his DevOps and software development work, technical skills, blog posts, and contact details.": [
-        "Eine interaktive ASCII-Visualisierung des Sonnensystems und der Milchstraße eröffnet das Portfolio von Kryštof Lískovec. Mit dem Zoom wechseln Sie zwischen Sonnensystem und Milchstraße; mit den Pfeiltasten drehen Sie die Ansicht. Weiter unten finden Sie Informationen zu seiner Arbeit in DevOps und Softwareentwicklung, seinen technischen Kenntnissen, Blogbeiträgen und Kontaktdaten.",
-        "Portfolio Kryštofa Lískovce uvádí interaktivní ASCII vizualizace sluneční soustavy a Mléčné dráhy. Ovládáním přiblížení přecházejte mezi sluneční soustavou a Mléčnou dráhou, šipkami otáčejte pohled. Níže najdete informace o jeho práci v DevOps a vývoji softwaru, technických dovednostech, blogové příspěvky a kontaktní údaje."
+        "Mein Portfolio beginnt mit einer interaktiven ASCII-Ansicht von Sonnensystem und Milchstraße. Mit dem Zoom wechselst du zwischen beiden; mit den Pfeiltasten drehst du die Ansicht. Darunter geht es um meine Arbeit in DevOps und Softwareentwicklung, meine Kenntnisse, Blogbeiträge und Kontaktmöglichkeiten.",
+        "Portfolio Kryštofa Lískovce začíná interaktivním ASCII pohledem na sluneční soustavu a Mléčnou dráhu. Přiblížením mezi nimi přepínáte, šipkami otáčíte pohled. Níže píšu o své práci v DevOps a vývoji softwaru, o tom, co umím, a najdete tu i blog a kontakt."
     ],
     "Focus the Solar System and Milky Way galaxy animation with Tab. Press Enter to choose a planet, use the arrow keys to move between planets or Sol, and press Enter again to zoom in. In a focused planetary scene, use Tab or the arrow keys to choose a moon or station. Press Escape to zoom out and Space to return to camera controls.": [
-        "Wählen Sie die Animation mit Tab aus. Drücken Sie Enter, um ein Objekt auszuwählen, wechseln Sie mit den Pfeiltasten zwischen Planeten und Sonne und drücken Sie erneut Enter zum Heranzoomen. In einer Planetenansicht wählen Sie mit Tab oder den Pfeiltasten einen Mond oder eine Station. Escape zoomt heraus; die Leertaste kehrt zur Kamerasteuerung zurück.",
-        "Klávesou Tab přejděte na animaci. Enter zahájí výběr objektu, šipkami přecházejte mezi planetami a Sluncem a dalším stisknutím Enter se přibližte. V přiblížené scéně vybírejte měsíc nebo stanici klávesou Tab či šipkami. Escape oddálí pohled a mezerník vás vrátí k ovládání kamery."
+        "Mit Tab gelangst du zur Animation. Drücke Enter, um ein Objekt auszuwählen, wechsle mit den Pfeiltasten zwischen den Planeten und der Sonne und drücke erneut Enter zum Heranzoomen. In der Planetenansicht wählst du mit Tab oder den Pfeiltasten einen Mond oder eine Station. Mit Escape zoomst du heraus, mit der Leertaste steuerst du wieder die Kamera.",
+        "Na animaci přejdete klávesou Tab. Stiskněte Enter, šipkami vyberte planetu nebo Slunce a dalším stisknutím Enter se přibližte. U planety můžete klávesou Tab nebo šipkami vybrat měsíc či stanici. Escape pohled oddálí a mezerník vrátí ovládání kamery."
     ],
     "Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions": [
         "Interaktives ASCII-Sonnensystem und Milchstraße mit laufend berechneten, ungefähren Planetenpositionen",
@@ -130,16 +130,16 @@ const translations: Record<string, readonly [string, string]> = {
         "Otevřít animaci na celou obrazovku"
     ],
     "tilt phone sideways": [
-        "telefon seitlich neigen",
-        "nakloňte telefon do strany"
+        "handy quer halten",
+        "otočte telefon na šířku"
     ],
     "Cosmic zoom controls": [
-        "Kosmische Zoomsteuerung",
-        "Ovládání kosmického přiblížení"
+        "Zoom für Sonnensystem und Milchstraße",
+        "Ovládání přiblížení sluneční soustavy a Mléčné dráhy"
     ],
     "Zoom between the Solar System and the Milky Way": [
         "Zwischen Sonnensystem und Milchstraße zoomen",
-        "Přiblížení mezi sluneční soustavou a Mléčnou dráhou"
+        "Přecházet mezi sluneční soustavou a Mléčnou dráhou"
     ],
     "MILKY WAY": [
         "MILCHSTRASSE",
@@ -182,20 +182,20 @@ const translations: Record<string, readonly [string, string]> = {
         "01 / o mně"
     ],
     "i build reliable software and the systems it runs on.": [
-        "ich entwickle zuverlässige software und die systeme dahinter.",
+        "ich baue zuverlässige software und die systeme, auf denen sie läuft.",
         "vyvíjím spolehlivý software i systémy, na kterých běží."
     ],
-    "hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic working across devops, infrastructure, and generally software development. my story began in backend development and gradually expanded into devops.": [
-        "hallo, ich bin Kryštof Lískovec, softwareentwickler aus Tschechien. ich arbeite an devops, infrastruktur und softwareentwicklung im allgemeinen. angefangen habe ich in der backend-entwicklung, später kam devops dazu.",
-        "ahoj, jsem Kryštof Lískovec, vývojář softwaru z České republiky. věnuji se devops, infrastruktuře a vývoji softwaru obecně. začínal jsem s backendem a postupně se dostal i k devops."
+    "hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic. i started in backend development. devops and infrastructure came later.": [
+        "hey, ich bin Kryštof Lískovec, softwareentwickler aus Tschechien. angefangen habe ich im backend, später kamen devops und infrastruktur dazu.",
+        "ahoj, jsem Kryštof Lískovec, vývojář z Česka. začínal jsem u backendu, k devops a infrastruktuře jsem se dostal až později."
     ],
     "these days my work sits between both. i still write code, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, faster and more maintainable setups.": [
-        "heute verbinde ich beides. ich schreibe weiterhin code und kümmere mich um container, on-prem-infrastruktur, CI/CD und deployments, die niemanden nachts wecken sollten. dabei habe ich auch ältere codebasen sicherer, schneller und wartbarer gemacht.",
-        "dnes propojuji obě oblasti. pořád píšu kód, ale pracuji také s kontejnery, on-prem infrastrukturou, CI/CD a nasazováním, které by nemělo nikoho budit v noci. pomáhal jsem také posouvat starší projekty k bezpečnějšímu, rychlejšímu a lépe udržovatelnému řešení."
+        "heute mache ich beides: ich schreibe code und kümmere mich um container, eigene server, CI/CD und deployments, die nachts niemanden wecken. nebenbei habe ich ältere projekte sicherer, schneller und leichter wartbar gemacht.",
+        "dnes dělám obojí. pořád píšu kód, ale starám se i o kontejnery, vlastní servery, CI/CD a nasazení, kvůli kterým nemusí nikdo v noci vstávat. pomáhal jsem také upravit starší projekty tak, aby byly bezpečnější, rychlejší a snáz se udržovaly."
     ],
     "outside of work, i’m usually somewhere around Linux, my homelab, or open-source projects.": [
-        "außerhalb der arbeit beschäftige ich mich meistens mit Linux, meinem homelab oder open-source-projekten.",
-        "mimo práci mě obvykle najdete u Linuxu, domácího labu nebo open-source projektů."
+        "auch nach feierabend lande ich meistens bei Linux, meinem homelab oder open-source-projekten.",
+        "i po práci mě často najdete u Linuxu, domácího labu nebo open-source projektů."
     ],
     "cv": [
         "lebenslauf",
@@ -242,28 +242,28 @@ const translations: Record<string, readonly [string, string]> = {
         "Zatím tu nic není."
     ],
     "Random adventures and struggles - mostly about software and whatever I am figuring out.": [
-        "Zufällige Abenteuer und Herausforderungen – meistens rund um Software und alles, womit ich mich gerade beschäftige.",
-        "Náhodná dobrodružství a trápení – hlavně o softwaru a o tom, co právě zkoumám."
+        "Kleine Abenteuer und Stolpersteine – meist mit Software und Dingen, an denen ich gerade tüftle.",
+        "Malá dobrodružství a občasné záseky – většinou se softwarem a věcmi, kterým zrovna přicházím na kloub."
     ],
     "Random adventures and struggles from Kryštof Lískovec - mostly about software and whatever he's figuring out.": [
-        "Abenteuer und Herausforderungen von Kryštof Lískovec – meistens rund um Software und alles, womit er sich gerade beschäftigt.",
-        "Dobrodružství a trápení Kryštofa Lískovce – hlavně o softwaru a o tom, co právě zkoumá."
+        "Kleine Abenteuer und Stolpersteine von Kryštof Lískovec – meist mit Software und Dingen, an denen er gerade tüftelt.",
+        "Malá dobrodružství a občasné záseky Kryštofa Lískovce – většinou se softwarem a věcmi, kterým zrovna přichází na kloub."
     ],
     "Random adventures and struggles - mostly about software, DevOps, and whatever I happen to be figuring out.": [
-        "Abenteuer und Herausforderungen – meistens rund um Software, DevOps und alles, womit ich mich gerade beschäftige.",
-        "Dobrodružství a trápení – hlavně o softwaru, DevOps a o tom, co právě zkoumám."
+        "Kleine Abenteuer und Stolpersteine – meist mit Software, DevOps und Dingen, an denen ich gerade tüftle.",
+        "Malá dobrodružství a občasné záseky – většinou se softwarem, DevOps a věcmi, kterým zrovna přicházím na kloub."
     ],
     "random adventures": [
-        "zufällige abenteuer",
-        "náhodná dobrodružství"
+        "kleine abenteuer",
+        "malá dobrodružství"
     ],
     "and struggles.": [
-        "und herausforderungen.",
-        "a trápení."
+        "und stolpersteine.",
+        "a občasné záseky."
     ],
     "mostly about software and whatever i happen to be figuring out. sometimes with opinions included.": [
-        "meistens über software und alles, womit ich mich gerade beschäftige. manchmal auch mit einer meinung dazu.",
-        "hlavně o softwaru a o tom, co právě zkoumám. občas i s vlastním názorem."
+        "meistens über software und dinge, an denen ich gerade tüftle. ab und zu mit einer meinung dazu.",
+        "hlavně o softwaru a věcech, kterým zrovna přicházím na kloub. občas přidám i svůj názor."
     ],
     "all posts": [
         "alle beiträge",
@@ -286,8 +286,8 @@ const translations: Record<string, readonly [string, string]> = {
         "404 | Nenalezeno | Kryštof Lískovec"
     ],
     "The requested page could not be found.": [
-        "Die angeforderte Seite wurde nicht gefunden.",
-        "Požadovaná stránka nebyla nalezena."
+        "Diese Seite gibt es leider nicht.",
+        "Tuhle stránku se nepodařilo najít."
     ],
     "404 - not found": [
         "404 - nicht gefunden",
@@ -295,7 +295,7 @@ const translations: Record<string, readonly [string, string]> = {
     ],
     "your lander drifted": [
         "dein lander ist",
-        "váš modul odletěl"
+        "tvůj modul odletěl"
     ],
     "somewhere else…": [
         "woanders gelandet…",

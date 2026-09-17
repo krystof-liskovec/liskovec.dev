@@ -1,7 +1,7 @@
 ---
 locale: cs
 title: Úplně obyčejné nasazení
-description: Ukázkový příspěvek o nasazení změny, aniž by se z toho stala velká událost.
+description: Ukázkový příspěvek o nasazení změny, ze kterého nebylo potřeba dělat událost.
 published: 2026-08-21
 featured: true
 draft: true
@@ -12,13 +12,13 @@ image: /og-default.png?v=2
 imageAlt: ASCII model sluneční soustavy ve stylu Gruvbox vedle jména Kryštof Lískovec
 ---
 
-Toto je ukázkový příspěvek. Slouží k ověření, že blog funguje od souboru Markdown až po hotovou stránku – a dává mi něco, co později nahradím skutečným článkem.
+Tohle je zatím jen ukázkový příspěvek. Díky němu můžu ověřit, že z Markdownu opravdu vznikne stránka blogu. A později ho vyměním za něco skutečného.
 
 ## Plán
 
-Plán byl záměrně obyčejný: jednou sestavit image, poslat stejný artefakt všemi prostředími, přepnout provoz až po úspěšné kontrole stavu a mít předchozí verzi po ruce pro rychlý návrat.
+Plán byl schválně nudný: sestavit image jen jednou, stejnou verzi protáhnout všemi prostředími, přepnout provoz teprve po úspěšném health checku a nechat si po ruce předchozí verzi pro případný návrat.
 
-Žádná chytrá orchestrace. Žádné hrdinské sezení v terminálu. Jen nasazení, u kterého je jasné, co právě dělá.
+Žádná důmyslná orchestrace. Žádné hrdinství v terminálu. Jen nasazení, u kterého je jasné, co se právě děje.
 
 ```yaml
 deploy:
@@ -31,15 +31,15 @@ deploy:
 
 ## Co se pokazilo
 
-První kontrola stavu mířila na špatný port. Bezpečně selhala, provoz zůstal u původní verze a logy problém jasně ukázaly. To považuji za dobré selhání.
+První health check mířil na špatný port. Nasazení se zastavilo, provoz zůstal na původní verzi a z logů bylo hned jasné proč. Přesně takhle má vypadat chyba, když už k ní dojde.
 
-Po opravě portu druhý pokus vyšel. Nikoho nic nevzbudilo – zhruba takový standard od infrastruktury očekávám.
+Po opravě portu druhý pokus prošel. Nikoho to nevzbudilo – a přesně to od infrastruktury chci.
 
 ## Co bych zachoval
 
-- Jeden artefakt procházející celou pipeline.
-- Kontrolu stavu, která při chybě zabrání přepnutí.
-- Možnost návratu bez nového sestavení.
-- Logy napsané pro člověka, který to bude za půl roku ladit.
+- Jeden sestavený image, který projde celou pipeline.
+- Health check, který při chybě zabrání přepnutí provozu.
+- Cestu zpátky bez dalšího buildu.
+- Logy, ve kterých se vyzná i člověk, který to bude ladit za půl roku.
 
-To je pro ukázkový příspěvek vše. Publikační systém zřejmě žije.
+To je k ukázkovému příspěvku vše. Blog zjevně žije.

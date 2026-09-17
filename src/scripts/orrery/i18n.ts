@@ -149,8 +149,8 @@ const copy: Record<string, readonly [string, string]> = {
         "rotace na boku / slabé prstence"
     ],
     "orbits nearly on its side": [
-        "umlauf fast auf der seite",
-        "obíhá téměř na boku"
+        "dreht sich fast auf der seite",
+        "otáčí se téměř na boku"
     ],
     "fastest planetary winds / Triton": [
         "schnellste planetare winde / Triton",
@@ -165,7 +165,7 @@ const copy: Record<string, readonly [string, string]> = {
         "Tombaugh Regio / pět měsíců"
     ],
     "mutually locked with Charon": [
-        "gegenseitig gebunden mit Charon",
+        "mit Charon gegenseitig gebunden",
         "vzájemně vázaná rotace s Charonem"
     ],
     "supermassive black hole": [
@@ -265,7 +265,7 @@ const copy: Record<string, readonly [string, string]> = {
         "měsíc Uranu"
     ],
     "moon of Neptune": [
-        "mond des Neptun",
+        "mond des Neptuns",
         "měsíc Neptunu"
     ],
     "moon of Pluto": [
@@ -445,11 +445,11 @@ const copy: Record<string, readonly [string, string]> = {
         "Ukončit animaci na celé obrazovce"
     ],
     "selected. Use arrow keys to choose a solar system object, then press Enter to zoom in.": [
-        "ausgewählt. Wählen Sie mit den Pfeiltasten ein Objekt im Sonnensystem und drücken Sie Enter zum Heranzoomen.",
+        "ausgewählt. Wähle mit den Pfeiltasten ein Objekt im Sonnensystem und drücke Enter zum Heranzoomen.",
         "vybráno. Šipkami vyberte objekt sluneční soustavy a klávesou Enter se přibližte."
     ],
     "selected. Use Tab or arrow keys to choose a nearby object, then press Enter to zoom in.": [
-        "ausgewählt. Wählen Sie mit Tab oder den Pfeiltasten ein nahes Objekt und drücken Sie Enter zum Heranzoomen.",
+        "ausgewählt. Wähle mit Tab oder den Pfeiltasten ein Objekt in der Nähe und drücke Enter zum Heranzoomen.",
         "vybráno. Klávesou Tab nebo šipkami vyberte blízký objekt a klávesou Enter se přibližte."
     ],
     "realtime": [
@@ -489,7 +489,7 @@ const copy: Record<string, readonly [string, string]> = {
         "deset milionů simulovaných let za sekundu"
     ],
     "realtime local rotation and satellite motion": [
-        "echtzeit für lokale rotation und satellitenbewegung",
+        "rotation und satellitenbewegung in echtzeit",
         "rotace a pohyb družic v reálném čase"
     ],
     "one simulated local hour per second": [
@@ -553,16 +553,16 @@ const copy: Record<string, readonly [string, string]> = {
         "ve sluneční soustavě."
     ],
     "A live, approximate ASCII visualization of the Solar System and the Milky Way galaxy": [
-        "Eine laufende, vereinfachte ASCII-Visualisierung des Sonnensystems und der Milchstraße",
-        "Živá přibližná ASCII vizualizace sluneční soustavy a Mléčné dráhy"
+        "Eine animierte ASCII-Ansicht von Sonnensystem und Milchstraße mit ungefähren Positionen",
+        "Animovaný ASCII pohled na sluneční soustavu a Mléčnou dráhu s přibližnými polohami"
     ],
     "An interactive ASCII visualization of the Solar System and the Milky Way galaxy introduces Kryštof Lískovec’s portfolio. Use the zoom controls to move between the Solar System and the Milky Way galaxy, and use the arrow keys to turn the current view. The portfolio content continues below with information about his DevOps and software development work, technical skills, blog posts, and contact details.": [
-        "Eine interaktive ASCII-Visualisierung des Sonnensystems und der Milchstraße eröffnet das Portfolio von Kryštof Lískovec. Mit dem Zoom wechseln Sie zwischen Sonnensystem und Milchstraße; mit den Pfeiltasten drehen Sie die Ansicht. Weiter unten finden Sie Informationen zu seiner Arbeit in DevOps und Softwareentwicklung, seinen technischen Kenntnissen, Blogbeiträgen und Kontaktdaten.",
-        "Portfolio Kryštofa Lískovce uvádí interaktivní ASCII vizualizace sluneční soustavy a Mléčné dráhy. Ovládáním přiblížení přecházejte mezi sluneční soustavou a Mléčnou dráhou, šipkami otáčejte pohled. Níže najdete informace o jeho práci v DevOps a vývoji softwaru, technických dovednostech, blogové příspěvky a kontaktní údaje."
+        "Mein Portfolio beginnt mit einer interaktiven ASCII-Ansicht von Sonnensystem und Milchstraße. Mit dem Zoom wechselst du zwischen beiden; mit den Pfeiltasten drehst du die Ansicht. Darunter geht es um meine Arbeit in DevOps und Softwareentwicklung, meine Kenntnisse, Blogbeiträge und Kontaktmöglichkeiten.",
+        "Portfolio Kryštofa Lískovce začíná interaktivním ASCII pohledem na sluneční soustavu a Mléčnou dráhu. Přiblížením mezi nimi přepínáte, šipkami otáčíte pohled. Níže píšu o své práci v DevOps a vývoji softwaru, o tom, co umím, a najdete tu i blog a kontakt."
     ],
     "Focus the Solar System and Milky Way galaxy animation with Tab. Press Enter to choose a planet, use the arrow keys to move between planets or Sol, and press Enter again to zoom in. In a focused planetary scene, use Tab or the arrow keys to choose a moon or station. Press Escape to zoom out and Space to return to camera controls.": [
-        "Wählen Sie die Animation mit Tab aus. Drücken Sie Enter, um ein Objekt auszuwählen, wechseln Sie mit den Pfeiltasten zwischen Planeten und Sonne und drücken Sie erneut Enter zum Heranzoomen. In einer Planetenansicht wählen Sie mit Tab oder den Pfeiltasten einen Mond oder eine Station. Escape zoomt heraus; die Leertaste kehrt zur Kamerasteuerung zurück.",
-        "Klávesou Tab přejděte na animaci. Enter zahájí výběr objektu, šipkami přecházejte mezi planetami a Sluncem a dalším stisknutím Enter se přibližte. V přiblížené scéně vybírejte měsíc nebo stanici klávesou Tab či šipkami. Escape oddálí pohled a mezerník vás vrátí k ovládání kamery."
+        "Mit Tab gelangst du zur Animation. Drücke Enter, um ein Objekt auszuwählen, wechsle mit den Pfeiltasten zwischen den Planeten und der Sonne und drücke erneut Enter zum Heranzoomen. In der Planetenansicht wählst du mit Tab oder den Pfeiltasten einen Mond oder eine Station. Mit Escape zoomst du heraus, mit der Leertaste steuerst du wieder die Kamera.",
+        "Na animaci přejdete klávesou Tab. Stiskněte Enter, šipkami vyberte planetu nebo Slunce a dalším stisknutím Enter se přibližte. U planety můžete klávesou Tab nebo šipkami vybrat měsíc či stanici. Escape pohled oddálí a mezerník vrátí ovládání kamery."
     ],
     "Interactive ASCII Solar System and Milky Way galaxy with live approximate planetary positions": [
         "Interaktives ASCII-Sonnensystem und Milchstraße mit laufend berechneten, ungefähren Planetenpositionen",
@@ -578,7 +578,7 @@ const copy: Record<string, readonly [string, string]> = {
     ],
     "Zoom between the Solar System and the Milky Way": [
         "Zwischen Sonnensystem und Milchstraße zoomen",
-        "Přiblížení mezi sluneční soustavou a Mléčnou dráhou"
+        "Přecházet mezi sluneční soustavou a Mléčnou dráhou"
     ],
     "MILKY WAY": [
         "MILCHSTRASSE",

@@ -1,7 +1,7 @@
 ---
 locale: de
 title: Ein ganz normales Deployment
-description: Ein Beispielbeitrag darüber, eine Änderung auszuliefern, ohne daraus ein Ereignis zu machen.
+description: Ein Testbeitrag über ein Deployment, das kein großes Ereignis wurde.
 published: 2026-08-21
 featured: true
 draft: true
@@ -12,13 +12,13 @@ image: /og-default.png?v=2
 imageAlt: Ein ASCII-Modell des Sonnensystems im Gruvbox-Stil neben dem Namen Kryštof Lískovec
 ---
 
-Dies ist ein Beispielbeitrag. Er soll sicherstellen, dass der Blog vom Markdown-Dokument bis zur fertigen Seite funktioniert – und mir etwas geben, das ich später durch einen echten Beitrag ersetzen kann.
+Das hier ist erst mal ein Testbeitrag. Damit prüfe ich, ob aus einer Markdown-Datei tatsächlich eine Blogseite wird. Später kommt an seine Stelle ein richtiger Beitrag.
 
 ## Der Plan
 
-Der Plan war bewusst unspektakulär: das Image einmal bauen, dasselbe Artefakt durch alle Umgebungen schicken, den Traffic erst nach einer erfolgreichen Zustandsprüfung umschalten und die vorherige Version für einen schnellen Rollback bereithalten.
+Der Plan war absichtlich langweilig: das Image einmal bauen, es durch alle Umgebungen schicken, den Traffic erst nach einem erfolgreichen Healthcheck umschalten und die vorherige Version für einen Rollback griffbereit halten.
 
-Keine ausgeklügelte Orchestrierung. Keine heldenhafte Terminal-Sitzung. Einfach ein Deployment, bei dem nachvollziehbar ist, was passiert.
+Keine ausgefeilte Orchestrierung. Keine Heldentaten im Terminal. Einfach ein Deployment, bei dem klar ist, was gerade passiert.
 
 ```yaml
 deploy:
@@ -31,15 +31,15 @@ deploy:
 
 ## Was schiefging
 
-Der erste Healthcheck prüfte den falschen Port. Er schlug sicher fehl, der Traffic blieb bei der bisherigen Version, und die Logs machten das Problem deutlich. Für mich ist das ein guter Fehler.
+Der erste Healthcheck prüfte den falschen Port. Das Deployment stoppte, der Traffic blieb bei der alten Version und aus den Logs war sofort klar, warum. Wenn schon ein Fehler, dann bitte so.
 
-Nach der Korrektur des Ports funktionierte der zweite Versuch. Niemand wurde geweckt – ungefähr das, was ich von Infrastruktur erwarte.
+Nach der Portkorrektur lief der zweite Versuch durch. Niemand wurde davon geweckt – genau das erwarte ich von Infrastruktur.
 
 ## Was ich beibehalten würde
 
-- Ein einziges Artefakt durch die gesamte Pipeline.
-- Einen Healthcheck, der das Umschalten bei Fehlern verhindert.
-- Einen Rollback ohne erneuten Build.
-- Logs für die Person, die das in sechs Monaten debuggen muss.
+- Ein einziges Image für die ganze Pipeline.
+- Einen Healthcheck, der bei Fehlern den Wechsel verhindert.
+- Einen Rollback ohne neuen Build.
+- Logs, mit denen auch die Person etwas anfangen kann, die das in sechs Monaten debuggt.
 
-Das war es mit dem Beispielbeitrag. Das Veröffentlichungssystem scheint zu leben.
+So viel zum Testbeitrag. Der Blog lebt offenbar.

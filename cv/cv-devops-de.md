@@ -4,7 +4,7 @@
 
 DevOps-Ingenieur
 
-5 Jahre Erfahrung in Backend-Entwicklung und DevOps
+5 Jahre Erfahrung in der Backend-Entwicklung und im DevOps-Bereich
 
 krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
@@ -16,17 +16,17 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 DevOps-Ingenieur (Sept 2024 – heute)
 
-- Verkürzte CI/CD-Einrichtung neuer Projekte von bis zu 1 Stunde auf meist 5–10 Minuten mit wiederverwendbaren, konfigurierbaren GitLab-Komponenten für Nuxt, NestJS und Go
-- Entwickelte einen modularen Backup-Assistenten für Git-versionierte resticprofile-Konfigurationen für Daten und Dateien; CI/CD verteilt sie für unabhängige Backblaze-B2-Backups
-- Provisionierte selbstverwaltete Infrastruktur mit Ansible und Git-versionierten Docker-Compose-Definitionen statt Bash-Skripten für reproduzierbare Deployments und Kostenkontrolle
-- Integrierte Graylog, eine OpenTelemetry-Pipeline und GlitchTip für zentrale Logs, Telemetrie und Erfassung von Anwendungsfehlern
-- Automatisierte Container-Deployments mit Docker-Healthchecks; fehlerhafte Releases werden verworfen, bevor die laufende Version gestoppt und ersetzt wird
+- CI/CD-Einrichtung für neue Projekte mit wiederverwendbaren, konfigurierbaren GitLab-Komponenten für Nuxt, NestJS und Go von bis zu einer Stunde auf meist 5–10 Minuten verkürzt
+- Modularen Backup-Assistenten entwickelt, der resticprofile-Konfigurationen für Datenbanken und Dateien erzeugt; sie werden in Git verwaltet und per CI/CD auf die Server verteilt, wo sie getrennte Backups in Backblaze B2 steuern
+- Eigene Infrastruktur mit Ansible und in Git verwalteten Docker-Compose-Dateien eingerichtet; damit Bash-Skripte ersetzt, Deployments reproduzierbar gemacht und langfristige Kosten besser kontrolliert
+- Graylog, eine OpenTelemetry-Pipeline und GlitchTip für zentrale Logs, Telemetrie und die Erfassung von Anwendungsfehlern eingebunden
+- Container-Deployments mit Docker-Healthchecks automatisiert; fehlerhafte Releases werden verworfen, bevor sie die laufende Version ersetzen
 
 Backend-Entwickler (Juli 2021 – Aug 2024)
 
-- Ersetzte Adress-Autocomplete-Abos für ca. 2.880–3.360 € jährlich durch eine REST-API mit Go und Elasticsearch für einen Kunden mit über 40 Websites
-- Automatisierte den Import tschechischer und slowakischer Adressdaten und optimierte Elasticsearch-Indizes für fehlertolerante Autocomplete-Suche
-- Entwickelte einen gecachten Rendering-Dienst mit NestJS und Puppeteer für HTML-Ausgabe an Crawler, ohne bestehende Vue.js-Anwendungen umzuschreiben
+- Kostenpflichtige Adressvorschläge (ca. 2.880–3.360 € pro Jahr) für einen Kunden mit über 40 Websites durch eine REST-API mit Go und Elasticsearch ersetzt
+- Import tschechischer und slowakischer Adressdaten automatisiert und Elasticsearch-Indizes für fehlertolerante Suche optimiert
+- Mit NestJS und Puppeteer einen Rendering-Dienst mit Cache entwickelt, der Crawlern fertiges HTML liefert, ohne bestehende Vue.js-Anwendungen umzuschreiben
 
 ## Kenntnisse
 
@@ -34,7 +34,7 @@ Infrastruktur: Linux, Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
 
 Sprachen und Frameworks: Go, TypeScript, PHP, NestJS, Symfony
 
-Observability: Graylog, OpenTelemetry, GlitchTip
+Monitoring und Observability: Graylog, OpenTelemetry, GlitchTip
 
 Dienste: resticprofile, Backblaze B2, Consul, OpenBao, Elasticsearch, PostgreSQL, Redis
 
@@ -42,7 +42,7 @@ Dienste: resticprofile, Backblaze B2, Consul, OpenBao, Elasticsearch, PostgreSQL
 
 ### Südböhmische Universität in České Budějovice
 
-Bachelor in Angewandter Informatik (2024)
+Bachelorabschluss in Angewandter Informatik (2024)
 
 ## Sprachen
 
