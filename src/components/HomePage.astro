@@ -54,6 +54,7 @@ const profileStructuredData = {
                         class="zoom-location-frame"><span id="zoom-location">{t("in the solar system.")}</span></span
                     >
                 </h1>
+                <p class="solar-introduction">{t("i'm a software developer working across devops and infrastructure.")}</p>
             </div>
             <div
                 class="solar-system"
@@ -260,7 +261,9 @@ const profileStructuredData = {
                     </div>
                 </div>
             </div>
-            <div class="hero-footer"><a href="#about">{t("↓ scroll to learn more")}</a></div>
+            <div class="hero-footer">
+                <a href="#about">{t("↓ about my work")}</a>
+            </div>
         </section>
         <div class="profile-layout">
             <section class="content-section" id="about">
@@ -277,7 +280,7 @@ const profileStructuredData = {
                             {t("outside of work, i’m usually somewhere around Linux, my homelab, or open-source projects.")}
                         </p>
                         <p class="about-cv-link">
-                            <a href={locale === "en" ? "/cv.pdf" : `/cv-${locale}.pdf`} target="_blank" rel="noopener noreferrer">{t("cv")} <span>↗</span></a>
+                            <a href={locale === "en" ? "/cv.pdf" : `/cv-${locale}.pdf`} target="_blank" rel="noopener noreferrer">{t("Download CV (PDF)")} <span>↗</span></a>
                         </p>
                     </div>
                 </div>
@@ -304,7 +307,7 @@ const profileStructuredData = {
                 <section class="about-contact" id="contact">
                     <div class="section-label">
                         <a class="section-label-anchor" href="#contact">{t("03 / contact")}</a>
-                    </div>
+                    </div><p class="contact-intro">{t("any questions? reach out!")}</p>
                     <div class="contact-links">
                         <a href="mailto:krystof@liskovec.dev">{t("email")} <span>↗</span></a>
                         <a href="https://github.com/krystof-liskovec" target="_blank" rel="noopener noreferrer"
@@ -335,16 +338,23 @@ const profileStructuredData = {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const initialHashTarget = window.location.hash ? document.getElementById(window.location.hash.slice(1)) : null;
     const isAnchorEntry = Boolean(initialHashTarget);
+    let hasSeenIntro = false;
+    try {
+        hasSeenIntro = window.localStorage.getItem('liskovec-orrery-intro-seen') === 'true';
+    } catch {
+        // The intro still works when browser storage is unavailable.
+    }
+    const skipIntro = isAnchorEntry || reducedMotion || hasSeenIntro;
 
-    if (isAnchorEntry) document.documentElement.setAttribute('data-orrery-anchor-entry', '');
-    if (!reducedMotion && !isAnchorEntry) {
+    if (skipIntro) document.documentElement.setAttribute('data-orrery-skip-intro', '');
+    if (!skipIntro) {
         solarHeading?.classList.add('is-intro-running');
         solarSystem?.classList.add('is-intro-running');
     }
     document.documentElement.setAttribute('data-orrery-heading-managed', '');
 
     const createIntroTypewriter = (element: HTMLElement) => {
-        const TYPE_DELAY_MS = 32;
+        const TYPE_DELAY_MS = 22;
         let timer = 0;
         let run = 0;
 
@@ -385,12 +395,12 @@ const profileStructuredData = {
     const loadOrrery = () => void import('../scripts/orrery.ts');
     // Give the completed heading a real paint opportunity before the heavy
     // interactive scene module begins evaluating on throttled devices.
-    const ORRERY_BOOT_DELAY_MS = 320;
+    const ORRERY_BOOT_DELAY_MS = 160;
     const idleWindow = window as Window & {
         requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
     };
     const scheduleOrrery = () => {
-        if (isAnchorEntry) {
+        if (skipIntro) {
             loadOrrery();
             return;
         }
@@ -412,6 +422,13 @@ const profileStructuredData = {
     };
     const finishHeading = () => {
         headingFinished = true;
+        if (!skipIntro) {
+            try {
+                window.localStorage.setItem('liskovec-orrery-intro-seen', 'true');
+            } catch {
+                // The intro plays normally when browser storage is unavailable.
+            }
+        }
         maybeStartOrrery();
     };
     window.addEventListener(
@@ -423,7 +440,7 @@ const profileStructuredData = {
         { once: true },
     );
 
-    if (isAnchorEntry) {
+    if (skipIntro) {
         if (solarHeadingLead) solarHeadingLead.textContent = initialLead;
         if (zoomLocation) zoomLocation.textContent = initialLocation;
         finishHeading();

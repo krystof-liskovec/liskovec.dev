@@ -17,6 +17,12 @@
     margin: 14px 0 0;
     font-size: clamp(42px, 5.4vw, 76px);
 }
+.solar-introduction {
+    max-width: 44rem;
+    margin: 16px 0 0;
+    color: var(--muted);
+    font: 16px/1.55 var(--sans);
+}
 .solar-heading-lead {
     color: inherit;
 }
@@ -240,12 +246,12 @@
 .solar-system.is-canvas-ready.is-intro-running .cosmic-zoom-switch,
 .solar-system.is-canvas-ready.is-intro-running .mobile-fullscreen-toggle,
 .solar-system.is-canvas-ready.is-intro-running .solar-caption {
-    animation-delay: 1.25s;
+    animation-delay: 0.65s;
 }
-html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .cosmic-zoom-control,
-html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .cosmic-zoom-switch,
-html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .mobile-fullscreen-toggle,
-html[data-orrery-anchor-entry] .solar-system.is-canvas-ready .solar-caption {
+html[data-orrery-skip-intro] .solar-system.is-canvas-ready .cosmic-zoom-control,
+html[data-orrery-skip-intro] .solar-system.is-canvas-ready .cosmic-zoom-switch,
+html[data-orrery-skip-intro] .solar-system.is-canvas-ready .mobile-fullscreen-toggle,
+html[data-orrery-skip-intro] .solar-system.is-canvas-ready .solar-caption {
     animation: none;
     opacity: 1;
 }

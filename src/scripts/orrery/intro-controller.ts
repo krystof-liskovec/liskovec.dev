@@ -1,6 +1,6 @@
 import { smoothstep } from './math';
 
-const INTRO_DURATION_MS = 2400;
+const INTRO_DURATION_MS = 1600;
 const ORBIT_START_PROGRESS = 0.16;
 const ORBIT_REVEAL_PROGRESS = 0.42;
 const BODY_START_PROGRESS = 0.35;
@@ -31,7 +31,7 @@ export class OrreryIntroController {
     private complete: boolean;
 
     constructor(reducedMotion: boolean) {
-        const skipIntro = document.documentElement.hasAttribute('data-orrery-anchor-entry');
+        const skipIntro = document.documentElement.hasAttribute('data-orrery-skip-intro');
         this.complete = reducedMotion || skipIntro;
         if (this.complete) completeState(this.state);
     }

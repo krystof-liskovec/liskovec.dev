@@ -101,9 +101,17 @@ const translations: Record<string, readonly [string, string]> = {
         "irgendwo",
         "někde"
     ],
+    "i'm a software developer working across devops and infrastructure.": [
+        "Ich bin Softwareentwickler mit Schwerpunkt auf DevOps und Infrastruktur.",
+        "Jsem vývojář softwaru se zaměřením na DevOps a infrastrukturu."
+    ],
     "in the solar system.": [
         "im sonnensystem.",
         "ve sluneční soustavě."
+    ],
+    "↓ about my work": [
+        "↓ zu meiner arbeit",
+        "↓ o mé práci"
     ],
     "A live, approximate ASCII visualization of the Solar System and the Milky Way galaxy": [
         "Eine animierte ASCII-Ansicht von Sonnensystem und Milchstraße mit ungefähren Positionen",
@@ -201,6 +209,10 @@ const translations: Record<string, readonly [string, string]> = {
         "lebenslauf",
         "životopis"
     ],
+    "Download CV (PDF)": [
+        "Lebenslauf als PDF herunterladen",
+        "Stáhnout životopis (PDF)"
+    ],
     "02 / toolbox": [
         "02 / werkzeugkasten",
         "02 / nástroje"
@@ -224,6 +236,10 @@ const translations: Record<string, readonly [string, string]> = {
     "03 / contact": [
         "03 / kontakt",
         "03 / kontakt"
+    ],
+    "any questions? reach out!": [
+        "Noch Fragen? Meld dich!",
+        "Máš otázky? Ozvi se!"
     ],
     "email": [
         "e-mail",
