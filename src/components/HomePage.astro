@@ -6,11 +6,12 @@ import Layout from '../layouts/Layout.astro';
 import PostList from './PostList.astro';
 import SiteShell from './SiteShell.astro';
 import { getCollection } from 'astro:content';
+import { isBlogPostVisible } from '../lib/blog';
 import '../styles/site.css';
 import { translateDisplay } from '../scripts/orrery/i18n';
 const animationText = (text: string) => translateDisplay(text, locale);
 
-const featuredPosts = (await getCollection('blog', ({ data }) => !data.draft && data.featured && data.locale === locale))
+const featuredPosts = (await getCollection('blog', ({ data }) => isBlogPostVisible(data) && data.featured && data.locale === locale))
     .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf())
     .slice(0, 3);
 const homeUrl = new URL(localizedPath('/', locale), Astro.site ?? Astro.url).href;

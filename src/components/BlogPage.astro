@@ -6,9 +6,10 @@ import Layout from '../layouts/Layout.astro';
 import PostList from './PostList.astro';
 import SiteShell from './SiteShell.astro';
 import { getCollection } from 'astro:content';
+import { isBlogPostVisible } from '../lib/blog';
 import '../styles/site.css';
 
-const posts = (await getCollection('blog', ({ data }) => !data.draft && data.locale === locale)).sort(
+const posts = (await getCollection('blog', ({ data }) => isBlogPostVisible(data) && data.locale === locale)).sort(
     (a, b) => b.data.published.valueOf() - a.data.published.valueOf(),
 );
 const siteUrl = Astro.site ?? Astro.url;

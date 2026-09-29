@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { getBlogSlug } from '../lib/blog';
+import { getBlogImageSrc, getBlogSlug } from '../lib/blog';
 import { getLocale, getTranslator, localizedPath, dateLocales } from '../i18n';
 
 interface Props {
@@ -26,7 +26,7 @@ const formatDate = (date: Date) =>
                 <a class="post-card" href={localizedPath(`/blog/${getBlogSlug(post.id)}/`, locale)}>
                     <div class="post-card-media">
                         <img
-                            src={post.data.image ?? '/og-default.png?v=2'}
+                            src={getBlogImageSrc(post.data.image) ?? '/og-default.png?v=2'}
                             alt={post.data.imageAlt ?? post.data.title}
                             width="180"
                             height="104"

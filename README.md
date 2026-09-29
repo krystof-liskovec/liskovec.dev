@@ -33,9 +33,9 @@ are translated. Shared pages live in `src/components/*Page.astro`; site copy and
 URL helpers live in `src/i18n/index.ts`, with animation copy in
 `src/scripts/orrery/i18n.ts`. Simulation object names remain English identifiers.
 
-Place translated posts in `src/content/blog/de/` or `src/content/blog/cs/`, using
-the same numbered filename as the English original and a `locale: de` or
-`locale: cs` frontmatter field. Translate titles, summaries, body text, tags, and
+Keep each post's translations alongside its English original in a numbered
+article folder under `src/content/blog/`. Use `index.md` for English, `de.md`
+with `locale: de`, and `cs.md` with `locale: cs`. Translate titles, summaries, body text, tags, and
 image descriptions; leave code samples intact. Publish translations alongside
 the original by setting `draft: false` in each file. RSS and featured lists only
 include posts in the selected language. If a translation is not published yet,
@@ -43,7 +43,27 @@ the switcher links to that language's blog instead of a missing article.
 
 ## Writing blog posts
 
-Posts live in `src/content/blog`. A post supports this frontmatter:
+Each article keeps its text, translations, images, and editable sources together:
+
+```text
+src/content/blog/001-hello-world/
+├── index.md
+├── cs.md
+├── de.md
+└── images/
+    ├── terminal.png
+    ├── solar-system.png
+    └── sources/
+```
+
+Numbered folders (`001-title`, `002-title`, and so on) are loaded into the blog.
+Only `index`, `cs`, and `de` Markdown or MDX files directly inside them are
+article entries; source notes and files in subfolders are not loaded as posts.
+The number and language filename do not appear in the article slug:
+`001-hello-world/index.md` uses `/blog/hello-world/`, and its German translation
+uses `/de/blog/hello-world/`.
+
+A post supports this frontmatter:
 
 ```yaml
 title: A useful title
@@ -55,18 +75,36 @@ featured: false
 draft: true
 tags:
     - devops
-image: /images/blog/example.png # optional; also used for link previews
+image: ./images/cover.png # optional; also used for link previews
 imageAlt: A concise description of the image
 ```
 
-Store local images under `public/images/blog`. Posts without a cover image use `public/og-default.png` for social previews. Draft posts are excluded from pages, the sitemap, RSS, and structured data.
+Store article images in its `images/` folder and original or editable files in
+`images/sources/`. All language versions can reference those shared files with
+relative paths:
+
+```markdown
+![The early terminal interface](./images/terminal.png)
+```
+
+Astro processes local Markdown images during the build. Relative frontmatter
+cover images are resolved through Astro's image schema and used in the post,
+listing, and social metadata. Public paths such as `/og-default.png?v=2` and
+absolute HTTP(S) image URLs are also supported. Unreferenced originals stay in
+the repository rather than being copied to the public site.
+
+Posts without a cover image use `public/og-default.png` for social previews.
+Draft posts are visible during `npm run dev`, including the blog index, featured
+posts, article pages, language links, and RSS. Production builds (`npm run build`)
+exclude drafts from pages, the sitemap, RSS, and structured data; `npm run preview`
+serves that production output.
 
 ## Image to ASCII art
 
 The blog's terminal-style image converter is a local CLI. It keeps the source image on your machine and infers the output format from the --output extension:
 
 ```sh
-./scripts/ascii-art.mjs public/images/blog/example.jpg --output example-ascii.png
+./scripts/ascii-art.mjs src/content/blog/001-hello-world/images/sources/example.jpg --output src/content/blog/001-hello-world/images/example-ascii.png
 ```
 
 Use .txt or .asc for plain ASCII, .svg for a crisp scalable export, or .png, .jpg, .jpeg, .webp, and .bmp for themed raster images. Flat edge-connected backgrounds are kept as a clean fill, inner colors remain part of the subject, and source transparency is preserved in SVG, PNG, and WebP output. Gruvbox is the default; use --theme original for exact source colours, or --theme amber and --theme monochrome for other stylized palettes. The standard character ramp is the default; use --chars fine for a denser full tonal ramp, --no-dither for cleaner flat areas, --invert to invert the source colours, character contrast, and generated background fill, or --force-theme-background to use the selected theme's background instead of the source background. Run npm run ascii -- --help for all options.

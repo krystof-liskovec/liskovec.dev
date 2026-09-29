@@ -1,10 +1,10 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
-import { getBlogSlug } from './blog';
+import { getBlogSlug, isBlogPostVisible } from './blog';
 import { getTranslator, localizedPath, type Locale } from '../i18n';
 export async function createFeed(site: URL, locale: Locale) {
     const t = getTranslator(locale);
-    const posts = (await getCollection('blog', ({ data }) => !data.draft && data.locale === locale))
+    const posts = (await getCollection('blog', ({ data }) => isBlogPostVisible(data) && data.locale === locale))
         .sort((a, b) => b.data.published.valueOf() - a.data.published.valueOf());
     return rss({
         title: 'Kryštof Lískovec | blog',

@@ -1,9 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
 import BlogPostPage from '../../../components/BlogPostPage.astro';
-import { getBlogSlug } from '../../../lib/blog';
+import { getBlogSlug, isBlogPostVisible } from '../../../lib/blog';
 export async function getStaticPaths() {
-    const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale !== 'en');
+    const posts = await getCollection('blog', ({ data }) => isBlogPostVisible(data) && data.locale !== 'en');
     return posts.map(post => ({ params: { lang: post.data.locale, id: getBlogSlug(post.id) }, props: { post } }));
 }
 ---

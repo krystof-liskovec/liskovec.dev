@@ -4,7 +4,7 @@ const locale = getLocale(Astro.url.pathname);
 const t = getTranslator(locale);
 import type { CollectionEntry } from 'astro:content';
 import { getCollection, render } from 'astro:content';
-import { getBlogSlug } from '../lib/blog';
+import { getBlogImageSrc, getBlogSlug, isBlogPostVisible } from '../lib/blog';
 import Layout from '../layouts/Layout.astro';
 import SiteShell from './SiteShell.astro';
 import '../styles/site.css';
@@ -16,7 +16,7 @@ interface Props {
 
 const { post } = Astro.props;
 const slug = getBlogSlug(post.id);
-const languages = (await getCollection('blog', ({ data }) => !data.draft))
+const languages = (await getCollection('blog', ({ data }) => isBlogPostVisible(data)))
     .filter(entry => getBlogSlug(entry.id) === slug)
     .map(entry => entry.data.locale);
 const { Content } = await render(post);
@@ -35,7 +35,9 @@ const updated = post.data.updated
 const siteUrl = Astro.site ?? Astro.url;
 const canonicalUrl = new URL(localizedPath(`/blog/${slug}/`, locale), siteUrl).href;
 const homeUrl = new URL(localizedPath('/', locale), siteUrl).href;
-const articleImageUrl = post.data.image ? new URL(post.data.image, siteUrl).href : undefined;
+const coverImage = getBlogImageSrc(post.data.image);
+const coverMetadata = typeof post.data.image === 'object' ? post.data.image : undefined;
+const articleImageUrl = coverImage ? new URL(coverImage, siteUrl).href : undefined;
 const articleStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -65,7 +67,9 @@ const articleStructuredData = {
 <Layout
     title={`${post.data.title} | Kryštof Lískovec`}
     description={post.data.description}
-    image={post.data.image}
+    image={coverImage}
+    imageWidth={coverMetadata?.width}
+    imageHeight={coverMetadata?.height}
     imageAlt={post.data.imageAlt ?? post.data.title}
     type="article"
     publishedTime={post.data.published.toISOString()}
@@ -88,9 +92,14 @@ const articleStructuredData = {
                 <p>{post.data.description}</p>
             </header>
             {
-                post.data.image && (
+                coverImage && (
                     <figure class="post-cover">
-                        <img src={post.data.image} alt={post.data.imageAlt ?? ''} />
+                        <img
+                            src={coverImage}
+                            alt={post.data.imageAlt ?? ''}
+                            width={coverMetadata?.width}
+                            height={coverMetadata?.height}
+                        />
                     </figure>
                 )
             }
