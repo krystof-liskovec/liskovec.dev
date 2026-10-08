@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="560" height="460" viewBox="0 0 560 460" role="img" aria-labelledby="title desc">
-  <title id="title">Reusing particle glyphs</title>
-  <desc id="desc">The Canvas 2D fallback copies glyphs from cached image tiles. The WebGL2 path uses a texture atlas to draw instanced particle batches. Each path has its own cache of font glyphs.</desc>
+  <title id="title">reusing particle glyphs</title>
+  <desc id="desc">the canvas 2d fallback copies glyphs from cached image tiles. the webgl2 path uses a texture atlas to draw instanced particle batches. each path has its own cache of font glyphs.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#a89984"/>
@@ -8,10 +8,10 @@
   </defs>
   <rect width="560" height="460" fill="#1d2021"/>
   <g font-family="ui-monospace, monospace" text-anchor="middle">
-    <text x="280" y="36" fill="#ebdbb2" font-size="20">Reusing particle glyphs</text>
+    <text x="280" y="36" fill="#ebdbb2" font-size="20">reusing particle glyphs</text>
     <rect x="90" y="60" width="380" height="86" rx="6" fill="#282828" stroke="#504945"/>
     <text x="280" y="99" fill="#fabd2f" font-size="30">. : * + @ #</text>
-    <text x="280" y="127" fill="#a89984" font-size="17">Font glyphs</text>
+    <text x="280" y="127" fill="#a89984" font-size="17">font glyphs</text>
     <g fill="none" stroke="#a89984" stroke-width="2" marker-end="url(#arrow)">
       <path d="M 220 146 V 168 H 148 V 198"/>
       <path d="M 340 146 V 168 H 412 V 198"/>
@@ -19,16 +19,16 @@
       <path d="M 412 286 V 338"/>
     </g>
     <rect x="28" y="200" width="240" height="86" rx="6" fill="#282828" stroke="#83a598"/>
-    <text x="148" y="236" fill="#83a598" font-size="20">Image atlas</text>
-    <text x="148" y="262" fill="#a89984" font-size="17">Cached glyph tiles</text>
+    <text x="148" y="236" fill="#83a598" font-size="20">image atlas</text>
+    <text x="148" y="262" fill="#a89984" font-size="17">cached glyph tiles</text>
     <rect x="292" y="200" width="240" height="86" rx="6" fill="#282828" stroke="#b8bb26"/>
-    <text x="412" y="236" fill="#b8bb26" font-size="20">Texture atlas</text>
-    <text x="412" y="262" fill="#a89984" font-size="17">Cached glyph texture</text>
+    <text x="412" y="236" fill="#b8bb26" font-size="20">texture atlas</text>
+    <text x="412" y="262" fill="#a89984" font-size="17">cached glyph texture</text>
     <rect x="28" y="340" width="240" height="86" rx="6" fill="#282828" stroke="#83a598"/>
-    <text x="148" y="376" fill="#ebdbb2" font-size="20">Canvas 2D fallback</text>
-    <text x="148" y="402" fill="#a89984" font-size="17">Copy image tiles</text>
+    <text x="148" y="376" fill="#ebdbb2" font-size="20">canvas 2d fallback</text>
+    <text x="148" y="402" fill="#a89984" font-size="17">copy image tiles</text>
     <rect x="292" y="340" width="240" height="86" rx="6" fill="#282828" stroke="#b8bb26"/>
-    <text x="412" y="376" fill="#ebdbb2" font-size="20">WebGL2 particles</text>
-    <text x="412" y="402" fill="#a89984" font-size="17">Draw batches on GPU</text>
+    <text x="412" y="376" fill="#ebdbb2" font-size="20">webgl2 particles</text>
+    <text x="412" y="402" fill="#a89984" font-size="17">draw batches on gpu</text>
   </g>
 </svg>

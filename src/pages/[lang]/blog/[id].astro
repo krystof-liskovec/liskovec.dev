@@ -2,9 +2,28 @@
 import { getCollection } from 'astro:content';
 import BlogPostPage from '../../../components/BlogPostPage.astro';
 import { getBlogSlug, isBlogPostVisible } from '../../../lib/blog';
+import { localizedLocales } from '../../../i18n';
+
 export async function getStaticPaths() {
-    const posts = await getCollection('blog', ({ data }) => isBlogPostVisible(data) && data.locale !== 'en');
-    return posts.map(post => ({ params: { lang: post.data.locale, id: getBlogSlug(post.id) }, props: { post } }));
+    const posts = await getCollection('blog', ({ data }) => isBlogPostVisible(data));
+    const localizedPosts = posts.filter(post => post.data.locale !== 'en');
+    const paths = localizedPosts.map(post => ({
+        params: { lang: post.data.locale, id: getBlogSlug(post.id) },
+        props: { post },
+    }));
+    const availableTranslations = new Set(
+        localizedPosts.map(post => `${post.data.locale}/${getBlogSlug(post.id)}`),
+    );
+
+    for (const post of posts.filter(entry => entry.data.locale === 'en')) {
+        const slug = getBlogSlug(post.id);
+        for (const lang of localizedLocales) {
+            if (availableTranslations.has(`${lang}/${slug}`)) continue;
+            paths.push({ params: { lang, id: slug }, props: { post } });
+        }
+    }
+
+    return paths;
 }
 ---
 <BlogPostPage post={Astro.props.post} />

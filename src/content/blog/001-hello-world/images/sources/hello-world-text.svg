@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="900" viewBox="0 0 1536 900">
+  <rect width="1536" height="900" fill="#1d2021" />
+  <g transform="translate(768 0) scale(.74 1) translate(-768 0)">
+    <text
+      x="768"
+      y="590"
+      fill="#fabd2f"
+      font-family="Space Grotesk, sans-serif"
+      font-size="360"
+      font-weight="600"
+      letter-spacing="-27"
+      text-anchor="middle"
+    >hello, world.</text>
+  </g>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="380" viewBox="0 0 840 380" role="img" aria-labelledby="title desc">
+  <title id="title">how the ascii scene is drawn</title>
+  <desc id="desc">a sphere is sampled on a grid, each point chooses a character and color, and the characters are placed on the canvas in camera order.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a89984" />
+    </marker>
+  </defs>
+  <rect width="840" height="380" fill="#1d2021" />
+  <g font-family="ui-monospace, monospace" text-anchor="middle">
+    <text x="420" y="38" fill="#ebdbb2" font-size="21">how the ascii scene is drawn</text>
+    <rect x="24" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="300" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="576" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <path d="M 270 189 H 292 M 546 189 H 568" stroke="#a89984" stroke-width="2" marker-end="url(#arrow)" />
+
+    <text x="144" y="99" fill="#83a598" font-size="17">1 · sample a sphere</text>
+    <g fill="none" stroke="#83a598" stroke-width="1.5">
+      <circle cx="144" cy="205" r="60" />
+      <ellipse cx="144" cy="205" rx="60" ry="22" />
+      <ellipse cx="144" cy="205" rx="28" ry="60" />
+      <path d="M 87 184 Q 144 165 201 184 M 87 226 Q 144 245 201 226" />
+      <ellipse cx="144" cy="205" rx="82" ry="25" stroke="#fabd2f" />
+    </g>
+    <circle cx="167" cy="174" r="4" fill="#fe8019" />
+    <text x="144" y="291" fill="#a89984" font-size="13">surface coordinates + light</text>
+
+    <text x="420" y="99" fill="#fabd2f" font-size="17">2 · choose a glyph</text>
+    <g font-size="22" font-family="ui-monospace, monospace">
+      <text x="420" y="151" fill="#a89984">·  .  :  .  ·</text>
+      <text x="420" y="181" fill="#b8bb26">.  :  o  :  .</text>
+      <text x="420" y="211" fill="#fabd2f">:  o  @  o  :</text>
+      <text x="420" y="241" fill="#fe8019">.  :  o  :  .</text>
+      <text x="420" y="271" fill="#a89984">·  .  :  .  ·</text>
+    </g>
+    <text x="420" y="299" fill="#a89984" font-size="13">texture + shade → glyph</text>
+
+    <text x="696" y="99" fill="#d3869b" font-size="17">3 · draw on canvas</text>
+    <ellipse cx="696" cy="207" rx="88" ry="28" fill="none" stroke="#fabd2f" stroke-width="1.5" />
+    <g font-size="21" font-family="ui-monospace, monospace" text-anchor="middle">
+      <text x="696" y="163" fill="#a89984">. : + : .</text>
+      <text x="696" y="188" fill="#b8bb26">: o @ o :</text>
+      <text x="696" y="213" fill="#fabd2f">+ @ ☼ @ +</text>
+      <text x="696" y="238" fill="#fe8019">: o @ o :</text>
+      <text x="696" y="263" fill="#a89984">. : + : .</text>
+    </g>
+    <text x="696" y="291" fill="#a89984" font-size="13">position · color · opacity</text>
+
+    <text x="420" y="352" fill="#a89984" font-size="14">move the camera and the surface and rings are projected again.</text>
+  </g>
+</svg>

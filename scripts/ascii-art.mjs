@@ -6,6 +6,8 @@ import sharp from 'sharp';
 
 const DEFAULTS = {
     width: 120,
+    fontSize: 14,
+    bold: false,
     theme: 'gruvbox',
     chars: 'standard',
     brightness: 0,
@@ -88,6 +90,8 @@ const usage =
         'Options:',
         '  -o, --output <file>       Write output; format comes from the extension',
         '  --width <columns>         Output width in characters (40–240, default: 120)',
+        '  --font-size <pixels>      SVG/raster glyph size (10–22, default: 14)',
+        '  --bold                    Use bold output glyphs (default: regular)',
         '  --chars <set>             Character ramp: fine, standard, or bold (default: standard)',
         '  --theme <theme>           Palette: gruvbox, original, monochrome, or amber (default: gruvbox)',
         '  --brightness <-100..100>  Adjust brightness before mapping characters',
@@ -133,6 +137,11 @@ function parseArgs(argv) {
         } else if (argument === '--width') {
             options.width = parseNumber(next, 'width', 40, 240);
             index += 1;
+        } else if (argument === '--font-size') {
+            options.fontSize = parseNumber(next, 'font size', 10, 22);
+            index += 1;
+        } else if (argument === '--bold') {
+            options.bold = true;
         } else if (argument === '--brightness') {
             options.brightness = parseNumber(next, 'brightness', -100, 100);
             index += 1;
@@ -452,11 +461,14 @@ function ansiLines(result, options, palette) {
 }
 
 function createSvg(result, options, palette) {
-    const fontSize = 14;
+    // Keep the cell grid fixed so font-size can enlarge glyphs within the same ASCII layout.
+    const cellSize = 14;
+    const fontSize = options.fontSize;
+    const fontWeight = options.bold ? 700 : 400;
     const lineHeight = 1.08;
-    const cellWidth = fontSize * 0.602;
+    const cellWidth = cellSize * 0.602;
     const width = Math.ceil(result.width * cellWidth);
-    const height = Math.ceil(result.height * fontSize * lineHeight + fontSize * 0.4);
+    const height = Math.ceil(result.height * cellSize * lineHeight + cellSize * 0.4);
     const rows = result.cells
         .map((row, rowIndex) => {
             let x = 0;
@@ -480,7 +492,7 @@ function createSvg(result, options, palette) {
                     return tspan;
                 })
                 .join('');
-            return '<text y="' + ((rowIndex + 1) * fontSize * lineHeight).toFixed(2) + '">' + tspans + '</text>';
+            return '<text y="' + ((rowIndex + 1) * cellSize * lineHeight).toFixed(2) + '">' + tspans + '</text>';
         })
         .join('');
     const outputBackground =
@@ -508,7 +520,9 @@ function createSvg(result, options, palette) {
         background +
         '  <g font-family="DejaVu Sans Mono,monospace" font-size="' +
         fontSize +
-        'px">' +
+        'px" font-weight="' +
+        fontWeight +
+        '">' +
         rows +
         '</g>\n' +
         '</svg>\n'

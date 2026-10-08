@@ -1,0 +1,102 @@
+---
+import { getLocale, getTranslator } from '../i18n';
+
+interface Props {
+    summary: string;
+    id: string;
+}
+
+const locale = getLocale(Astro.url.pathname);
+const t = getTranslator(locale);
+const { summary, id } = Astro.props;
+const paragraphs = summary
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+---
+
+{paragraphs.length > 0 && (
+    <div class="post-summary">
+        <button
+            class="post-summary-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls={id}
+            data-show-label={t('show summary')}
+            data-hide-label={t('hide summary')}
+        >
+            {t('show summary')}
+        </button>
+        <div class="post-summary-box" id={id} hidden>
+            {paragraphs.map((paragraph) => <p class="post-summary-text">{paragraph}</p>)}
+        </div>
+    </div>
+)}
+
+<script>
+    const summaryButtons = document.querySelectorAll<HTMLButtonElement>('.post-summary-toggle');
+
+    summaryButtons.forEach((button) => {
+        const panelId = button.getAttribute('aria-controls');
+        const panel = panelId ? document.getElementById(panelId) : null;
+        const summaryText = panel ? Array.from(panel.querySelectorAll<HTMLElement>('.post-summary-text')) : [];
+        const paragraphs = summaryText.map((paragraph) => paragraph.textContent?.trim() ?? '');
+        const tokens = paragraphs.flatMap((paragraph, index) => [
+            ...(paragraph.match(/\S+\s*/g) ?? []),
+            ...(index < paragraphs.length - 1 ? ['\n\n'] : []),
+        ]);
+
+        if (!panel || summaryText.length === 0 || paragraphs.every((paragraph) => !paragraph)) return;
+
+        const restoreSummary = () => {
+            summaryText.forEach((paragraph, index) => {
+                paragraph.textContent = paragraphs[index];
+            });
+        };
+
+        let timer = 0;
+        let hasTyped = false;
+
+        button.addEventListener('click', () => {
+            const isOpening = button.getAttribute('aria-expanded') !== 'true';
+            button.setAttribute('aria-expanded', String(isOpening));
+            button.textContent = isOpening ? button.dataset.hideLabel ?? '' : button.dataset.showLabel ?? '';
+            panel.hidden = !isOpening;
+            window.clearTimeout(timer);
+
+            if (!isOpening) {
+                restoreSummary();
+                hasTyped = true;
+                return;
+            }
+
+            if (hasTyped || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                restoreSummary();
+                hasTyped = true;
+                return;
+            }
+
+            summaryText.forEach((paragraph) => {
+                paragraph.textContent = '';
+            });
+            let visibleTokens = 0;
+            let currentParagraph = 0;
+            hasTyped = true;
+
+            const writeNextToken = () => {
+                const token = tokens[visibleTokens];
+                if (token === '\n\n') {
+                    currentParagraph += 1;
+                } else {
+                    summaryText[currentParagraph].textContent += token;
+                }
+                visibleTokens += 1;
+                if (visibleTokens < tokens.length) {
+                    timer = window.setTimeout(writeNextToken, 35);
+                }
+            };
+
+            writeNextToken();
+        });
+    });
+</script>

@@ -2,6 +2,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { getBlogImageSrc, getBlogSlug } from '../lib/blog';
 import { getLocale, getTranslator, localizedPath, dateLocales } from '../i18n';
+import PostSummary from './PostSummary.astro';
 
 interface Props {
     posts: CollectionEntry<'blog'>[];
@@ -22,30 +23,38 @@ const formatDate = (date: Date) =>
 <div class="post-list">
     {
         posts.length > 0 ? (
-            posts.map((post) => (
-                <a class="post-card" href={localizedPath(`/blog/${getBlogSlug(post.id)}/`, locale)}>
-                    <div class="post-card-media">
-                        <img
-                            src={getBlogImageSrc(post.data.image) ?? '/og-default.png?v=2'}
-                            alt={post.data.imageAlt ?? post.data.title}
-                            width="180"
-                            height="104"
-                            loading="lazy"
-                            decoding="async"
-                        />
-                    </div>
-                    <div class="post-card-body">
-                        <div class="post-card-meta">
-                            <div class="post-card-date">{formatDate(post.data.published)}</div>
-                            {post.data.tags.length > 0 && (
-                                <span class="post-card-tags">{post.data.tags.join(' · ')}</span>
-                            )}
+            posts.map((post) => {
+                const postUrl = localizedPath(`/blog/${getBlogSlug(post.id)}/`, locale);
+                const summaryId = `post-summary-${locale}-${getBlogSlug(post.id)}`;
+
+                return (
+                    <article class="post-card">
+                        <a class="post-card-media" href={postUrl} aria-label={post.data.title}>
+                            <img
+                                src={getBlogImageSrc(post.data.thumbnail ?? post.data.image) ?? '/og-default.png?v=2'}
+                                alt={post.data.thumbnailAlt ?? post.data.imageAlt ?? post.data.title}
+                                width="180"
+                                height="104"
+                                loading="lazy"
+                                decoding="async"
+                            />
+                        </a>
+                        <div class="post-card-body">
+                            <div class="post-card-meta">
+                                <div class="post-card-date">{formatDate(post.data.published)}</div>
+                                {post.data.tags.length > 0 && (
+                                    <span class="post-card-tags">{post.data.tags.join(' · ')}</span>
+                                )}
+                            </div>
+                            <a class="post-card-content-link" href={postUrl}>
+                                <h2>{post.data.title}</h2>
+                                <p>{post.data.description}</p>
+                            </a>
+                            {post.data.summary && <PostSummary summary={post.data.summary} id={summaryId} />}
                         </div>
-                        <h2>{post.data.title}</h2>
-                        <p>{post.data.description}</p>
-                    </div>
-                </a>
-            ))
+                    </article>
+                );
+            })
         ) : (
             <div class="post-list-empty">{emptyMessage}</div>
         )

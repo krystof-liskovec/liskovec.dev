@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="380" viewBox="0 0 840 380" role="img" aria-labelledby="title desc">
+  <title id="title">three ways the renderer does less work</title>
+  <desc id="desc">the canvas uses fewer backing pixels, the scheduler caps its update rate, and offscreen or invisible work is skipped.</desc>
+  <rect width="840" height="380" fill="#1d2021" />
+  <g font-family="ui-monospace, monospace" text-anchor="middle">
+    <text x="420" y="38" fill="#ebdbb2" font-size="21">three ways the renderer does less work</text>
+    <rect x="24" y="66" width="250" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="295" y="66" width="250" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="566" y="66" width="250" height="250" rx="7" fill="#282828" stroke="#504945" />
+
+    <text x="149" y="101" fill="#83a598" font-size="17">fewer pixels</text>
+    <text x="95" y="135" fill="#a89984" font-size="13">ratio 3</text>
+    <text x="203" y="135" fill="#a89984" font-size="13">ratio 2</text>
+    <g stroke="#504945" stroke-width="1">
+      <rect x="60" y="148" width="22" height="22" fill="#fabd2f" />
+      <rect x="82" y="148" width="22" height="22" fill="#d79921" />
+      <rect x="104" y="148" width="22" height="22" fill="#b8bb26" />
+      <rect x="60" y="170" width="22" height="22" fill="#d79921" />
+      <rect x="82" y="170" width="22" height="22" fill="#b8bb26" />
+      <rect x="104" y="170" width="22" height="22" fill="#83a598" />
+      <rect x="60" y="192" width="22" height="22" fill="#b8bb26" />
+      <rect x="82" y="192" width="22" height="22" fill="#83a598" />
+      <rect x="104" y="192" width="22" height="22" fill="#458588" />
+      <rect x="177" y="159" width="30" height="30" fill="#fabd2f" />
+      <rect x="207" y="159" width="30" height="30" fill="#b8bb26" />
+      <rect x="177" y="189" width="30" height="30" fill="#b8bb26" />
+      <rect x="207" y="189" width="30" height="30" fill="#83a598" />
+    </g>
+    <text x="149" y="247" fill="#ebdbb2" font-size="17">9 → 4 backing pixels</text>
+    <text x="149" y="278" fill="#a89984" font-size="13">per css pixel</text>
+
+    <text x="420" y="101" fill="#fabd2f" font-size="17">frame caps</text>
+    <path d="M 337 158 H 503" stroke="#504945" stroke-width="12" stroke-linecap="round" />
+    <path d="M 337 158 H 475" stroke="#fabd2f" stroke-width="12" stroke-linecap="round" />
+    <circle cx="475" cy="158" r="10" fill="#fe8019" />
+    <text x="420" y="193" fill="#ebdbb2" font-size="16">120 fps max</text>
+    <path d="M 337 225 H 503" stroke="#504945" stroke-width="12" stroke-linecap="round" />
+    <path d="M 337 225 H 420" stroke="#83a598" stroke-width="12" stroke-linecap="round" />
+    <circle cx="420" cy="225" r="10" fill="#b8bb26" />
+    <text x="420" y="260" fill="#ebdbb2" font-size="15">60 fps max when cached</text>
+    <text x="420" y="289" fill="#a89984" font-size="13">caps, not promised frame rates</text>
+
+    <text x="691" y="101" fill="#d3869b" font-size="17">skip invisible work</text>
+    <rect x="590" y="130" width="95" height="76" rx="4" fill="none" stroke="#665c54" stroke-dasharray="5 5" />
+    <text x="638" y="157" fill="#a89984" font-size="12">screen</text>
+    <circle cx="637" cy="182" r="12" fill="#83a598" />
+    <circle cx="713" cy="169" r="10" fill="#fe8019" opacity=".45" />
+    <path d="M 690 169 H 741" stroke="#a89984" stroke-width="2" />
+    <path d="M 734 162 L 746 169 L 734 176" fill="none" stroke="#a89984" stroke-width="2" />
+    <text x="773" y="174" fill="#a89984" font-size="13">skip</text>
+    <text x="691" y="237" fill="#ebdbb2" font-size="14">offscreen → don't draw</text>
+    <text x="691" y="265" fill="#ebdbb2" font-size="14">hidden tab → pause</text>
+    <text x="420" y="352" fill="#a89984" font-size="14">these shortcuts reduce work; they aren't speed measurements.</text>
+  </g>
+</svg>

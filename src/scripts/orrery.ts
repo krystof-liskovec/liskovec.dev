@@ -102,6 +102,7 @@ if (canvasElement && systemElement && canvasContext) {
     let reducedMotion = reducedMotionQuery.matches;
     const introController = new OrreryIntroController(reducedMotion);
     const solarHeading = document.querySelector<HTMLElement>('.solar-heading');
+    const solarIntroduction = document.querySelector<HTMLElement>('.solar-introduction');
     if (introController.running) {
         system.classList.add('is-intro-running');
         solarHeading?.classList.add('is-intro-running');
@@ -1229,6 +1230,7 @@ if (canvasElement && systemElement && canvasContext) {
             introController.skip();
             system.classList.remove('is-intro-running');
             solarHeading?.classList.remove('is-intro-running');
+            solarIntroduction?.classList.add('is-dismissed');
             scheduleParticleRenderer(true);
         },
     });

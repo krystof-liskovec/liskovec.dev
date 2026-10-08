@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="380" viewBox="0 0 840 380" role="img" aria-labelledby="title desc">
+  <title id="title">from orbital data to the screen</title>
+  <desc id="desc">published orbital elements go into a kepler solver to calculate a position. the scene then uses enlarged planets and compressed spacing so the result fits on screen.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a89984" />
+    </marker>
+  </defs>
+  <rect width="840" height="380" fill="#1d2021" />
+  <g font-family="ui-monospace, monospace" text-anchor="middle">
+    <text x="420" y="38" fill="#ebdbb2" font-size="21">from orbital data to the screen</text>
+    <rect x="24" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="300" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <rect x="576" y="66" width="240" height="250" rx="7" fill="#282828" stroke="#504945" />
+    <path d="M 270 189 H 292 M 546 189 H 568" stroke="#a89984" stroke-width="2" marker-end="url(#arrow)" />
+
+    <text x="144" y="100" fill="#83a598" font-size="17">1 · orbital elements</text>
+    <text x="144" y="132" fill="#a89984" font-size="14">jpl / j2000 values</text>
+    <text x="144" y="172" fill="#ebdbb2" font-size="15">size · shape · tilt</text>
+    <text x="144" y="198" fill="#ebdbb2" font-size="15">position · rates</text>
+    <ellipse cx="144" cy="250" rx="78" ry="34" fill="none" stroke="#504945" stroke-width="2" />
+    <circle cx="144" cy="250" r="8" fill="#fabd2f" />
+    <circle cx="215" cy="234" r="5" fill="#83a598" />
+    <text x="144" y="302" fill="#a89984" font-size="13">data describes the orbit</text>
+
+    <text x="420" y="100" fill="#fabd2f" font-size="17">2 · find the position</text>
+    <text x="420" y="136" fill="#a89984" font-size="14">time + orbit</text>
+    <ellipse cx="420" cy="207" rx="82" ry="43" fill="none" stroke="#83a598" stroke-width="2" />
+    <circle cx="420" cy="207" r="9" fill="#fabd2f" />
+    <circle cx="493" cy="183" r="6" fill="#fe8019" />
+    <path d="M 420 207 L 493 183" stroke="#a89984" stroke-dasharray="4 5" />
+    <text x="420" y="275" fill="#ebdbb2" font-size="15">solve kepler's equation</text>
+    <text x="420" y="301" fill="#a89984" font-size="13">body position on orbit</text>
+
+    <text x="696" y="100" fill="#d3869b" font-size="17">3 · make it readable</text>
+    <ellipse cx="696" cy="207" rx="91" ry="55" fill="none" stroke="#504945" stroke-width="1.5" />
+    <ellipse cx="696" cy="207" rx="69" ry="42" fill="none" stroke="#665c54" stroke-width="1.5" />
+    <ellipse cx="696" cy="207" rx="45" ry="28" fill="none" stroke="#83a598" stroke-width="1.5" />
+    <circle cx="696" cy="207" r="12" fill="#fabd2f" />
+    <circle cx="765" cy="178" r="8" fill="#83a598" />
+    <circle cx="643" cy="188" r="7" fill="#fe8019" />
+    <circle cx="711" cy="180" r="6" fill="#b8bb26" />
+    <text x="696" y="284" fill="#ebdbb2" font-size="14">bigger bodies · tight orbits</text>
+    <text x="696" y="305" fill="#a89984" font-size="13">model positions · not to scale</text>
+
+    <text x="420" y="352" fill="#a89984" font-size="14">the model gives positions. the drawing makes them fit.</text>
+  </g>
+</svg>

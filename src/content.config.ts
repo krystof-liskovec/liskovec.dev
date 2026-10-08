@@ -17,6 +17,7 @@ const blog = defineCollection({
             locale: z.enum(['en', 'de', 'cs']).default('en'),
             title: z.string(),
             description: z.string(),
+            summary: z.string().trim().min(1).optional(),
             published: z.coerce.date(),
             updated: z.coerce.date().optional(),
             featured: z.boolean().default(false),
@@ -24,6 +25,8 @@ const blog = defineCollection({
             tags: z.array(z.string()).default([]),
             image: z.union([z.string().regex(/^(?:\/|https?:\/\/)/), image()]).optional(),
             imageAlt: z.string().optional(),
+            thumbnail: z.union([z.string().regex(/^(?:\/|https?:\/\/)/), image()]).optional(),
+            thumbnailAlt: z.string().optional(),
         }),
 });
 

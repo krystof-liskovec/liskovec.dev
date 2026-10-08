@@ -93,6 +93,18 @@ const translations: Record<string, readonly [string, string]> = {
         "blog",
         "blog"
     ],
+    "Open larger image": [
+        "Bild vergrößern",
+        "Otevřít obrázek ve větším zobrazení"
+    ],
+    "Close image preview": [
+        "Bildvorschau schließen",
+        "Zavřít náhled obrázku"
+    ],
+    "Image preview": [
+        "Bildvorschau",
+        "Náhled obrázku"
+    ],
     "made with curiosity + caffeine": [
         "mit neugier + koffein gebaut",
         "postaveno ze zvědavosti + kofeinu"
@@ -284,6 +296,14 @@ const translations: Record<string, readonly [string, string]> = {
     "all posts": [
         "alle beiträge",
         "všechny příspěvky"
+    ],
+    "show summary": [
+        "zusammenfassung anzeigen",
+        "zobrazit shrnutí"
+    ],
+    "hide summary": [
+        "zusammenfassung ausblenden",
+        "skrýt shrnutí"
     ],
     "[ subscribe via rss → ]": [
         "[ per rss abonnieren → ]",

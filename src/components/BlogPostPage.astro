@@ -1,5 +1,5 @@
 ---
-import { getLocale, getTranslator, localizedPath, dateLocales } from '../i18n';
+import { getLocale, getTranslator, localizedPath, dateLocales, locales } from '../i18n';
 const locale = getLocale(Astro.url.pathname);
 const t = getTranslator(locale);
 import type { CollectionEntry } from 'astro:content';
@@ -7,6 +7,7 @@ import { getCollection, render } from 'astro:content';
 import { getBlogImageSrc, getBlogSlug, isBlogPostVisible } from '../lib/blog';
 import Layout from '../layouts/Layout.astro';
 import SiteShell from './SiteShell.astro';
+import PostSummary from './PostSummary.astro';
 import '../styles/site.css';
 
 
@@ -19,6 +20,7 @@ const slug = getBlogSlug(post.id);
 const languages = (await getCollection('blog', ({ data }) => isBlogPostVisible(data)))
     .filter(entry => getBlogSlug(entry.id) === slug)
     .map(entry => entry.data.locale);
+const articleLanguages = languages.includes('en') ? [...locales] : languages;
 const { Content } = await render(post);
 const published = new Intl.DateTimeFormat(dateLocales[locale], {
     day: '2-digit',
@@ -33,7 +35,7 @@ const updated = post.data.updated
       }).format(post.data.updated)
     : null;
 const siteUrl = Astro.site ?? Astro.url;
-const canonicalUrl = new URL(localizedPath(`/blog/${slug}/`, locale), siteUrl).href;
+const canonicalUrl = new URL(localizedPath(`/blog/${slug}/`, post.data.locale), siteUrl).href;
 const homeUrl = new URL(localizedPath('/', locale), siteUrl).href;
 const coverImage = getBlogImageSrc(post.data.image);
 const coverMetadata = typeof post.data.image === 'object' ? post.data.image : undefined;
@@ -41,7 +43,7 @@ const articleImageUrl = coverImage ? new URL(coverImage, siteUrl).href : undefin
 const articleStructuredData = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    inLanguage: locale,
+    inLanguage: post.data.locale,
     '@id': `${canonicalUrl}#article`,
     mainEntityOfPage: canonicalUrl,
     url: canonicalUrl,
@@ -57,7 +59,7 @@ const articleStructuredData = {
     },
     isPartOf: {
         '@type': 'Blog',
-        '@id': `${new URL(localizedPath('/blog/', locale), siteUrl).href}#blog`,
+        '@id': `${new URL(localizedPath('/blog/', post.data.locale), siteUrl).href}#blog`,
     },
     keywords: post.data.tags,
     ...(articleImageUrl ? { image: articleImageUrl } : {}),
@@ -72,13 +74,14 @@ const articleStructuredData = {
     imageHeight={coverMetadata?.height}
     imageAlt={post.data.imageAlt ?? post.data.title}
     type="article"
+    canonical={canonicalUrl}
     publishedTime={post.data.published.toISOString()}
     modifiedTime={(post.data.updated ?? post.data.published).toISOString()}
     tags={post.data.tags}
     structuredData={articleStructuredData}
     languages={languages}
 >
-    <SiteShell mainClass="post-page" languages={languages}>
+    <SiteShell mainClass="post-page" languages={articleLanguages}>
         <article>
             <a class="post-back" href={localizedPath("/blog/", locale)}>{t("[ ← ALL POSTS ]")}</a>
             <header class="post-header">
@@ -90,6 +93,9 @@ const articleStructuredData = {
                 </div>
                 <h1>{post.data.title}</h1>
                 <p>{post.data.description}</p>
+                {post.data.summary && (
+                    <PostSummary summary={post.data.summary} id={`post-summary-${locale}-${slug}-detail`} />
+                )}
             </header>
             {
                 coverImage && (
@@ -104,6 +110,52 @@ const articleStructuredData = {
                 )
             }
             <div class="post-body"><Content /></div>
+            <dialog
+                class="post-image-viewer"
+                aria-label={t('Image preview')}
+                data-open-label={t('Open larger image')}
+            >
+                <button class="post-image-viewer-close" type="button" aria-label={t('Close image preview')}>
+                    ×
+                </button>
+                <img alt="" />
+            </dialog>
         </article>
     </SiteShell>
 </Layout>
+
+<script>
+    const article = document.querySelector('.post-page article');
+    const imageViewer = document.querySelector<HTMLDialogElement>('.post-image-viewer');
+    const viewerImage = imageViewer?.querySelector('img');
+    const closeViewerButton = imageViewer?.querySelector('button');
+
+    if (article && imageViewer && viewerImage && closeViewerButton) {
+        const openLabel = imageViewer.dataset.openLabel ?? 'Open larger image';
+
+        article.querySelectorAll('.post-cover img, .post-body img').forEach((image) => {
+            if (image.closest('a')) return;
+
+            const imageLink = document.createElement('a');
+            imageLink.className = 'post-image-link';
+            imageLink.href = image.currentSrc || image.src;
+            imageLink.title = openLabel;
+            imageLink.setAttribute('aria-label', `${image.alt ? `${image.alt} — ` : ''}${openLabel}`);
+            image.before(imageLink);
+            imageLink.append(image);
+
+            imageLink.addEventListener('click', (event) => {
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                viewerImage.src = imageLink.href;
+                viewerImage.alt = image.alt;
+                imageViewer.showModal();
+            });
+        });
+
+        closeViewerButton.addEventListener('click', () => imageViewer.close());
+        imageViewer.addEventListener('click', (event) => {
+            if (event.target === imageViewer) imageViewer.close();
+        });
+    }
+</script>

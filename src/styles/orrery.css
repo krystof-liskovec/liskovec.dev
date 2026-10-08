@@ -19,9 +19,20 @@
 }
 .solar-introduction {
     max-width: 44rem;
+    max-height: 6em;
     margin: 16px 0 0;
+    overflow: hidden;
     color: var(--muted);
     font: 16px/1.55 var(--sans);
+    transition:
+        max-height 240ms ease,
+        margin-top 240ms ease,
+        opacity 180ms ease;
+}
+.solar-introduction.is-dismissed {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
 }
 .solar-heading-lead {
     color: inherit;
@@ -1086,6 +1097,7 @@ body {
     }
     .cosmic-zoom-switch,
     .cosmic-zoom-control,
+    .solar-introduction,
     .mobile-fullscreen-toggle,
     .solar-caption {
         transition: none;
