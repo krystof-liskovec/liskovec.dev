@@ -214,8 +214,9 @@ Centauri is intentionally above the disk because it is a halo globular cluster.
 
 ## Deployment
 
-The `.woodpecker.yml` workflow builds the CV PDFs and Astro site in the same
-pipeline, then deploys `dist/` to Cloudflare Pages after every push to `main`.
+The `.gitea/workflows/deploy.yml` workflow builds the CV PDFs and Astro site,
+then deploys `dist/` to Cloudflare Pages after every push to `main` or a manual
+run on `main`.
 The CV sources and PDF builder live under `cv/`; generated PDFs are written to
 `public/` for the `/cv.pdf` and `/cv-backend.pdf` links.
 Run `python3 cv/build_cv.py` before `npm run build` to refresh all six downloads
@@ -225,9 +226,12 @@ German and Czech downloads use `/cv-de.pdf`, `/cv-cs.pdf`,
 `/cv-backend-de.pdf`, and `/cv-backend-cs.pdf`; each homepage links to its
 matching DevOps CV. The deployment builds all language variants automatically.
 
-Create these repository secrets in Woodpecker before enabling the workflow:
+Create these repository Actions secrets in Gitea before deploying:
 
-- `cloudflare_account_id` - the Cloudflare account ID
-- `cloudflare_api_token` - an API token with the permissions required to deploy to Cloudflare Pages
+- `CLOUDFLARE_ACCOUNT_ID` - the Cloudflare account ID
+- `CLOUDFLARE_API_TOKEN` - an API token with the permissions required to deploy to Cloudflare Pages
 
-The workflow expects the Pages project to be named `liskovec`. Change `CLOUDFLARE_PAGES_PROJECT` in `.woodpecker.yml` if the project has another name.
+Add them under the repository's **Settings → Actions → Secrets**. The workflow
+expects the Pages project to be named `liskovec`; change
+`CLOUDFLARE_PAGES_PROJECT` in `.gitea/workflows/deploy.yml` if the project has
+another name.

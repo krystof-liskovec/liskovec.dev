@@ -1,0 +1,63 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: gitea.ref_name == 'main'
+    runs-on: ubuntu-latest
+    env:
+      SITE_URL: https://liskovec.pages.dev
+      CLOUDFLARE_PAGES_PROJECT: liskovec
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install CV build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-liberation poppler-utils
+
+      - name: Build CV PDFs
+        run: |
+          python -m pip install reportlab
+          python cv/build_cv.py
+
+      - name: Install site dependencies
+        run: npm ci
+
+      - name: Build site
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CI_COMMIT_BRANCH: ${{ gitea.ref_name }}
+          CI_COMMIT_SHA: ${{ gitea.sha }}
+          CI_COMMIT_MESSAGE: ${{ gitea.event.head_commit.message }}
+        run: >-
+          npx --yes wrangler pages deploy dist
+          --project-name="$CLOUDFLARE_PAGES_PROJECT"
+          --branch="$CI_COMMIT_BRANCH"
+          --commit-hash="$CI_COMMIT_SHA"
+          --commit-message="${CI_COMMIT_MESSAGE:-Manual deployment}"
