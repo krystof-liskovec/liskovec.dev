@@ -4,11 +4,11 @@
 
 DevOps inženýr
 
-5 let zkušeností s backendovým vývojem a DevOps
+DevOps inženýr s 5 lety zkušeností s backendem a infrastrukturou, zaměřený na to, aby byly stávající systémy jednodušší, spolehlivější a snáz se udržovaly. Hledám pozici v DevOps nebo platform engineeringu v Německu.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
 
-České Budějovice, Česká republika · Plánuji stěhování do Německa
+České Budějovice, Česká republika · Občan EU, plánuji stěhování do Německa
 
 ## Pracovní zkušenosti
 
@@ -16,29 +16,31 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 DevOps inženýr (září 2024 – dosud)
 
+- Spravoval jsem 6 produkčních serverů s Ubuntu LTS, každý zhruba se 40 klientskými projekty; zabezpečení SSH, firewall, přístupy a aktualizace jsem řídil přes Ansible
+- Bash skripty pro nasazení jsem nahradil Ansiblem a Docker Compose definicemi v Gitu; nasazení jsou díky tomu opakovatelná a dlouhodobé náklady pod kontrolou
 - Díky znovupoužitelným a nastavitelným komponentám GitLab CI/CD pro Nuxt, NestJS a Go jsem zkrátil nastavení CI/CD u nových projektů z až jedné hodiny na obvyklých 5–10 minut
-- Vytvořil jsem modulárního průvodce zálohami, který generuje konfigurace resticprofile pro databáze a soubory; ukládají se do Gitu a CI/CD je rozesílá na servery pro oddělené zálohy do Backblaze B2
-- Vlastní infrastrukturu jsem spravoval pomocí Ansible a Docker Compose souborů v Gitu místo Bash skriptů; nasazení jsou díky tomu opakovatelná a dlouhodobé náklady pod kontrolou
-- Spravoval jsem vlastní Linuxové servery; zabezpečení SSH, pravidla firewallu, uživatelské přístupy a aktualizace systému jsem pomocí Ansible držel jednotné na všech hostech
-- Produkční problémy na Linuxových serverech jsem řešil pomocí systemd, systémových logů a sledování zdrojů a rutinní údržbu jsem automatizoval v Bashi
-- Pro centrální logování, telemetrii a sledování chyb aplikací jsem zavedl Graylog, OpenTelemetry pipeline a GlitchTip
-- Nasazování kontejnerů jsem automatizoval pomocí Docker health checků; neúspěšná verze se zahodí dřív, než nahradí tu běžící
+- Do CI/CD pipeline jsem přidal health checky před nasazením, takže neúspěšná verze se odhalí dřív, než nahradí tu běžící
+- Pracné ruční zálohy jsem nahradil modulárním řešením s restic, které zálohuje databáze a soubory do Backblaze B2 a snadno se rozšíří o každou novou službu
+- Pro centrální logy, telemetrii a sledování chyb jsem zavedl Graylog, OpenTelemetry pipeline a GlitchTip
 
 Backendový vývojář (červenec 2021 – srpen 2024)
 
 - Pro klienta s více než 40 weby jsem nahradil placené našeptávání adres (zhruba 70–82 tisíc Kč ročně) REST API v Go a Elasticsearch
 - Zautomatizoval jsem import českých a slovenských adres a vyladil indexy Elasticsearch pro našeptávání, které si poradí i s překlepy
-- V NestJS a Puppeteer jsem vytvořil službu, která crawlerům vrací vyrenderované HTML z cache bez nutnosti přepisovat stávající aplikace ve Vue.js
+
+## Domácí lab
+
+- Provozuji zhruba 20 služeb v Docker Compose za Nginx reverzní proxy, mimo jiné Gitea s CI runnery, Immich, Paperless-ngx, Jellyfin a monitoring Beszel
 
 ## Dovednosti
 
-Infrastruktura: Linux, Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
+Infrastruktura: Linux (Ubuntu LTS, Debian), Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
 
 Jazyky a frameworky: Go, TypeScript, PHP, NestJS, Symfony
 
 Monitoring a observabilita: Graylog, OpenTelemetry, GlitchTip
 
-Služby: resticprofile, Backblaze B2, Consul, OpenBao
+Služby: restic, resticprofile, Backblaze B2, Consul, OpenBao
 
 Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 

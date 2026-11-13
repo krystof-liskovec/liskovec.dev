@@ -4,11 +4,11 @@
 
 DevOps-Ingenieur
 
-5 Jahre Erfahrung in der Backend-Entwicklung und im DevOps-Bereich
+DevOps-Ingenieur mit 5 Jahren Erfahrung in Backend und Infrastruktur, mit Fokus darauf, bestehende Systeme einfacher, zuverlässiger und wartbarer zu machen. Auf der Suche nach einer DevOps- oder Platform-Engineering-Stelle in Deutschland.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
 
-České Budějovice, Tschechien · Umzug nach Deutschland geplant
+České Budějovice, Tschechien · EU-Bürger, Umzug nach Deutschland geplant
 
 ## Berufserfahrung
 
@@ -16,29 +16,31 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 DevOps-Ingenieur (Sept 2024 – heute)
 
+- 6 Ubuntu-LTS-Produktionsserver mit jeweils rund 40 Kundenprojekten betreut; SSH-Härtung, Firewall-Regeln, Benutzerzugänge und Systemupdates mit Ansible verwaltet
+- Bash-Deployment-Skripte durch Ansible und in Git verwaltete Docker-Compose-Definitionen ersetzt; Deployments reproduzierbar gemacht und langfristige Kosten kontrolliert
 - CI/CD-Einrichtung für neue Projekte mit wiederverwendbaren, konfigurierbaren GitLab-Komponenten für Nuxt, NestJS und Go von bis zu einer Stunde auf meist 5–10 Minuten verkürzt
-- Modularen Backup-Assistenten entwickelt: resticprofile-Konfigurationen für Datenbanken und Dateien in Git verwaltet und per CI/CD für getrennte Backblaze-B2-Backups verteilt
-- Eigene Infrastruktur mit Ansible und in Git verwalteten Docker-Compose-Dateien eingerichtet; damit Bash-Skripte ersetzt, Deployments reproduzierbar gemacht und langfristige Kosten besser kontrolliert
-- Eigene Linux-Server administriert; SSH-Härtung, Firewall-Regeln, Benutzerzugänge und Systemupdates mit Ansible auf allen Hosts einheitlich gehalten
-- Produktionsprobleme auf Linux-Hosts mithilfe von systemd, Systemlogs und Ressourcenmonitoring analysiert und Routinewartung mit Bash automatisiert
-- Graylog, eine OpenTelemetry-Pipeline und GlitchTip für zentrale Logs, Telemetrie und die Erfassung von Anwendungsfehlern eingebunden
-- Container-Deployments mit Docker-Healthchecks automatisiert; fehlerhafte Releases werden verworfen, bevor sie die laufende Version ersetzen
+- Healthchecks vor dem Deployment in CI/CD-Pipelines eingeführt, sodass fehlerhafte Releases erkannt werden, bevor sie die laufende Version ersetzen
+- Aufwendige manuelle Backups durch ein modulares restic-Setup für Datenbanken und Dateien nach Backblaze B2 ersetzt; neue Dienste lassen sich einfach einbinden
+- Graylog, eine OpenTelemetry-Pipeline und GlitchTip für zentrale Logs, Telemetrie und Fehlertracking eingeführt
 
 Backend-Entwickler (Juli 2021 – Aug 2024)
 
 - Kostenpflichtige Adressvorschläge (ca. 2.880–3.360 € pro Jahr) für einen Kunden mit über 40 Websites durch eine REST-API mit Go und Elasticsearch ersetzt
 - Import tschechischer und slowakischer Adressdaten automatisiert und Elasticsearch-Indizes für fehlertolerante Suche optimiert
-- Mit NestJS und Puppeteer einen Rendering-Dienst mit Cache entwickelt, der Crawlern fertiges HTML liefert, ohne bestehende Vue.js-Anwendungen umzuschreiben
+
+## Homelab
+
+- Rund 20 selbst gehostete Docker-Compose-Dienste hinter einem Nginx-Reverse-Proxy, darunter Gitea mit CI-Runnern, Immich, Paperless-ngx, Jellyfin und Beszel-Monitoring
 
 ## Kenntnisse
 
-Infrastruktur: Linux, Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
+Infrastruktur: Linux (Ubuntu LTS, Debian), Docker, Docker Compose, Ansible, GitLab CI/CD, Nginx
 
 Sprachen und Frameworks: Go, TypeScript, PHP, NestJS, Symfony
 
 Monitoring und Observability: Graylog, OpenTelemetry, GlitchTip
 
-Dienste: resticprofile, Backblaze B2, Consul, OpenBao
+Dienste: restic, resticprofile, Backblaze B2, Consul, OpenBao
 
 Daten: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 

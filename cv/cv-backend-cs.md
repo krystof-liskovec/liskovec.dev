@@ -4,11 +4,11 @@
 
 Backendový vývojář
 
-5 let zkušeností s backendovým vývojem a DevOps
+Backendový vývojář s 5 lety zkušeností v Go, TypeScriptu a PHP a praktickou zkušeností s DevOps, zaměřený na jednoduché, snadno udržovatelné služby i infrastrukturu, na které běží. Hledám pozici backendového vývojáře v Německu.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
 
-České Budějovice, Česká republika · Plánuji stěhování do Německa
+České Budějovice, Česká republika · Občan EU, plánuji stěhování do Německa
 
 ## Pracovní zkušenosti
 
@@ -16,8 +16,10 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 DevOps inženýr (září 2024 – dosud)
 
+- Spravoval jsem 6 produkčních serverů s Ubuntu LTS, každý zhruba se 40 klientskými projekty; zabezpečení SSH, firewall, přístupy a aktualizace jsem řídil přes Ansible
 - Díky znovupoužitelným komponentám GitLab CI/CD s nastavitelnými vstupy jsem zkrátil nastavení CI/CD u nových projektů z až jedné hodiny na obvyklých 5–10 minut
 - Nasazování kontejnerů na vlastních serverech jsem převedl z Bash skriptů na Docker Compose, takže se konfigurace snáze kontroluje a udržuje
+- Do CI/CD pipeline jsem přidal health checky před nasazením, takže neúspěšná verze se odhalí dřív, než nahradí tu běžící
 
 Backendový vývojář (červenec 2021 – srpen 2024)
 
@@ -33,7 +35,7 @@ Jazyky a frameworky: Go, TypeScript, PHP, NestJS, Express, Symfony
 
 Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
-Infrastruktura: Ansible, Linux, Docker, Docker Compose, GitLab CI/CD
+Infrastruktura: Ansible, Linux (Ubuntu LTS, Debian), Docker, Docker Compose, GitLab CI/CD
 
 Monitoring a observabilita: Graylog, OpenTelemetry, GlitchTip
 

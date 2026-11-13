@@ -4,11 +4,11 @@
 
 Backend Developer
 
-5 years of experience across backend development and DevOps
+Backend developer with 5 years of experience in Go, TypeScript and PHP and hands-on DevOps work, focused on simple, maintainable services and the infrastructure they run on. Looking for a backend developer role in Germany.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
 
-České Budějovice, Czech Republic · Relocating to Germany
+České Budějovice, Czech Republic · EU citizen, relocating to Germany
 
 ## Experience
 
@@ -16,8 +16,10 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 DevOps Engineer (Sept 2024 – Present)
 
+- Managed 6 Ubuntu LTS production servers hosting around 40 client projects each, using Ansible for SSH hardening, firewall rules, user access and system updates
 - Reduced new-project CI/CD setup from up to 1 hour to typically 5–10 minutes through reusable GitLab CI/CD components with configurable inputs
 - Migrated on-premises container deployments from Bash scripts to Docker Compose, simplifying configuration review and maintenance
+- Added pre-deployment health checks to CI/CD pipelines, catching failed releases before they replaced the running version
 
 Backend Developer (July 2021 – Aug 2024)
 
@@ -33,7 +35,7 @@ Languages and frameworks: Go, TypeScript, PHP, NestJS, Express, Symfony
 
 Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
-Infrastructure: Ansible, Linux, Docker, Docker Compose, GitLab CI/CD
+Infrastructure: Ansible, Linux (Ubuntu LTS, Debian), Docker, Docker Compose, GitLab CI/CD
 
 Observability: Graylog, OpenTelemetry, GlitchTip
 
