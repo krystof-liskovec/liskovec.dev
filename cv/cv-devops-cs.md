@@ -6,7 +6,7 @@ DevOps inženýr
 
 DevOps inženýr s 5 lety zkušeností s backendem a infrastrukturou, zaměřený na to, aby byly stávající systémy jednodušší, spolehlivější a snáz se udržovaly. Hledám pozici v DevOps nebo platform engineeringu v Německu.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
 České Budějovice, Česká republika · Občan EU, plánuji stěhování do Německa
 

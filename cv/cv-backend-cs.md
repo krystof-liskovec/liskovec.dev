@@ -6,7 +6,7 @@ Backendový vývojář
 
 Backendový vývojář s 5 lety zkušeností v Go, TypeScriptu a PHP a praktickou zkušeností s DevOps, zaměřený na jednoduché, snadno udržovatelné služby i infrastrukturu, na které běží. Hledám pozici backendového vývojáře v Německu.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
 České Budějovice, Česká republika · Občan EU, plánuji stěhování do Německa
 

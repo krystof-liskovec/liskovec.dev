@@ -6,7 +6,7 @@ DevOps Engineer
 
 DevOps Engineer mit 5 Jahren Erfahrung in Backend und Infrastruktur, mit Fokus darauf, bestehende Systeme einfacher, zuverlässiger und wartbarer zu machen. Auf der Suche nach einer DevOps- oder Platform-Engineering-Stelle in Deutschland.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
 České Budějovice, Tschechien · EU-Bürger, Umzug nach Deutschland geplant
 

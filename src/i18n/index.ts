@@ -105,6 +105,10 @@ const translations: Record<string, readonly [string, string]> = {
         "Bildvorschau",
         "Náhled obrázku"
     ],
+    "source code": [
+        "quellcode",
+        "zdrojový kód"
+    ],
     "made with curiosity + caffeine": [
         "mit neugier + koffein gebaut",
         "postaveno ze zvědavosti + kofeinu"

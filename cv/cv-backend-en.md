@@ -6,7 +6,7 @@ Backend Developer
 
 Backend developer with 5 years of experience in Go, TypeScript and PHP and hands-on DevOps work, focused on simple, maintainable services and the infrastructure they run on. Looking for a backend developer role in Germany.
 
-krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
+krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
 České Budějovice, Czech Republic · EU citizen, relocating to Germany
 
