@@ -28,6 +28,12 @@ WIDTH = A4[0] - 2 * MARGIN - 12
 NAVY = colors.HexColor("#234D68")
 RULE = colors.HexColor("#C7D4DE")
 DATED_HEADING = re.compile(r"^(.*?) \(([^()]*\d{4} – [^()]+)\)$")
+# Body text sizes tried in order until a CV fits on one page.
+BODY_SIZES = [10.5, 10.25, 10, 9.75, 9.5]
+
+
+class PageOverflow(ValueError):
+    pass
 
 
 def plain(text):
@@ -49,9 +55,9 @@ def markup(text):
     return text
 
 
-def style(name, **kwargs):
+def style(name, size=10.5, **kwargs):
     settings = dict(
-        fontName="CV-Regular", fontSize=10.5, leading=14,
+        fontName="CV-Regular", fontSize=size, leading=round(size * 4 / 3, 2),
         textColor=colors.black, alignment=TA_LEFT,
         splitLongWords=False, spaceAfter=4,
     )
@@ -117,21 +123,21 @@ class SectionHeading(Flowable):
         self.canv.line(start, 11, self.width, 11)
 
 
-def build(source, destination, language="en"):
+def build(source, destination, language="en", size=10.5):
     raw = source.read_text(encoding="utf-8")
     lines = [line.strip() for line in raw.splitlines()
              if line.strip() and not line.startswith("<!--")]
-    body = style("body")
+    body = style("body", size)
     styles = {
         "name": style("name", fontName="CV-Bold", fontSize=30, leading=35, spaceAfter=5),
         "target": style("target", fontName="CV-Bold", fontSize=13, leading=17,
                         textColor=NAVY, spaceAfter=3),
-        "summary": style("summary", spaceAfter=8),
-        "contact": style("contact", leading=14, spaceAfter=3),
+        "summary": style("summary", size, spaceAfter=8),
+        "contact": style("contact", size, spaceAfter=3),
         "company": style("company", fontName="CV-Bold", fontSize=11, leading=14,
                          spaceAfter=4, keepWithNext=True),
-        "bullet": style("bullet", leftIndent=11, firstLineIndent=0,
-                        bulletIndent=0, bulletFontName="CV-Regular", bulletFontSize=10.5,
+        "bullet": style("bullet", size, leftIndent=11, firstLineIndent=0,
+                        bulletIndent=0, bulletFontName="CV-Regular", bulletFontSize=size,
                         spaceAfter=5),
     }
     story = []
@@ -177,7 +183,7 @@ def build(source, destination, language="en"):
     doc.build(story)
     info = subprocess.check_output(["pdfinfo", str(destination)], text=True)
     if not re.search(r"Pages:\s+1\b", info):
-        raise ValueError(f"Expected one page: {destination}")
+        raise PageOverflow(f"Expected one page: {destination}")
     extracted = subprocess.check_output(["pdftotext", str(destination), "-"], text=True)
     compact = lambda value: " ".join(value.split())
     for line in lines:
@@ -188,7 +194,7 @@ def build(source, destination, language="en"):
         for part in expected.split(" · "):
             if compact(plain(part)) not in compact(extracted):
                 raise ValueError(f"Missing PDF text: {part}")
-    print(f"Verified one-page PDF with complete extracted text: {destination.relative_to(ROOT)}")
+    print(f"Verified one-page PDF with complete extracted text ({size} pt): {destination.relative_to(ROOT)}")
 
 
 def main():
@@ -214,7 +220,13 @@ def main():
         for language in ["en", "de", "cs"]:
             stem = "cv" if role == "devops" else "cv-backend"
             suffix = "" if language == "en" else f"-{language}"
-            build(CV_ROOT / f"cv-{role}-{language}.md", OUTPUT / f"{stem}{suffix}.pdf", language)
+            for size in BODY_SIZES:
+                try:
+                    build(CV_ROOT / f"cv-{role}-{language}.md", OUTPUT / f"{stem}{suffix}.pdf", language, size)
+                    break
+                except PageOverflow:
+                    if size == BODY_SIZES[-1]:
+                        raise
 
 
 if __name__ == "__main__":

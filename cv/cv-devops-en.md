@@ -19,6 +19,8 @@ DevOps Engineer (Sept 2024 – Present)
 - Reduced new-project CI/CD setup from up to 1 hour to typically 5–10 minutes by building reusable, configurable GitLab CI/CD components for Nuxt, NestJS and Go
 - Built a modular backup wizard generating Git-tracked resticprofile configs for databases and files; CI/CD deployed them to each server for independent Backblaze B2 backups
 - Provisioned self-managed infrastructure with Ansible and Git-tracked Docker Compose definitions, replacing Bash scripts to keep deployments reproducible and control long-term costs
+- Administered self-managed Linux servers, using Ansible to keep SSH hardening, firewall rules, user access and system updates consistent across hosts
+- Diagnosed production issues on Linux hosts through systemd, system logs and resource monitoring, and automated routine maintenance with Bash
 - Added observability with Graylog, an OpenTelemetry pipeline, and GlitchTip for centralized logs, telemetry, and application-error tracking
 - Automated container deployments with Docker health checks, discarding releases that failed validation before stopping and replacing the running version
 
@@ -36,7 +38,9 @@ Languages and frameworks: Go, TypeScript, PHP, NestJS, Symfony
 
 Observability: Graylog, OpenTelemetry, GlitchTip
 
-Services: resticprofile, Backblaze B2, Consul, OpenBao, Elasticsearch, PostgreSQL, Redis
+Services: resticprofile, Backblaze B2, Consul, OpenBao
+
+Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
 ## Education
 

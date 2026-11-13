@@ -19,6 +19,8 @@ DevOps inženýr (září 2024 – dosud)
 - Díky znovupoužitelným a nastavitelným komponentám GitLab CI/CD pro Nuxt, NestJS a Go jsem zkrátil nastavení CI/CD u nových projektů z až jedné hodiny na obvyklých 5–10 minut
 - Vytvořil jsem modulárního průvodce zálohami, který generuje konfigurace resticprofile pro databáze a soubory; ukládají se do Gitu a CI/CD je rozesílá na servery pro oddělené zálohy do Backblaze B2
 - Vlastní infrastrukturu jsem spravoval pomocí Ansible a Docker Compose souborů v Gitu místo Bash skriptů; nasazení jsou díky tomu opakovatelná a dlouhodobé náklady pod kontrolou
+- Spravoval jsem vlastní Linuxové servery; zabezpečení SSH, pravidla firewallu, uživatelské přístupy a aktualizace systému jsem pomocí Ansible držel jednotné na všech hostech
+- Produkční problémy na Linuxových serverech jsem řešil pomocí systemd, systémových logů a sledování zdrojů a rutinní údržbu jsem automatizoval v Bashi
 - Pro centrální logování, telemetrii a sledování chyb aplikací jsem zavedl Graylog, OpenTelemetry pipeline a GlitchTip
 - Nasazování kontejnerů jsem automatizoval pomocí Docker health checků; neúspěšná verze se zahodí dřív, než nahradí tu běžící
 
@@ -36,7 +38,9 @@ Jazyky a frameworky: Go, TypeScript, PHP, NestJS, Symfony
 
 Monitoring a observabilita: Graylog, OpenTelemetry, GlitchTip
 
-Služby: resticprofile, Backblaze B2, Consul, OpenBao, Elasticsearch, PostgreSQL, Redis
+Služby: resticprofile, Backblaze B2, Consul, OpenBao
+
+Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
 ## Vzdělání
 
