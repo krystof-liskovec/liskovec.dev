@@ -148,7 +148,7 @@ import '../styles/site.css';
             if (link.dataset.language === language) link.setAttribute('aria-current', 'page');
             else link.removeAttribute('aria-current');
         });
-        const footer = document.querySelector('footer span:last-child');
+        const footer = document.querySelector('footer .footer-tagline');
         if (footer) footer.textContent = t('made with curiosity + caffeine');
         const rss = document.querySelector<HTMLLinkElement>('link[type="application/rss+xml"]');
         if (rss) {
