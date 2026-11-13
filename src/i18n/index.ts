@@ -205,13 +205,13 @@ const translations: Record<string, readonly [string, string]> = {
         "ich baue zuverlässige software und die systeme, auf denen sie läuft.",
         "vyvíjím spolehlivý software i systémy, na kterých běží."
     ],
-    "hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic. i started in backend development. devops and infrastructure came later.": [
-        "hey, ich bin Kryštof Lískovec, softwareentwickler aus Tschechien. angefangen habe ich im backend, später kamen devops und infrastruktur dazu.",
-        "ahoj, jsem Kryštof Lískovec, vývojář z Česka. začínal jsem u backendu, k devops a infrastruktuře jsem se dostal až později."
+    "hi there, i’m Kryštof Lískovec, a software developer from the Czech Republic, currently getting ready to move to Germany. i started in backend development. devops and infrastructure came later.": [
+        "hey, ich bin Kryštof Lískovec, softwareentwickler aus Tschechien und bereite gerade meinen umzug nach deutschland vor. angefangen habe ich im backend, später kamen devops und infrastruktur dazu.",
+        "ahoj, jsem Kryštof Lískovec, vývojář z Česka a právě se chystám na stěhování do Německa. začínal jsem u backendu, k devops a infrastruktuře jsem se dostal až později."
     ],
-    "these days my work sits between both. i still write code, while also working with containers, on-prem infrastructure, CI/CD, and deployments that should not wake anyone up at night. along the way, i’ve helped move older codebases towards safer, faster and more maintainable setups.": [
-        "heute mache ich beides: ich schreibe code und kümmere mich um container, eigene server, CI/CD und deployments, die nachts niemanden wecken. nebenbei habe ich ältere projekte sicherer, schneller und leichter wartbar gemacht.",
-        "dnes dělám obojí. pořád píšu kód, ale starám se i o kontejnery, vlastní servery, CI/CD a nasazení, kvůli kterým nemusí nikdo v noci vstávat. pomáhal jsem také upravit starší projekty tak, aby byly bezpečnější, rychlejší a snáz se udržovaly."
+    "these days my work sits between both. i still write code, but i also look after a handful of Ubuntu servers running dozens of client projects each, along with CI/CD, backups, and deployments that should not wake anyone up at night. what i enjoy most is taking an existing setup and making it simpler and easier to maintain.": [
+        "heute mache ich beides: ich schreibe weiterhin code, betreue aber auch mehrere Ubuntu-server mit jeweils dutzenden kundenprojekten, dazu CI/CD, backups und deployments, die nachts niemanden wecken. am liebsten nehme ich bestehende setups und mache sie einfacher und leichter wartbar.",
+        "dnes dělám obojí. pořád píšu kód, ale starám se i o několik Ubuntu serverů, na každém s desítkami klientských projektů, a k tomu o CI/CD, zálohy a nasazení, kvůli kterým nemusí nikdo v noci vstávat. nejvíc mě baví vzít existující řešení a udělat ho jednodušší a snáz udržovatelné."
     ],
     "outside of work, i’m usually somewhere around Linux, my homelab, or open-source projects.": [
         "auch nach feierabend lande ich meistens bei Linux, meinem homelab oder open-source-projekten.",
