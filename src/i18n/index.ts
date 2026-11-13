@@ -114,7 +114,7 @@ const translations: Record<string, readonly [string, string]> = {
         "někde"
     ],
     "i'm a software developer working across devops and infrastructure.": [
-        "Ich bin Softwareentwickler mit Schwerpunkt auf DevOps und Infrastruktur.",
+        "ich bin softwareentwickler mit schwerpunkt auf devops und infrastruktur.",
         "Jsem vývojář softwaru se zaměřením na DevOps a infrastrukturu."
     ],
     "in the solar system.": [
@@ -250,7 +250,7 @@ const translations: Record<string, readonly [string, string]> = {
         "03 / kontakt"
     ],
     "any questions? reach out!": [
-        "Noch Fragen? Meld dich!",
+        "noch fragen? meld dich!",
         "Máš otázky? Ozvi se!"
     ],
     "email": [

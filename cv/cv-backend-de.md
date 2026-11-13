@@ -4,7 +4,7 @@
 
 Backend-Entwickler
 
-Backend-Entwickler mit 5 Jahren Erfahrung in Go, TypeScript und PHP sowie praktischer DevOps-Erfahrung, mit Fokus auf einfache, wartbare Dienste und die Infrastruktur, auf der sie laufen. Auf der Suche nach einer Stelle als Backend-Entwickler in Deutschland.
+Backend-Entwickler mit 5 Jahren Erfahrung in Go, TypeScript und PHP sowie praktischen DevOps-Kenntnissen, mit Fokus auf einfache, wartbare Dienste und die Infrastruktur, auf der sie laufen. Auf der Suche nach einer Stelle als Backend-Entwickler in Deutschland.
 
 krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/)
 
@@ -14,20 +14,20 @@ krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev)
 
 ### Anycoders s. r. o. (Juli 2021 – heute)
 
-DevOps-Ingenieur (Sept 2024 – heute)
+DevOps Engineer (Sept 2024 – heute)
 
 - 6 Ubuntu-LTS-Produktionsserver mit jeweils rund 40 Kundenprojekten betreut; SSH-Härtung, Firewall-Regeln, Benutzerzugänge und Systemupdates mit Ansible verwaltet
-- CI/CD-Einrichtung für neue Projekte mit wiederverwendbaren GitLab-CI/CD-Komponenten mit konfigurierbaren Eingaben von bis zu einer Stunde auf meist 5–10 Minuten verkürzt
+- Einrichtungszeit für CI/CD bei neuen Projekten von bis zu einer Stunde auf meist 5–10 Minuten verkürzt – mit wiederverwendbaren GitLab-CI/CD-Komponenten mit konfigurierbaren Eingaben
 - Container-Deployments auf eigenen Servern von Bash-Skripten auf Docker Compose umgestellt; Konfigurationen lassen sich dadurch leichter prüfen und pflegen
 - Healthchecks vor dem Deployment in CI/CD-Pipelines eingeführt, sodass fehlerhafte Releases erkannt werden, bevor sie die laufende Version ersetzen
 
 Backend-Entwickler (Juli 2021 – Aug 2024)
 
-- Kostenpflichtige Adressvorschläge (ca. 2.880–3.360 € pro Jahr) für einen Kunden mit über 40 Websites durch eine REST-API mit Go und Elasticsearch ersetzt
+- Kostenpflichtigen Dienst für Adress-Autovervollständigung (ca. 2.880–3.360 € pro Jahr) für einen Kunden mit über 40 Websites durch eine eigene REST-API mit Go und Elasticsearch ersetzt
 - Import tschechischer und slowakischer Adressdaten automatisiert und Elasticsearch-Indizes für fehlertolerante Suche optimiert
-- Paketstationen mehrerer Zusteller in einer API zusammengeführt, sodass eine gemeinsame Suche die einzelnen Anbieter-Widgets ersetzen konnte
+- Paketstationen mehrerer Versanddienstleister in einer API zusammengeführt, sodass eine gemeinsame Suche die einzelnen Anbieter-Widgets ersetzen konnte
 - Mit NestJS und Puppeteer einen Rendering-Dienst mit Cache entwickelt, der Crawlern fertiges HTML liefert, ohne bestehende Vue.js-Anwendungen umzuschreiben
-- Rendering-Dienst um Sitemaps für Single-Page-Anwendungen ergänzt
+- Rendering-Dienst um Sitemap-Generierung für Single-Page-Anwendungen erweitert
 
 ## Kenntnisse
 
