@@ -44,6 +44,8 @@ Dienste: restic, resticprofile, Backblaze B2, Consul, OpenBao
 
 Daten: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
+Werkzeuge: Codex und Claude Code (täglich im Beruf)
+
 ## Ausbildung
 
 ### Südböhmische Universität in České Budějovice

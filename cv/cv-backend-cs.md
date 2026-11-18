@@ -4,7 +4,7 @@
 
 Backendový vývojář
 
-Backendový vývojář s 5 lety zkušeností v Go, TypeScriptu a PHP a praktickou zkušeností s DevOps, zaměřený na jednoduché, snadno udržovatelné služby i infrastrukturu, na které běží. Hledám pozici backendového vývojáře v Německu.
+Backendový vývojář s 5 lety zkušeností s backendem a infrastrukturou, z toho 3 roky s Go. Vyvíjím udržovatelné služby v Go, TypeScriptu a PHP. Hledám backendovou pozici v Německu.
 
 krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
@@ -33,13 +33,13 @@ Backendový vývojář (červenec 2021 – srpen 2024)
 
 Jazyky a frameworky: Go, TypeScript, PHP, NestJS, Express, Symfony
 
-Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
+Data: PostgreSQL (schémata, migrace, zálohy, SQL EXPLAIN), Elasticsearch, MySQL, MariaDB, MongoDB, Redis
 
 Infrastruktura: Ansible, Linux (Ubuntu LTS, Debian), Docker, Docker Compose, GitLab CI/CD
 
 Monitoring a observabilita: Graylog, OpenTelemetry, GlitchTip
 
-Nástroje: Puppeteer
+Nástroje: Codex a Claude Code (denně v práci), Puppeteer
 
 ## Vzdělání
 

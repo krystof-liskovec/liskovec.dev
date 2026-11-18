@@ -4,7 +4,7 @@
 
 Backend Developer
 
-Backend developer with 5 years of experience in Go, TypeScript and PHP and hands-on DevOps work, focused on simple, maintainable services and the infrastructure they run on. Looking for a backend developer role in Germany.
+Backend developer with 5 years of combined backend and infrastructure experience, including 3 years with Go. Builds maintainable services in Go, TypeScript and PHP. Looking for a backend role in Germany.
 
 krystof@liskovec.dev · +420 774 457 444 · [liskovec.dev](https://liskovec.dev) · [LinkedIn](https://www.linkedin.com/in/krystof-liskovec/) · [GitHub](https://github.com/krystof-liskovec)
 
@@ -33,13 +33,13 @@ Backend Developer (July 2021 – Aug 2024)
 
 Languages and frameworks: Go, TypeScript, PHP, NestJS, Express, Symfony
 
-Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
+Data: PostgreSQL (schemas, migrations, backups, SQL EXPLAIN), Elasticsearch, MySQL, MariaDB, MongoDB, Redis
 
 Infrastructure: Ansible, Linux (Ubuntu LTS, Debian), Docker, Docker Compose, GitLab CI/CD
 
 Observability: Graylog, OpenTelemetry, GlitchTip
 
-Tools: Puppeteer
+Tools: Codex and Claude Code (daily at work), Puppeteer
 
 ## Education
 

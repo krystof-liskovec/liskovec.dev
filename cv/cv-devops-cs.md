@@ -44,6 +44,8 @@ Služby: restic, resticprofile, Backblaze B2, Consul, OpenBao
 
 Data: Elasticsearch, PostgreSQL, MySQL, MariaDB, MongoDB, Redis
 
+Nástroje: Codex a Claude Code (denně v práci)
+
 ## Vzdělání
 
 ### Jihočeská univerzita v Českých Budějovicích

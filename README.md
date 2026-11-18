@@ -220,8 +220,8 @@ run on `main`.
 The CV sources and PDF builder live under `cv/`; generated PDFs are written to
 `public/` for the `/cv.pdf` and `/cv-backend.pdf` links.
 Run `python3 cv/build_cv.py` before `npm run build` to refresh all six downloads
-locally. The generator preserves inline parenthesized dates, the English/German/Czech
-language order, and navy email and website links.
+locally. The generator right-aligns parenthesized dates, retains the
+English/German/Czech language order, and adds clickable contact links.
 German and Czech downloads use `/cv-de.pdf`, `/cv-cs.pdf`,
 `/cv-backend-de.pdf`, and `/cv-backend-cs.pdf`; each homepage links to its
 matching DevOps CV. The deployment builds all language variants automatically.
